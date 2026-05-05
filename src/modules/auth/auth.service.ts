@@ -108,7 +108,7 @@ export class AuthService {
       accessToken,
       refreshToken,
       user: UserMapper.toDto(user),
-      location
+      location:location
     };
   }
 }

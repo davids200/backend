@@ -10,42 +10,15 @@ exports.PostgresService = void 0;
 const common_1 = require("@nestjs/common");
 const pg_1 = require("pg");
 let PostgresService = class PostgresService {
-    client;
-    async init() {
-        this.client = new pg_1.Client({
-            host: 'localhost',
-            port: 5432,
-            user: 'admin',
-            password: 'admin',
-            database: 'social_app',
-        });
-        await this.client.connect();
-        console.log('Postgres connected');
-        await this.createSchema();
-    }
-    async createSchema() {
-        await this.client.query(`
-      CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
-      CREATE TABLE IF NOT EXISTS users (
-        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-        email TEXT UNIQUE NOT NULL,
-        password TEXT NOT NULL,
-        location_id TEXT,
-        created_at TIMESTAMP DEFAULT NOW()
-      );
-
-      CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
-    `);
-    }
-    getClient() {
-        return this.client;
-    }
-    async query(text, params) {
-        return this.client.query(text, params);
-    }
-    async onModuleDestroy() {
-        await this.client.end();
+    pool = new pg_1.Pool({
+        host: 'localhost',
+        port: 5432,
+        user: 'admin',
+        password: 'admin',
+        database: 'social_app',
+    });
+    async query(query, params) {
+        return this.pool.query(query, params);
     }
 };
 exports.PostgresService = PostgresService;

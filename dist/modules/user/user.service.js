@@ -20,16 +20,19 @@ const user_entity_1 = require("./entities/user.entity");
 const user_profile_entity_1 = require("./entities/user-profile.entity");
 const user_education_entity_1 = require("./entities/user-education.entity");
 const user_session_entity_1 = require("./entities/user-session.entity");
+const location_producer_1 = require("../../infrastructure/kafka/producers/location.producer");
 let UserService = class UserService {
     userRepo;
     profileRepo;
     eduRepo;
     sessionRepo;
-    constructor(userRepo, profileRepo, eduRepo, sessionRepo) {
+    locationProducer;
+    constructor(userRepo, profileRepo, eduRepo, sessionRepo, locationProducer) {
         this.userRepo = userRepo;
         this.profileRepo = profileRepo;
         this.eduRepo = eduRepo;
         this.sessionRepo = sessionRepo;
+        this.locationProducer = locationProducer;
     }
     // =========================
     // CREATE USER
@@ -87,6 +90,34 @@ let UserService = class UserService {
     async deleteSession(token) {
         return this.sessionRepo.delete({ refreshToken: token });
     }
+    // 📁 src/modules/user/user.service.ts
+    async updateLocation(userId, newLocationId) {
+        const user = await this.userRepo.findOne({
+            where: { id: userId },
+        });
+        if (!user)
+            throw new Error('User not found');
+        const oldLocationId = user.locationId;
+        // update DB
+        user.locationId = newLocationId;
+        await this.userRepo.save(user);
+        // ✅ ONLY EMIT IF OLD LOCATION EXISTS
+        if (oldLocationId) {
+            await this.locationProducer.locationUpdated({
+                userId,
+                oldLocationId,
+                newLocationId,
+            });
+        }
+        else {
+            // first-time location set
+            await this.locationProducer.locationInitialized({
+                userId,
+                newLocationId,
+            });
+        }
+        return user;
+    }
 };
 exports.UserService = UserService;
 exports.UserService = UserService = __decorate([
@@ -98,6 +129,7 @@ exports.UserService = UserService = __decorate([
     __metadata("design:paramtypes", [typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
-        typeorm_2.Repository])
+        typeorm_2.Repository,
+        location_producer_1.LocationProducer])
 ], UserService);
 //# sourceMappingURL=user.service.js.map

@@ -8,6 +8,7 @@ import { UserSessionEntity } from './entities/user-session.entity';
 
 import { UserService } from './user.service';
 import { UserResolver } from './user.resolver';
+import { KafkaModule } from '../../infrastructure/kafka/kafka.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { UserResolver } from './user.resolver';
       UserEducationEntity,
       UserSessionEntity,
     ]),
+    KafkaModule,
   ],
   providers: [UserService, UserResolver],
   exports: [UserService],

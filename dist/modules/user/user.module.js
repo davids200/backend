@@ -15,6 +15,7 @@ const user_education_entity_1 = require("./entities/user-education.entity");
 const user_session_entity_1 = require("./entities/user-session.entity");
 const user_service_1 = require("./user.service");
 const user_resolver_1 = require("./user.resolver");
+const kafka_module_1 = require("../../infrastructure/kafka/kafka.module");
 let UserModule = class UserModule {
 };
 exports.UserModule = UserModule;
@@ -27,6 +28,7 @@ exports.UserModule = UserModule = __decorate([
                 user_education_entity_1.UserEducationEntity,
                 user_session_entity_1.UserSessionEntity,
             ]),
+            kafka_module_1.KafkaModule,
         ],
         providers: [user_service_1.UserService, user_resolver_1.UserResolver],
         exports: [user_service_1.UserService],

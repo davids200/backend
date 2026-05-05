@@ -2,20 +2,26 @@ import { Injectable } from '@nestjs/common';
 import { KafkaService } from '../kafka.service';
 import { KAFKA_TOPICS } from '../kafka.topics';
 
+export interface NotificationEvent {
+  userId: string;
+  type: 'LIKE' | 'COMMENT' | 'FOLLOW' | 'SYSTEM';
+  referenceId: string;
+  actorId?: string;
+  createdAt?: string;
+}
+
 @Injectable()
 export class NotificationProducer {
   constructor(private readonly kafka: KafkaService) {}
 
-  async createNotification(data: {
-    userId: string;
-    actorId: string;
-    type: string;
-    targetId: string;
-  }) {
-    return this.kafka.emit(
+  // =========================
+  // GENERIC NOTIFICATION EVENT
+  // =========================
+  async sendNotification(event: NotificationEvent) {
+    await this.kafka.emit(
       KAFKA_TOPICS.NOTIFICATION_SEND,
-      data,
-      data.userId, // 🔥 key = receiver
+      event,
+      event.userId, // key for partitioning
     );
   }
 }

@@ -17,9 +17,12 @@ const redis_service_1 = require("../../redis/redis.service");
 const redis_feed_service_1 = require("../../redis/feed/redis.feed.service");
 const feed_ranking_util_1 = require("../../../modules/feed/utils/feed-ranking.util");
 const feed_constants_1 = require("../../../modules/feed/feed.constants");
+const location_feed_repo_1 = require("../../scylladb/location.feed.repo");
+const kafka_constants_1 = require("../kafka.constants");
 let FeedConsumer = FeedConsumer_1 = class FeedConsumer {
     redis;
     redisFeed;
+    locationFeedRepo;
     logger = new common_1.Logger(FeedConsumer_1.name);
     kafka = new kafkajs_1.Kafka({
         clientId: 'social-app',
@@ -28,9 +31,10 @@ let FeedConsumer = FeedConsumer_1 = class FeedConsumer {
     consumer = this.kafka.consumer({
         groupId: 'feed-fanout-group',
     });
-    constructor(redis, redisFeed) {
+    constructor(redis, redisFeed, locationFeedRepo) {
         this.redis = redis;
         this.redisFeed = redisFeed;
+        this.locationFeedRepo = locationFeedRepo;
     }
     async onModuleInit() {
         await this.start();
@@ -48,26 +52,38 @@ let FeedConsumer = FeedConsumer_1 = class FeedConsumer {
                     return;
                 try {
                     const event = JSON.parse(message.value.toString());
-                    const { postId, userId, createdAt } = event;
+                    const { postId, userId, createdAt, locationId, districtId, countryCode, visibility = 'LOCAL', } = event;
                     this.logger.log(`📩 post.created: ${postId}`);
                     // =========================
-                    // 1. GET FOLLOWERS FROM REDIS
+                    // 0. WRITE TO SCYLLA (BASED ON VISIBILITY)
+                    // =========================
+                    await this.locationFeedRepo.insertPost({
+                        locationId: locationId,
+                        districtId,
+                        countryCode,
+                        postId,
+                        authorId: userId,
+                        createdAt: new Date(createdAt),
+                        visibility,
+                    });
+                    // =========================
+                    // 1. GET FOLLOWERS (REDIS)
                     // =========================
                     const followerList = await this.redis
                         .getClient()
                         .smembers(`followers:${userId}`);
-                    if (!followerList.length)
-                        return;
-                    // =========================
-                    // 2. CELEBRITY CHECK
-                    // =========================
                     const followerCount = followerList.length;
+                    // =========================
+                    // 2. CELEBRITY LOGIC
+                    // =========================
                     if (followerCount > feed_constants_1.CELEBRITY_THRESHOLD) {
-                        this.logger.log(`🔥 Celebrity (${followerCount}) → skip fanout`);
+                        this.logger.log(`🔥 Celebrity (${followerCount}) → skip fanout (pull from Scylla)`);
                         return;
                     }
+                    if (!followerCount)
+                        return;
                     // =========================
-                    // 3. CALCULATE SCORE
+                    // 3. SCORE CALCULATION
                     // =========================
                     const score = (0, feed_ranking_util_1.calculateScore)({
                         createdAt,
@@ -78,16 +94,15 @@ let FeedConsumer = FeedConsumer_1 = class FeedConsumer {
                     // =========================
                     // 4. FANOUT (BATCHED)
                     // =========================
-                    const BATCH_SIZE = 500;
-                    for (let i = 0; i < followerList.length; i += BATCH_SIZE) {
-                        const batch = followerList.slice(i, i + BATCH_SIZE);
+                    for (let i = 0; i < followerCount; i += kafka_constants_1.KAFKA_CONSTANTS.BATCH_SIZE) {
+                        const batch = followerList.slice(i, i + kafka_constants_1.KAFKA_CONSTANTS.BATCH_SIZE);
                         await Promise.all(batch.map((followerId) => this.redisFeed.addToFeed(followerId, postId, score)));
                     }
                     // =========================
-                    // 5. TRIM FEEDS (KEEP LAST N)
+                    // 5. TRIM FEEDS
                     // =========================
-                    for (let i = 0; i < followerList.length; i += BATCH_SIZE) {
-                        const batch = followerList.slice(i, i + BATCH_SIZE);
+                    for (let i = 0; i < followerCount; i += kafka_constants_1.KAFKA_CONSTANTS.BATCH_SIZE) {
+                        const batch = followerList.slice(i, i + kafka_constants_1.KAFKA_CONSTANTS.BATCH_SIZE);
                         await Promise.all(batch.map((followerId) => this.redisFeed.trimFeed(followerId)));
                     }
                     this.logger.log(`⚡ Fanout complete → ${followerCount} users`);
@@ -103,6 +118,7 @@ exports.FeedConsumer = FeedConsumer;
 exports.FeedConsumer = FeedConsumer = FeedConsumer_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [redis_service_1.RedisService,
-        redis_feed_service_1.RedisFeedService])
+        redis_feed_service_1.RedisFeedService,
+        location_feed_repo_1.LocationFeedRepository])
 ], FeedConsumer);
 //# sourceMappingURL=feed.consumer.js.map

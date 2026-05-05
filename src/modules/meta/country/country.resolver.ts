@@ -6,18 +6,16 @@ import { CountryModel } from './country.model';
 export class CountryResolver {
   constructor(private service: CountryService) {}
 
-@Mutation(() => CountryModel)
-createCountry(
-  @Args('name') name: string,
-  @Args('code') code: string,
-) {
-  return this.service.create(name, code);
-}
+  @Mutation(() => CountryModel)
+  createCountry(
+    @Args('name') name: string,
+    @Args('code') code: string,
+  ) {
+    return this.service.create(name, code);
+  }
 
-
-
- @Query(() => [CountryModel])
-countries() {
-  return this.service.findAll();
-}
+  @Query(() => [CountryModel])
+  countries() {
+    return this.service.findAll();
+  }
 }

@@ -94,4 +94,19 @@ async getFeedPaginated(userId: string, limit = 20, cursor?: string) {
   return this.client.execute(query, params, { prepare: true });
 }
 
+
+
+
+ async execute(query: string, params: any[] = []) {
+    try {
+      return await this.client.execute(query, params, {
+        prepare: true, // VERY IMPORTANT (performance)
+      });
+    } catch (error) {
+      this.logger.error('Scylla query failed', error);
+      throw error;
+    }
+  }
+
+
 }

@@ -38,6 +38,34 @@ export class ScyllaSchemaLoader {
       );
     `);
 
-    console.log('Scylla schema ready');
-  }
+
+await client.execute(`
+CREATE TABLE IF NOT EXISTS social.posts_by_location (
+location_id TEXT,
+created_at TIMESTAMP,
+post_id UUID,
+author_id UUID,
+PRIMARY KEY (location_id, created_at, post_id)
+) WITH CLUSTERING ORDER BY (created_at DESC);
+);
+`);
+
+
+
+await client.execute(`
+CREATE TABLE IF NOT EXISTS social.posts_by_country ( 
+country_code TEXT,
+created_at TIMESTAMP,
+post_id TEXT,
+author_id TEXT,
+PRIMARY KEY (country_code, created_at, post_id)
+) WITH CLUSTERING ORDER BY (created_at DESC);
+`);
+console.log('Scylla schema ready');
+}
+
+
+
+
+
 }

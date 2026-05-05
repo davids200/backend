@@ -1,9 +1,8 @@
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
-import { Kafka } from 'kafkajs';
-import { PostgresService } from '../infrastructure/postgresql/postgres.service';
-import { RedisFeedService } from '../infrastructure/redis/feed/redis.feed.service';
-import { CELEBRITY_THRESHOLD } from '../modules/feed/feed.constants';
-
+import { Kafka } from 'kafkajs'; 
+import { PostgresService } from '../../infrastructure/postgresql/postgres.service';
+import { RedisFeedService } from '../../infrastructure/redis/feed/redis.feed.service';
+import { CELEBRITY_THRESHOLD } from '../../modules/feed/feed.constants';
 
 @Injectable()
 export class FeedWorker implements OnModuleInit {

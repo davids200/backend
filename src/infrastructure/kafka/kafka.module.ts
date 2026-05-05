@@ -11,10 +11,12 @@ import { FeedConsumer } from './consumers/feed.consumer';
 import { NotificationConsumer } from '../../modules/notification/notification.consumer';
 
 // workers
-import { FeedWorker } from '../../workers/feed.worker';
 import { ScyllaModule } from '../scylladb/scylla.module';
 import { PostgresModule } from '../postgresql/postgres.module';
 import { RedisModule } from '../redis/redis.module';
+import { FeedWorker } from '../../workers/feed/feed.worker';
+import { LocationProducer } from './location.producer';
+import { LocationFeedRepository } from '../scylladb/location.feed.repo';
 
 @Global()
 @Module({
@@ -25,12 +27,12 @@ import { RedisModule } from '../redis/redis.module';
   ],
   providers: [
     KafkaService,
-
+LocationProducer,
     // producers
     PostProducer,
     FollowProducer,
     NotificationProducer,
-
+LocationFeedRepository,
     // consumers
     FeedConsumer,
     // NotificationConsumer,
@@ -43,6 +45,7 @@ import { RedisModule } from '../redis/redis.module';
     PostProducer,
     FollowProducer,
     NotificationProducer,
+    LocationProducer
   ],
 })
 export class KafkaModule {}

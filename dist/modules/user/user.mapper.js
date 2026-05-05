@@ -7,6 +7,7 @@ class UserMapper {
             id: user.id,
             email: user.email,
             username: user.username,
+            location_id: user.locationId
         };
     }
     static toDtoList(users) {

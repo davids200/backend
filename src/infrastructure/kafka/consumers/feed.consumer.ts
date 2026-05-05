@@ -4,8 +4,13 @@ import { Kafka } from 'kafkajs';
 import { RedisService } from '../../redis/redis.service';
 import { RedisFeedService } from '../../redis/feed/redis.feed.service';
 
-import { calculateScore } from '../../../modules/feed/utils/feed-ranking.util'; 
+import { calculateScore } from '../../../modules/feed/utils/feed-ranking.util';
 import { CELEBRITY_THRESHOLD } from '../../../modules/feed/feed.constants';
+
+import { LocationFeedRepository } from '../../scylladb/location.feed.repo';
+import { KAFKA_CONSTANTS } from '../kafka.constants';
+
+type Visibility = 'LOCAL' | 'DISTRICT' | 'COUNTRY' | 'GLOBAL';
 
 @Injectable()
 export class FeedConsumer implements OnModuleInit {
@@ -23,6 +28,7 @@ export class FeedConsumer implements OnModuleInit {
   constructor(
     private readonly redis: RedisService,
     private readonly redisFeed: RedisFeedService,
+    private readonly locationFeedRepo: LocationFeedRepository,
   ) {}
 
   async onModuleInit() {
@@ -45,33 +51,63 @@ export class FeedConsumer implements OnModuleInit {
 
         try {
           const event = JSON.parse(message.value.toString());
-          const { postId, userId, createdAt } = event;
+
+          const {
+            postId,
+            userId,
+            createdAt,
+            locationId,
+            districtId,
+            countryCode,
+            visibility = 'LOCAL',
+          }: {
+            postId: string;
+            userId: string;
+            createdAt: string;
+            locationId?: string;
+            districtId?: string;
+            countryCode?: string;
+            visibility: Visibility;
+          } = event;
 
           this.logger.log(`📩 post.created: ${postId}`);
 
           // =========================
-          // 1. GET FOLLOWERS FROM REDIS
+          // 0. WRITE TO SCYLLA (BASED ON VISIBILITY)
+          // =========================
+          await this.locationFeedRepo.insertPost({
+            locationId: locationId!,
+            districtId,
+            countryCode,
+            postId,
+            authorId: userId,
+            createdAt: new Date(createdAt),
+            visibility,
+          });
+
+          // =========================
+          // 1. GET FOLLOWERS (REDIS)
           // =========================
           const followerList = await this.redis
             .getClient()
             .smembers(`followers:${userId}`);
 
-          if (!followerList.length) return;
-
-          // =========================
-          // 2. CELEBRITY CHECK
-          // =========================
           const followerCount = followerList.length;
 
+          // =========================
+          // 2. CELEBRITY LOGIC
+          // =========================
           if (followerCount > CELEBRITY_THRESHOLD) {
             this.logger.log(
-              `🔥 Celebrity (${followerCount}) → skip fanout`,
+              `🔥 Celebrity (${followerCount}) → skip fanout (pull from Scylla)`,
             );
             return;
           }
 
+          if (!followerCount) return;
+
           // =========================
-          // 3. CALCULATE SCORE
+          // 3. SCORE CALCULATION
           // =========================
           const score = calculateScore({
             createdAt,
@@ -83,10 +119,10 @@ export class FeedConsumer implements OnModuleInit {
           // =========================
           // 4. FANOUT (BATCHED)
           // =========================
-          const BATCH_SIZE = 500;
+          
 
-          for (let i = 0; i < followerList.length; i += BATCH_SIZE) {
-            const batch = followerList.slice(i, i + BATCH_SIZE);
+          for (let i = 0; i < followerCount; i += KAFKA_CONSTANTS.BATCH_SIZE) {
+            const batch = followerList.slice(i, i + KAFKA_CONSTANTS.BATCH_SIZE);
 
             await Promise.all(
               batch.map((followerId) =>
@@ -100,10 +136,10 @@ export class FeedConsumer implements OnModuleInit {
           }
 
           // =========================
-          // 5. TRIM FEEDS (KEEP LAST N)
+          // 5. TRIM FEEDS
           // =========================
-          for (let i = 0; i < followerList.length; i += BATCH_SIZE) {
-            const batch = followerList.slice(i, i + BATCH_SIZE);
+          for (let i = 0; i < followerCount; i += KAFKA_CONSTANTS.BATCH_SIZE) {
+            const batch = followerList.slice(i, i + KAFKA_CONSTANTS.BATCH_SIZE);
 
             await Promise.all(
               batch.map((followerId) =>

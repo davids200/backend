@@ -127,7 +127,7 @@ let AuthService = class AuthService {
             accessToken,
             refreshToken,
             user: user_mapper_1.UserMapper.toDto(user),
-            location
+            location: location
         };
     }
 };

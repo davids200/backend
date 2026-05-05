@@ -11,35 +11,28 @@ import { EducationLevelService } from './education/education-level.service';
 import { CountryResolver } from './country/country.resolver'; 
 import { SchoolResolver } from './school/school.resolver';
 import { EducationLevelResolver } from './education/education-level.resolver'; 
-import { EducationLevelEntity } from '../user/entities/education-level.entity';  
-import { LocationEntity } from './location/location.entity';
-import { LocationService } from './location/location.service';
-import { LocationResolver } from './location/location.resolver';
+import { EducationLevelEntity } from '../user/entities/education-level.entity'; 
 import { PostgresModule } from '../../infrastructure/postgresql/postgres.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      CountryEntity,
-      LocationEntity,
+      CountryEntity, 
       SchoolEntity,
       EducationLevelEntity,
     ]),
     PostgresModule
   ],
   providers: [
-    CountryService,
-    LocationService,
+    CountryService, 
     SchoolService,
     EducationLevelService,
-    CountryResolver,
-    LocationResolver,
+    CountryResolver, 
     SchoolResolver,
     EducationLevelResolver,
   ],
   exports: [
-    CountryService,
-    LocationService,
+    CountryService, 
     SchoolService,
     EducationLevelService,
   ],

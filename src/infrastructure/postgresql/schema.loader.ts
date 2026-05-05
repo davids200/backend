@@ -109,3 +109,7 @@ export class ScyllaSchemaLoader {
     console.log('✅ ScyllaDB schema ready');
   }
 }
+
+// CREATE INDEX idx_comments_post_parent ON comments (post_id, parent_id);
+// CREATE INDEX idx_comments_root ON comments (root_id);
+// CREATE INDEX idx_comments_created ON comments (created_at DESC);

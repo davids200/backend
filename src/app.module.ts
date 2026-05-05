@@ -11,7 +11,9 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UserEntity } from './modules/user/entities/user.entity';
 import { MinioModule } from './infrastructure/minio/minio.module';
 import { NotificationModule } from './modules/notification/notification.module';
-import { MetaModule } from './modules/meta/meta.module';
+import { MetaModule } from './modules/meta/meta.module'; 
+import { CountryModule } from './modules/meta/country/country.module';
+import { LocationModule } from './modules/location/location.module';
  
 @Module({
   imports: [
@@ -22,7 +24,7 @@ import { MetaModule } from './modules/meta/meta.module';
       username: 'admin',
       password: 'admin',
       database: 'social_app',
-
+      autoLoadEntities: true,
       entities: [UserEntity],
       synchronize: true, // ⚠️ dev only
     }),
@@ -38,7 +40,9 @@ NotificationModule,
     MetaModule,
     FeedModule,
     AuthModule ,
-    MinioModule
+    MinioModule, 
+    LocationModule,
+    CountryModule
   ],
   providers: [DebugResolver],
 })

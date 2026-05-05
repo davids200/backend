@@ -20,6 +20,8 @@ const user_entity_1 = require("./modules/user/entities/user.entity");
 const minio_module_1 = require("./infrastructure/minio/minio.module");
 const notification_module_1 = require("./modules/notification/notification.module");
 const meta_module_1 = require("./modules/meta/meta.module");
+const country_module_1 = require("./modules/meta/country/country.module");
+const location_module_1 = require("./modules/location/location.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -33,6 +35,7 @@ exports.AppModule = AppModule = __decorate([
                 username: 'admin',
                 password: 'admin',
                 database: 'social_app',
+                autoLoadEntities: true,
                 entities: [user_entity_1.UserEntity],
                 synchronize: true, // ⚠️ dev only
             }),
@@ -48,7 +51,9 @@ exports.AppModule = AppModule = __decorate([
             meta_module_1.MetaModule,
             feed_module_1.FeedModule,
             auth_module_1.AuthModule,
-            minio_module_1.MinioModule
+            minio_module_1.MinioModule,
+            location_module_1.LocationModule,
+            country_module_1.CountryModule
         ],
         providers: [debug_resolver_1.DebugResolver],
     })

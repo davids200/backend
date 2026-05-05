@@ -16,10 +16,12 @@ const notification_producer_1 = require("./producers/notification.producer");
 // consumers
 const feed_consumer_1 = require("./consumers/feed.consumer");
 // workers
-const feed_worker_1 = require("../../workers/feed.worker");
 const scylla_module_1 = require("../scylladb/scylla.module");
 const postgres_module_1 = require("../postgresql/postgres.module");
 const redis_module_1 = require("../redis/redis.module");
+const feed_worker_1 = require("../../workers/feed/feed.worker");
+const location_producer_1 = require("./location.producer");
+const location_feed_repo_1 = require("../scylladb/location.feed.repo");
 let KafkaModule = class KafkaModule {
 };
 exports.KafkaModule = KafkaModule;
@@ -33,10 +35,12 @@ exports.KafkaModule = KafkaModule = __decorate([
         ],
         providers: [
             kafka_service_1.KafkaService,
+            location_producer_1.LocationProducer,
             // producers
             post_producer_1.PostProducer,
             follow_producer_1.FollowProducer,
             notification_producer_1.NotificationProducer,
+            location_feed_repo_1.LocationFeedRepository,
             // consumers
             feed_consumer_1.FeedConsumer,
             // NotificationConsumer,
@@ -48,6 +52,7 @@ exports.KafkaModule = KafkaModule = __decorate([
             post_producer_1.PostProducer,
             follow_producer_1.FollowProducer,
             notification_producer_1.NotificationProducer,
+            location_producer_1.LocationProducer
         ],
     })
 ], KafkaModule);

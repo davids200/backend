@@ -41,11 +41,13 @@ export class CommentConsumer implements OnModuleInit {
         // =========================
         // 2. NOTIFICATION
         // =========================
-        await this.notification.notify({
-          userId: event.userId,
-          type: 'COMMENT',
-          referenceId: event.postId,
-        });
+       await this.notification.sendNotification({
+  userId: event.userId,
+  type: 'COMMENT',
+  referenceId: event.postId,
+  actorId: event.userId,
+  createdAt: new Date().toISOString(),
+});
       },
     });
   }

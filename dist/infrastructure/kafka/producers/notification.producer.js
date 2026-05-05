@@ -18,8 +18,11 @@ let NotificationProducer = class NotificationProducer {
     constructor(kafka) {
         this.kafka = kafka;
     }
-    async createNotification(data) {
-        return this.kafka.emit(kafka_topics_1.KAFKA_TOPICS.NOTIFICATION_SEND, data, data.userId);
+    // =========================
+    // GENERIC NOTIFICATION EVENT
+    // =========================
+    async sendNotification(event) {
+        await this.kafka.emit(kafka_topics_1.KAFKA_TOPICS.NOTIFICATION_SEND, event, event.userId);
     }
 };
 exports.NotificationProducer = NotificationProducer;

@@ -6,6 +6,7 @@ import { UserEntity } from './entities/user.entity';
 import { UserProfileEntity } from './entities/user-profile.entity';
 import { UserEducationEntity } from './entities/user-education.entity';
 import { UserSessionEntity } from './entities/user-session.entity';
+import { LocationProducer } from '../../infrastructure/kafka/producers/location.producer';
 
 @Injectable()
 export class UserService {
@@ -21,6 +22,8 @@ export class UserService {
 
     @InjectRepository(UserSessionEntity)
     private sessionRepo: Repository<UserSessionEntity>,
+
+    private readonly locationProducer: LocationProducer,
   ) {}
 
   // =========================
@@ -50,21 +53,32 @@ export class UserService {
   // =========================
   // PROFILE
   // =========================
-  async updateProfile(userId: string, data: Partial<UserProfileEntity>) {
-    let profile = await this.profileRepo.findOne({ where: { userId } });
+async updateProfile(userId: string, data: Partial<UserProfileEntity>) {
+let profile = await this.profileRepo.findOne({ where: { userId } });
 
-    if (!profile) {
-      profile = this.profileRepo.create({ userId, ...data });
-    } else {
-      Object.assign(profile, data);
-    }
+if (!profile) {
+profile = this.profileRepo.create({ userId, ...data });
+} else {
+Object.assign(profile, data);
+}
 
-    return this.profileRepo.save(profile);
-  }
+return this.profileRepo.save(profile);
+}
+
+
+
+
+
 
   async getProfile(userId: string) {
     return this.profileRepo.findOne({ where: { userId } });
   }
+
+
+
+
+
+
 
   // =========================
   // EDUCATION
@@ -78,6 +92,12 @@ export class UserService {
     return this.eduRepo.find({ where: { userId } });
   }
 
+
+
+
+
+
+
   // =========================
   // SESSION
   // =========================
@@ -88,4 +108,39 @@ export class UserService {
   async deleteSession(token: string) {
     return this.sessionRepo.delete({ refreshToken: token });
   }
+
+
+// 📁 src/modules/user/user.service.ts
+
+async updateLocation(userId: string, newLocationId: string) {
+  const user = await this.userRepo.findOne({
+    where: { id: userId },
+  });
+
+  if (!user) throw new Error('User not found');
+
+  const oldLocationId = user.locationId;
+
+  // update DB
+  user.locationId = newLocationId;
+  await this.userRepo.save(user);
+
+  // ✅ ONLY EMIT IF OLD LOCATION EXISTS
+  if (oldLocationId) {
+    await this.locationProducer.locationUpdated({
+      userId,
+      oldLocationId,
+      newLocationId,
+    });
+  } else {
+    // first-time location set
+    await this.locationProducer.locationInitialized({
+      userId,
+      newLocationId,
+    });
+  }
+
+  return user;
+}
+  
 }

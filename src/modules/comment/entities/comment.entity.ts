@@ -11,33 +11,41 @@ export class CommentEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
+  // =========================
+  // POST RELATION (IMPORTANT)
+  // =========================
   @Index()
   @Column()
   postId!: string;
 
+  // =========================
+  // USER
+  // =========================
   @Index()
   @Column()
   userId!: string;
 
-  // 🔥 THREADING
-  @Index()
-  @Column({ nullable: true })
-  parentId?: string;
-
-  // 🔥 ROOT THREAD (fast grouping)
-  @Index()
-  @Column()
-  rootId!: string;
-
+  // =========================
+  // CONTENT
+  // =========================
   @Column('text')
   content!: string;
 
-  @Column({ default: false })
-  isEdited!: boolean;
+  // =========================
+  // THREADING
+  // =========================
+  @Index()
+  @Column({ nullable: true })
+  parentId?: string | null;   // ✅ FIXED
 
-  @Column({ default: false })
-  isDeleted!: boolean;
+  @Index()
+  @Column({ nullable: true })
+  rootId?: string | null;     // ✅ FIXED
 
+  // =========================
+  // TIMESTAMP
+  // =========================
+  @Index()
   @CreateDateColumn()
   createdAt!: Date;
 }

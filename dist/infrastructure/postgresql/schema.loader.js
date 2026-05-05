@@ -110,4 +110,7 @@ exports.ScyllaSchemaLoader = ScyllaSchemaLoader;
 exports.ScyllaSchemaLoader = ScyllaSchemaLoader = __decorate([
     (0, common_1.Injectable)()
 ], ScyllaSchemaLoader);
+// CREATE INDEX idx_comments_post_parent ON comments (post_id, parent_id);
+// CREATE INDEX idx_comments_root ON comments (root_id);
+// CREATE INDEX idx_comments_created ON comments (created_at DESC);
 //# sourceMappingURL=schema.loader.js.map

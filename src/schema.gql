@@ -14,10 +14,11 @@ type CountryModel {
 }
 
 input CreateLocationInput {
-  countryCode: String
+  countryId: String!
+  latitude: Float
+  longitude: Float
   name: String!
   parentId: String
-  type: String!
 }
 
 input CreatePostInput {
@@ -43,13 +44,18 @@ type FeedResponse {
   nextCursor: DateTime
 }
 
-type LocationModel {
-  children: [LocationModel!]
-  country_code: String
+type LocationEntity {
+  children: [LocationEntity]
+  countryId: String!
+  createdAt: DateTime!
   id: ID!
+  latitude: Float
+  level: Int!
+  longitude: Float
   name: String!
-  parent_id: String
-  type: String!
+  parent: LocationEntity
+  parentId: String
+  updatedAt: DateTime!
 }
 
 input LoginInput {
@@ -60,7 +66,7 @@ input LoginInput {
 type Mutation {
   createCountry(code: String!, name: String!): CountryModel!
   createEducationLevel(name: String!, order: Float!): String!
-  createLocation(data: CreateLocationInput!): LocationModel!
+  createLocation(data: CreateLocationInput!): LocationEntity!
   createPost(data: CreatePostInput!): PostModel!
   createSchool(locationId: String!, name: String!): String!
   login(input: LoginInput!): AuthPayload!
@@ -81,10 +87,9 @@ type Query {
   countries: [CountryModel!]!
   educationLevels: [String!]!
   getFeed(cursor: Float, limit: Float): FeedResponse!
-  getLocation(id: String!): LocationModel
-  getLocationChildren(parentId: String!): [LocationModel!]!
-  getLocationTree(id: String!): LocationModel
   getNotifications: [String!]!
+  location(id: String!): LocationEntity
+  locationTree(id: String!): LocationEntity!
   ping: String!
   schools(locationId: String!): [String!]!
 }
