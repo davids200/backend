@@ -17,13 +17,15 @@ import { RedisModule } from '../redis/redis.module';
 import { FeedWorker } from '../../workers/feed/feed.worker';
 import { LocationProducer } from './location.producer';
 import { LocationFeedRepository } from '../scylladb/location.feed.repo';
+import { LocationModule } from '../../modules/location/location.module';
 
 @Global()
 @Module({
   imports:[
     ScyllaModule,
     PostgresModule,
-    RedisModule
+    RedisModule,
+    LocationModule
   ],
   providers: [
     KafkaService,

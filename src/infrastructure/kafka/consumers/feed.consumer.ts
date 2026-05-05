@@ -3,14 +3,12 @@ import { Kafka } from 'kafkajs';
 
 import { RedisService } from '../../redis/redis.service';
 import { RedisFeedService } from '../../redis/feed/redis.feed.service';
+import { LocationFeedRepository } from '../../scylladb/location.feed.repo';
 
 import { calculateScore } from '../../../modules/feed/utils/feed-ranking.util';
 import { CELEBRITY_THRESHOLD } from '../../../modules/feed/feed.constants';
-
-import { LocationFeedRepository } from '../../scylladb/location.feed.repo';
-import { KAFKA_CONSTANTS } from '../kafka.constants';
-
-type Visibility = 'LOCAL' | 'DISTRICT' | 'COUNTRY' | 'GLOBAL';
+import { LocationService } from '../../../modules/location/location.service';
+import { LocationNode } from '../../../modules/location/location.types';
 
 @Injectable()
 export class FeedConsumer implements OnModuleInit {
@@ -29,6 +27,7 @@ export class FeedConsumer implements OnModuleInit {
     private readonly redis: RedisService,
     private readonly redisFeed: RedisFeedService,
     private readonly locationFeedRepo: LocationFeedRepository,
+    private readonly locationService: LocationService,
   ) {}
 
   async onModuleInit() {
@@ -52,63 +51,9 @@ export class FeedConsumer implements OnModuleInit {
         try {
           const event = JSON.parse(message.value.toString());
 
-          const {
-            postId,
-            userId,
-            createdAt,
-            locationId,
-            districtId,
-            countryCode,
-            visibility = 'LOCAL',
-          }: {
-            postId: string;
-            userId: string;
-            createdAt: string;
-            locationId?: string;
-            districtId?: string;
-            countryCode?: string;
-            visibility: Visibility;
-          } = event;
+          const { postId, userId, createdAt, locationId } = event;
 
-          this.logger.log(`📩 post.created: ${postId}`);
-
-          // =========================
-          // 0. WRITE TO SCYLLA (BASED ON VISIBILITY)
-          // =========================
-          await this.locationFeedRepo.insertPost({
-            locationId: locationId!,
-            districtId,
-            countryCode,
-            postId,
-            authorId: userId,
-            createdAt: new Date(createdAt),
-            visibility,
-          });
-
-          // =========================
-          // 1. GET FOLLOWERS (REDIS)
-          // =========================
-          const followerList = await this.redis
-            .getClient()
-            .smembers(`followers:${userId}`);
-
-          const followerCount = followerList.length;
-
-          // =========================
-          // 2. CELEBRITY LOGIC
-          // =========================
-          if (followerCount > CELEBRITY_THRESHOLD) {
-            this.logger.log(
-              `🔥 Celebrity (${followerCount}) → skip fanout (pull from Scylla)`,
-            );
-            return;
-          }
-
-          if (!followerCount) return;
-
-          // =========================
-          // 3. SCORE CALCULATION
-          // =========================
+          // 1. SCORE
           const score = calculateScore({
             createdAt,
             likes: 0,
@@ -116,43 +61,59 @@ export class FeedConsumer implements OnModuleInit {
             isFollowingAuthor: true,
           });
 
-          // =========================
-          // 4. FANOUT (BATCHED)
-          // =========================
-          
+          // 2. FOLLOWERS
+          const followers = await this.redis
+            .getClient()
+            .smembers(`followers:${userId}`);
 
-          for (let i = 0; i < followerCount; i += KAFKA_CONSTANTS.BATCH_SIZE) {
-            const batch = followerList.slice(i, i + KAFKA_CONSTANTS.BATCH_SIZE);
+          // 3. FANOUT (NON-CELEBRITY)
+          if (followers.length <= CELEBRITY_THRESHOLD) {
+            const BATCH = 500;
 
-            await Promise.all(
-              batch.map((followerId) =>
-                this.redisFeed.addToFeed(
-                  followerId,
-                  postId,
-                  score,
+            for (let i = 0; i < followers.length; i += BATCH) {
+              const batch = followers.slice(i, i + BATCH);
+
+              await Promise.all(
+                batch.map((followerId) =>
+                  this.redisFeed.addToFeed(
+                    followerId,
+                    postId,
+                    score,
+                  ),
                 ),
-              ),
-            );
+              );
+            }
           }
 
-          // =========================
-          // 5. TRIM FEEDS
-          // =========================
-          for (let i = 0; i < followerCount; i += KAFKA_CONSTANTS.BATCH_SIZE) {
-            const batch = followerList.slice(i, i + KAFKA_CONSTANTS.BATCH_SIZE);
+          // 4. LOCATION FEED
+          if (locationId) {
+            const hierarchy: LocationNode[] =
+              await this.locationService.getLocationHierarchy(
+                locationId,
+              );
 
             await Promise.all(
-              batch.map((followerId) =>
-                this.redisFeed.trimFeed(followerId),
+              hierarchy.map((loc) =>
+                this.locationFeedRepo.insertPost({
+                  locationId: loc.id,
+                  postId,
+                  authorId: userId,
+                  createdAt: new Date(createdAt),
+                }),
               ),
             );
           }
 
-          this.logger.log(
-            `⚡ Fanout complete → ${followerCount} users`,
-          );
+          // 5. GLOBAL
+          await this.locationFeedRepo.insertGlobalPost({
+            postId,
+            authorId: userId,
+            createdAt: new Date(createdAt),
+          });
+
+          this.logger.log(`✅ Feed processed: ${postId}`);
         } catch (err) {
-          this.logger.error('Feed consumer error', err);
+          this.logger.error('Feed error', err);
         }
       },
     });

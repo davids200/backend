@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { LocationEntity } from './location.entity';
 import { KafkaService } from '../../infrastructure/kafka/kafka.service';
+import { LocationNode } from './location.types';
+import { PostgresService } from '../../infrastructure/postgresql/postgres.service';
 
 @Injectable()
 export class LocationService {
@@ -10,7 +12,10 @@ export class LocationService {
     @InjectRepository(LocationEntity)
     private readonly locationRepo: Repository<LocationEntity>,
     private readonly kafka: KafkaService,
+    private readonly postgres: PostgresService
   ) {}
+
+  
 
   async createLocation(data: {
     name: string;
@@ -107,6 +112,39 @@ export class LocationService {
 
     return this.buildTree(results);
   }
+
+
+
+async getLocationHierarchy(locationId: string): Promise<LocationNode[]> {
+    const result = await this.postgres.query(
+      `
+      WITH RECURSIVE tree AS (
+        SELECT id, parent_id, level
+        FROM locations
+        WHERE id = $1
+
+        UNION ALL
+
+        SELECT l.id, l.parent_id, l.level
+        FROM locations l
+        INNER JOIN tree t ON t.parent_id = l.id
+      )
+      SELECT id, level FROM tree;
+      `,
+      [locationId],
+    );
+
+    return result.rows || [];
+  }
+
+
+
+
+
+
+
+
+
 
   private buildTree(rows: any[]) {
     const map = new Map();

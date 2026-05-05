@@ -73,16 +73,11 @@ let ScyllaService = ScyllaService_1 = class ScyllaService {
         params.push(limit);
         return this.client.execute(query, params, { prepare: true });
     }
-    async execute(query, params = []) {
-        try {
-            return await this.client.execute(query, params, {
-                prepare: true, // VERY IMPORTANT (performance)
-            });
-        }
-        catch (error) {
-            this.logger.error('Scylla query failed', error);
-            throw error;
-        }
+    async execute(query, params = [], options = {}) {
+        return this.client.execute(query, params, {
+            prepare: true,
+            ...options,
+        });
     }
 };
 exports.ScyllaService = ScyllaService;

@@ -22,6 +22,7 @@ const redis_module_1 = require("../redis/redis.module");
 const feed_worker_1 = require("../../workers/feed/feed.worker");
 const location_producer_1 = require("./location.producer");
 const location_feed_repo_1 = require("../scylladb/location.feed.repo");
+const location_module_1 = require("../../modules/location/location.module");
 let KafkaModule = class KafkaModule {
 };
 exports.KafkaModule = KafkaModule;
@@ -31,7 +32,8 @@ exports.KafkaModule = KafkaModule = __decorate([
         imports: [
             scylla_module_1.ScyllaModule,
             postgres_module_1.PostgresModule,
-            redis_module_1.RedisModule
+            redis_module_1.RedisModule,
+            location_module_1.LocationModule
         ],
         providers: [
             kafka_service_1.KafkaService,

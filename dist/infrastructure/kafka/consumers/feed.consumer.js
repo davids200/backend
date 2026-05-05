@@ -15,14 +15,15 @@ const common_1 = require("@nestjs/common");
 const kafkajs_1 = require("kafkajs");
 const redis_service_1 = require("../../redis/redis.service");
 const redis_feed_service_1 = require("../../redis/feed/redis.feed.service");
+const location_feed_repo_1 = require("../../scylladb/location.feed.repo");
 const feed_ranking_util_1 = require("../../../modules/feed/utils/feed-ranking.util");
 const feed_constants_1 = require("../../../modules/feed/feed.constants");
-const location_feed_repo_1 = require("../../scylladb/location.feed.repo");
-const kafka_constants_1 = require("../kafka.constants");
+const location_service_1 = require("../../../modules/location/location.service");
 let FeedConsumer = FeedConsumer_1 = class FeedConsumer {
     redis;
     redisFeed;
     locationFeedRepo;
+    locationService;
     logger = new common_1.Logger(FeedConsumer_1.name);
     kafka = new kafkajs_1.Kafka({
         clientId: 'social-app',
@@ -31,10 +32,11 @@ let FeedConsumer = FeedConsumer_1 = class FeedConsumer {
     consumer = this.kafka.consumer({
         groupId: 'feed-fanout-group',
     });
-    constructor(redis, redisFeed, locationFeedRepo) {
+    constructor(redis, redisFeed, locationFeedRepo, locationService) {
         this.redis = redis;
         this.redisFeed = redisFeed;
         this.locationFeedRepo = locationFeedRepo;
+        this.locationService = locationService;
     }
     async onModuleInit() {
         await this.start();
@@ -52,63 +54,46 @@ let FeedConsumer = FeedConsumer_1 = class FeedConsumer {
                     return;
                 try {
                     const event = JSON.parse(message.value.toString());
-                    const { postId, userId, createdAt, locationId, districtId, countryCode, visibility = 'LOCAL', } = event;
-                    this.logger.log(`📩 post.created: ${postId}`);
-                    // =========================
-                    // 0. WRITE TO SCYLLA (BASED ON VISIBILITY)
-                    // =========================
-                    await this.locationFeedRepo.insertPost({
-                        locationId: locationId,
-                        districtId,
-                        countryCode,
-                        postId,
-                        authorId: userId,
-                        createdAt: new Date(createdAt),
-                        visibility,
-                    });
-                    // =========================
-                    // 1. GET FOLLOWERS (REDIS)
-                    // =========================
-                    const followerList = await this.redis
-                        .getClient()
-                        .smembers(`followers:${userId}`);
-                    const followerCount = followerList.length;
-                    // =========================
-                    // 2. CELEBRITY LOGIC
-                    // =========================
-                    if (followerCount > feed_constants_1.CELEBRITY_THRESHOLD) {
-                        this.logger.log(`🔥 Celebrity (${followerCount}) → skip fanout (pull from Scylla)`);
-                        return;
-                    }
-                    if (!followerCount)
-                        return;
-                    // =========================
-                    // 3. SCORE CALCULATION
-                    // =========================
+                    const { postId, userId, createdAt, locationId } = event;
+                    // 1. SCORE
                     const score = (0, feed_ranking_util_1.calculateScore)({
                         createdAt,
                         likes: 0,
                         comments: 0,
                         isFollowingAuthor: true,
                     });
-                    // =========================
-                    // 4. FANOUT (BATCHED)
-                    // =========================
-                    for (let i = 0; i < followerCount; i += kafka_constants_1.KAFKA_CONSTANTS.BATCH_SIZE) {
-                        const batch = followerList.slice(i, i + kafka_constants_1.KAFKA_CONSTANTS.BATCH_SIZE);
-                        await Promise.all(batch.map((followerId) => this.redisFeed.addToFeed(followerId, postId, score)));
+                    // 2. FOLLOWERS
+                    const followers = await this.redis
+                        .getClient()
+                        .smembers(`followers:${userId}`);
+                    // 3. FANOUT (NON-CELEBRITY)
+                    if (followers.length <= feed_constants_1.CELEBRITY_THRESHOLD) {
+                        const BATCH = 500;
+                        for (let i = 0; i < followers.length; i += BATCH) {
+                            const batch = followers.slice(i, i + BATCH);
+                            await Promise.all(batch.map((followerId) => this.redisFeed.addToFeed(followerId, postId, score)));
+                        }
                     }
-                    // =========================
-                    // 5. TRIM FEEDS
-                    // =========================
-                    for (let i = 0; i < followerCount; i += kafka_constants_1.KAFKA_CONSTANTS.BATCH_SIZE) {
-                        const batch = followerList.slice(i, i + kafka_constants_1.KAFKA_CONSTANTS.BATCH_SIZE);
-                        await Promise.all(batch.map((followerId) => this.redisFeed.trimFeed(followerId)));
+                    // 4. LOCATION FEED
+                    if (locationId) {
+                        const hierarchy = await this.locationService.getLocationHierarchy(locationId);
+                        await Promise.all(hierarchy.map((loc) => this.locationFeedRepo.insertPost({
+                            locationId: loc.id,
+                            postId,
+                            authorId: userId,
+                            createdAt: new Date(createdAt),
+                        })));
                     }
-                    this.logger.log(`⚡ Fanout complete → ${followerCount} users`);
+                    // 5. GLOBAL
+                    await this.locationFeedRepo.insertGlobalPost({
+                        postId,
+                        authorId: userId,
+                        createdAt: new Date(createdAt),
+                    });
+                    this.logger.log(`✅ Feed processed: ${postId}`);
                 }
                 catch (err) {
-                    this.logger.error('Feed consumer error', err);
+                    this.logger.error('Feed error', err);
                 }
             },
         });
@@ -119,6 +104,7 @@ exports.FeedConsumer = FeedConsumer = FeedConsumer_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [redis_service_1.RedisService,
         redis_feed_service_1.RedisFeedService,
-        location_feed_repo_1.LocationFeedRepository])
+        location_feed_repo_1.LocationFeedRepository,
+        location_service_1.LocationService])
 ], FeedConsumer);
 //# sourceMappingURL=feed.consumer.js.map
