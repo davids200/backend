@@ -30,15 +30,15 @@ let PostResolver = class PostResolver {
         this.postService = postService;
         this.feedService = feedService;
     }
-    // =========================
-    // FEED QUERY (MOVE LOGIC OUT OF POST)
-    // =========================
+    // =====================================================
+    // GET USER FEED
+    // =====================================================
     async getFeed(user, limit, cursor) {
-        return this.feedService.getFeed(user.id, limit, cursor);
+        return this.feedService.getFeed(user, limit, cursor);
     }
-    // =========================
+    // =====================================================
     // CREATE POST
-    // =========================
+    // =====================================================
     async createPost(user, data) {
         return this.postService.createPost(user.id, data);
     }
@@ -48,8 +48,13 @@ __decorate([
     (0, graphql_1.Query)(() => feed_response_1.FeedResponse),
     (0, common_1.UseGuards)(gql_auth_guard_1.GqlAuthGuard),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
-    __param(1, (0, graphql_1.Args)('limit', { nullable: true })),
-    __param(2, (0, graphql_1.Args)('cursor', { nullable: true })),
+    __param(1, (0, graphql_1.Args)('limit', {
+        nullable: true,
+        defaultValue: 20,
+    })),
+    __param(2, (0, graphql_1.Args)('cursor', {
+        nullable: true,
+    })),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [user_entity_1.UserEntity, Number, Number]),
     __metadata("design:returntype", Promise)

@@ -2,8 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
-import { CommentEntity } from './entities/comment.entity';
-import { CommentProducer } from '../../infrastructure/kafka/producers/comment.producer';
+import { CommentEntity } from './entities/comment.entity'; 
+import { CommentProducer } from './comment.producer';
 
 interface CreateCommentInput {
   postId: string;

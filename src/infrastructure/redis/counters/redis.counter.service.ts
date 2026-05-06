@@ -1,84 +1,221 @@
-import { Injectable } from '@nestjs/common';
-import { RedisService } from '../redis.service';
+import {
+  Injectable,
+  Logger,
+} from '@nestjs/common';
+
+import { RedisService }
+from '../redis.service';
 
 @Injectable()
 export class RedisCounterService {
-  constructor(private readonly redis: RedisService) {}
+  private readonly logger =
+    new Logger(RedisCounterService.name);
 
-  // =========================
-  // KEY BUILDERS
-  // =========================
-  private likeKey(type: string, id: string) {
+  constructor(
+    private readonly redis: RedisService,
+  ) {}
+
+  // =====================================================
+  // REDIS KEYS
+  // =====================================================
+
+  private likeKey(
+    type: string,
+    id: string,
+  ) {
+
     return `likes:${type}:${id}`;
   }
 
-  private commentKey(postId: string) {
+  private commentKey(
+    postId: string,
+  ) {
+
     return `comments:post:${postId}`;
   }
 
-  // =========================
-  // LIKE COUNTERS
-  // =========================
-  async incrementLikes(type: string, id: string) {
-    await this.redis.getClient().incr(this.likeKey(type, id));
+  // =====================================================
+  // INCREMENT LIKES
+  // =====================================================
+
+  async incrementLikes(
+    type: string,
+    id: string,
+  ) {
+
+    await this.redis.client.incr(
+      this.likeKey(type, id),
+    );
   }
 
-  async decrementLikes(type: string, id: string) {
-    await this.redis.getClient().decr(this.likeKey(type, id));
+  // =====================================================
+  // DECREMENT LIKES
+  // =====================================================
+
+  async decrementLikes(
+    type: string,
+    id: string,
+  ) {
+
+    await this.redis.client.decr(
+      this.likeKey(type, id),
+    );
   }
 
-  // =========================
-  // COMMENT COUNTERS (POST LEVEL)
-  // =========================
-  async incrementComments(postId: string) {
-    await this.redis.getClient().incr(this.commentKey(postId));
+  // =====================================================
+  // INCREMENT COMMENTS
+  // =====================================================
+
+  async incrementComments(
+    postId: string,
+  ) {
+
+    await this.redis.client.incr(
+      this.commentKey(postId),
+    );
   }
 
-  async decrementComments(postId: string) {
-    await this.redis.getClient().decr(this.commentKey(postId));
+  // =====================================================
+  // DECREMENT COMMENTS
+  // =====================================================
+
+  async decrementComments(
+    postId: string,
+  ) {
+
+    await this.redis.client.decr(
+      this.commentKey(postId),
+    );
   }
 
-  // =========================
-  // GETTERS
-  // =========================
-  async getLikes(type: string, id: string): Promise<number> {
-    const val = await this.redis.getClient().get(this.likeKey(type, id));
-    return val ? parseInt(val, 10) : 0;
+  // =====================================================
+  // GET LIKE COUNT
+  // =====================================================
+
+  async getLikes(
+    type: string,
+    id: string,
+  ): Promise<number> {
+
+    const value =
+      await this.redis.client.get(
+        this.likeKey(type, id),
+      );
+
+    return value
+      ? parseInt(value, 10)
+      : 0;
   }
 
-  async getComments(postId: string): Promise<number> {
-    const val = await this.redis.getClient().get(this.commentKey(postId));
-    return val ? parseInt(val, 10) : 0;
+  // =====================================================
+  // GET COMMENT COUNT
+  // =====================================================
+
+  async getComments(
+    postId: string,
+  ): Promise<number> {
+
+    const value =
+      await this.redis.client.get(
+        this.commentKey(postId),
+      );
+
+    return value
+      ? parseInt(value, 10)
+      : 0;
   }
 
-  // =========================
-  // BULK FETCH (🔥 CRITICAL)
-  // =========================
-  async getBulkCounts(postIds: string[]) {
-    const pipeline = this.redis.getClient().pipeline();
+  // =====================================================
+  // BULK COUNTS
+  // =====================================================
 
-    postIds.forEach((postId) => {
-      pipeline.get(this.likeKey('post', postId));
-      pipeline.get(this.commentKey(postId));
-    });
-
-    const results = await pipeline.exec();
-
-    const map: Record<
+  async getBulkCounts(
+    postIds: string[],
+  ): Promise<
+    Record<
       string,
-      { likes: number; comments: number }
+      {
+        likes: number;
+        comments: number;
+      }
+    >
+  > {
+
+    // ================================================
+    // EMPTY INPUT
+    // ================================================
+
+    if (!postIds.length) {
+      return {};
+    }
+
+    // ================================================
+    // REDIS PIPELINE
+    // ================================================
+
+    const pipeline =
+      this.redis.client.pipeline();
+
+    for (const postId of postIds) {
+
+      pipeline.get(
+        this.likeKey(
+          'post',
+          postId,
+        ),
+      );
+
+      pipeline.get(
+        this.commentKey(postId),
+      );
+    }
+
+    const results =
+      await pipeline.exec();
+
+    // ================================================
+    // BUILD RESPONSE MAP
+    // ================================================
+
+    const counts: Record<
+      string,
+      {
+        likes: number;
+        comments: number;
+      }
     > = {};
 
-    postIds.forEach((postId, i) => {
-      const likeVal = results?.[i * 2]?.[1];
-      const commentVal = results?.[i * 2 + 1]?.[1];
+    postIds.forEach(
+      (postId, index) => {
 
-      map[postId] = {
-        likes: likeVal ? parseInt(likeVal as string, 10) : 0,
-        comments: commentVal ? parseInt(commentVal as string, 10) : 0,
-      };
-    });
+        const likeValue =
+          results?.[
+            index * 2
+          ]?.[1];
 
-    return map;
+        const commentValue =
+          results?.[
+            index * 2 + 1
+          ]?.[1];
+
+        counts[postId] = {
+          likes: likeValue
+            ? parseInt(
+                likeValue as string,
+                10,
+              )
+            : 0,
+
+          comments: commentValue
+            ? parseInt(
+                commentValue as string,
+                10,
+              )
+            : 0,
+        };
+      },
+    );
+
+    return counts;
   }
 }

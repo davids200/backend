@@ -1,19 +1,22 @@
-import { ObjectType, Field } from '@nestjs/graphql';
+import { ObjectType, Field, ID, Int } from '@nestjs/graphql';
 
 @ObjectType()
-export class FeedItem {
-  @Field()
-user_id!: string;
+export class FeedItemModel {
+  @Field(() => ID)
+  id!: string;
 
   @Field()
-  post_id!: string;
+  content!: string;
 
   @Field()
-  author_id!: string;
-
-  @Field({ nullable: true })
-  location_id?: string;
+  authorId!: string;
 
   @Field()
-  created_at!: Date;
+  createdAt!: Date;
+
+  @Field(() => Int)
+  likes!: number;
+
+  @Field(() => Int)
+  comments!: number;
 }

@@ -14,50 +14,63 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PostService = void 0;
 const common_1 = require("@nestjs/common");
-const minio_service_1 = require("../../infrastructure/minio/minio.service");
-const kafka_service_1 = require("../../infrastructure/kafka/kafka.service");
 const typeorm_1 = require("typeorm");
-const post_entity_1 = require("./post.entity");
 const typeorm_2 = require("@nestjs/typeorm");
+const minio_service_1 = require("../../infrastructure/minio/minio.service");
 const postgres_service_1 = require("../../infrastructure/postgresql/postgres.service");
+const post_entity_1 = require("./post.entity");
+const extract_hashtags_util_1 = require("../hashtag/utils/extract-hashtags.util");
+const post_producer_1 = require("./post.producer");
 let PostService = class PostService {
     minio;
-    kafka;
+    postProducer;
     postRepo;
     postgres;
-    postRepository;
-    constructor(minio, kafka, postRepo, postgres) {
+    constructor(minio, postProducer, postRepo, postgres) {
         this.minio = minio;
-        this.kafka = kafka;
+        this.postProducer = postProducer;
         this.postRepo = postRepo;
         this.postgres = postgres;
     }
+    // CREATE POST
     async createPost(userId, data) {
         const post = await this.postRepo.save({
             ...data,
             userId,
         });
-        await this.kafka.emit('post.created', {
-            postId: post.id,
-            userId,
+        // EXTRACT HASHTAGS 
+        const hashtags = (0, extract_hashtags_util_1.extractHashtags)(data.content || '');
+        // EMIT POST CREATED EVENT
+        await this.postProducer.postCreated({
+            postId: post.id, userId,
             locationId: post.locationId,
+            createdAt: post.createdAt,
         });
+        // EMIT HASHTAG EVENT
+        if (hashtags.length > 0) {
+            await this.postProducer.hashtagCreated({
+                postId: post.id, userId, hashtags, locationId: post.locationId, createdAt: post.createdAt,
+            });
+        }
         return post;
     }
+    // GET FOLLOWING 
     async getFollowing(userId) {
         const result = await this.postgres.query(`
-SELECT u.id, u.is_celebrity
-FROM follows f
-JOIN users u ON u.id = f.following_id
+SELECT  u.id,u.is_celebrity FROM follows f JOIN users u ON u.id = f.following_id
 WHERE f.follower_id = $1
 `, [userId]);
         return result.rows;
     }
+    // GET POSTS BY IDS
     async getPostsByIds(postIds) {
-        if (!postIds.length)
+        if (!postIds.length) {
             return [];
-        return this.postRepository.find({
-            where: { id: (0, typeorm_1.In)(postIds) },
+        }
+        return this.postRepo.find({
+            where: {
+                id: (0, typeorm_1.In)(postIds),
+            },
         });
     }
 };
@@ -66,7 +79,7 @@ exports.PostService = PostService = __decorate([
     (0, common_1.Injectable)(),
     __param(2, (0, typeorm_2.InjectRepository)(post_entity_1.PostEntity)),
     __metadata("design:paramtypes", [minio_service_1.MinioService,
-        kafka_service_1.KafkaService,
+        post_producer_1.PostProducer,
         typeorm_1.Repository,
         postgres_service_1.PostgresService])
 ], PostService);

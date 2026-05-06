@@ -2,9 +2,9 @@ import { Injectable, OnApplicationBootstrap, Logger } from '@nestjs/common';
 
 import { ScyllaService } from '../infrastructure/scylladb/scylla.service';
 import { KafkaService } from '../infrastructure/kafka/kafka.service';
-import { MinioService } from '../infrastructure/minio/minio.service';
-import { FeedConsumer } from '../infrastructure/kafka/consumers/feed.consumer';
-import { NotificationConsumer } from '../modules/notification/notification.consumer';
+import { MinioService } from '../infrastructure/minio/minio.service'; 
+import { FeedConsumer } from '../workers/feed/feed.consumer';
+import { NotificationConsumer } from '../workers/notification/notification.consumer';
 
  
 @Injectable()
@@ -36,8 +36,8 @@ export class BootstrapService implements OnApplicationBootstrap {
       this.logger.log('✔ Kafka producer initialized');
 
       // 4. Start consumers explicitly (IMPORTANT)
-      await this.feedConsumer.onModuleInit();
-      this.logger.log('✔ Feed consumer started');
+      // await this.feedConsumer.onModuleInit();
+      // this.logger.log('✔ Feed consumer started');
 
       await this.notificationConsumer.onModuleInit();
       this.logger.log('✔ Notification consumer started');

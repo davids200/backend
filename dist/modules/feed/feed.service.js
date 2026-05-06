@@ -8,58 +8,79 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var FeedService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FeedService = void 0;
 const common_1 = require("@nestjs/common");
 const redis_feed_service_1 = require("../../infrastructure/redis/feed/redis.feed.service");
-const post_service_1 = require("../post/post.service");
-const redis_counter_service_1 = require("../../infrastructure/redis/counters/redis.counter.service");
-let FeedService = class FeedService {
+let FeedService = FeedService_1 = class FeedService {
     redisFeed;
-    postService;
-    redisCounter;
-    constructor(redisFeed, postService, redisCounter) {
+    logger = new common_1.Logger(FeedService_1.name);
+    constructor(redisFeed) {
         this.redisFeed = redisFeed;
-        this.postService = postService;
-        this.redisCounter = redisCounter;
     }
-    async getFeed(userId, limit = 20, offset = 0) {
-        const postIds = await this.redisFeed.getFeed(userId, limit, offset);
-        if (!postIds.length) {
-            return { data: [], nextCursor: null };
+    // =====================================================
+    // PROCESS POST EVENT
+    // =====================================================
+    async processPost(params) {
+        const { postId, userId, locationId, createdAt, } = params;
+        this.logger.log(`Processing post: ${postId}`);
+        // ================================================
+        // PLACEHOLDER
+        // Feed fanout logic handled here
+        // ================================================
+        return true;
+    }
+    // =====================================================
+    // GET USER FEED
+    // =====================================================
+    async getFeed(user, limit = 20, cursor) {
+        // ================================================
+        // FOLLOWING FEED
+        // ================================================
+        const followingFeed = await this.redisFeed
+            .getFeedWithCursor(user.id, limit, cursor);
+        // ================================================
+        // GLOBAL TRENDING
+        // ================================================
+        const globalTrending = await this.redisFeed
+            .getGlobalTrending(limit);
+        // ================================================
+        // LOCATION TRENDING
+        // ================================================
+        let localTrending = [];
+        if (user.locationId) {
+            localTrending =
+                await this.redisFeed
+                    .getLocationTrending(user.locationId, limit);
         }
-        const [posts, counters] = await Promise.all([
-            this.postService.getPostsByIds(postIds),
-            this.redisCounter.getBulkCounts(postIds),
-        ]);
-        const postMap = new Map(posts.map((p) => [p.id, p]));
-        const feed = postIds
-            .map((postId) => {
-            const post = postMap.get(postId);
-            if (!post)
-                return null;
-            const counter = counters[postId] || {
-                likes: 0,
-                comments: 0,
-            };
-            return {
-                ...post,
-                likes: counter.likes,
-                comments: counter.comments,
-            };
-        })
-            .filter(Boolean);
+        // ================================================
+        // MERGE FEEDS
+        // ================================================
+        const merged = [
+            ...followingFeed,
+            ...globalTrending,
+            ...localTrending,
+        ];
+        // ================================================
+        // REMOVE DUPLICATES
+        // ================================================
+        const uniquePosts = [
+            ...new Set(merged),
+        ];
+        // ================================================
+        // NEXT CURSOR
+        // ================================================
+        const nextCursor = (cursor || 0) + limit;
         return {
-            data: feed,
-            nextCursor: postIds.length === limit ? offset + limit : null,
+            posts: uniquePosts,
+            nextCursor,
         };
     }
 };
 exports.FeedService = FeedService;
-exports.FeedService = FeedService = __decorate([
+exports.FeedService = FeedService = FeedService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [redis_feed_service_1.RedisFeedService,
-        post_service_1.PostService,
-        redis_counter_service_1.RedisCounterService])
+    __metadata("design:paramtypes", [redis_feed_service_1.RedisFeedService])
 ], FeedService);
 //# sourceMappingURL=feed.service.js.map

@@ -1,19 +1,35 @@
-
-
-
-
 export function calculateScore(params: {
-  createdAt: string;
+  createdAt: Date;
   likes: number;
   comments: number;
   isFollowingAuthor: boolean;
-}): number {
-  const timeScore = new Date(params.createdAt).getTime() / 1000;
+}) {
 
-  const engagementScore =
-    params.likes * 2 + params.comments * 3;
+  const {
+    createdAt,
+    likes,
+    comments,
+    isFollowingAuthor,
+  } = params;
 
-  const followBoost = params.isFollowingAuthor ? 50 : 0;
+  const ageHours =
+    (
+      Date.now() -
+      new Date(createdAt).getTime()
+    ) /
+    (1000 * 60 * 60);
 
-  return timeScore + engagementScore + followBoost;
+  const recency =
+    Math.max(1, 48 - ageHours);
+
+  let score =
+    recency +
+    likes * 2 +
+    comments * 3;
+
+  if (isFollowingAuthor) {
+    score += 20;
+  }
+
+  return score;
 }

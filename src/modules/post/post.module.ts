@@ -1,33 +1,28 @@
 import { Module } from '@nestjs/common';
-import { PostService } from './post.service';
-import { PostResolver } from './post.resolver';
 
-import { MinioService } from '../../infrastructure/minio/minio.service';
-import { KafkaService } from '../../infrastructure/kafka/kafka.service'; 
-import { PostProducer } from '../../infrastructure/kafka/producers/post.producer';
-import { KafkaModule } from '../../infrastructure/kafka/kafka.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { PostEntity } from './post.entity';
-import { FeedService } from '../feed/feed.service';
 
+import { PostEntity } from './post.entity';
+
+import { PostService } from './post.service';
+
+import { PostProducer } from './post.producer';
 
 @Module({
-  imports:[
-    TypeOrmModule.forFeature([PostEntity]),
-    KafkaModule,
-    
+  imports: [
+    TypeOrmModule.forFeature([
+      PostEntity,
+    ]),
   ],
+
   providers: [
-    PostService, 
-    PostResolver, 
-    MinioService, 
-    KafkaService,
-    PostProducer,
-FeedService
-  ],
-  exports:[
     PostService,
-  KafkaModule,]
-  
+    PostProducer,
+  ],
+
+  exports: [
+    PostService,
+    PostProducer,
+  ],
 })
 export class PostModule {}

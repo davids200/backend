@@ -9,25 +9,27 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.FeedModule = void 0;
 const common_1 = require("@nestjs/common");
 const feed_service_1 = require("./feed.service");
-const feed_resolver_1 = require("./feed.resolver");
-const scylla_service_1 = require("../../infrastructure/scylladb/scylla.service");
-const post_module_1 = require("../post/post.module");
+const feed_consumer_1 = require("../../workers/feed/feed.consumer");
+const kafka_module_1 = require("../../infrastructure/kafka/kafka.module");
 const redis_module_1 = require("../../infrastructure/redis/redis.module");
-const scylla_module_1 = require("../../infrastructure/scylladb/scylla.module");
 let FeedModule = class FeedModule {
 };
 exports.FeedModule = FeedModule;
 exports.FeedModule = FeedModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            post_module_1.PostModule,
+            kafka_module_1.KafkaModule,
             redis_module_1.RedisModule,
-            scylla_module_1.ScyllaModule
         ],
-        providers: [feed_service_1.FeedService, feed_resolver_1.FeedResolver, scylla_service_1.ScyllaService],
+        providers: [
+            feed_service_1.FeedService,
+        ],
+        controllers: [
+            feed_consumer_1.FeedConsumer,
+        ],
         exports: [
-            feed_service_1.FeedService
-        ]
+            feed_service_1.FeedService,
+        ],
     })
 ], FeedModule);
 //# sourceMappingURL=feed.module.js.map

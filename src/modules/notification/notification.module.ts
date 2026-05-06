@@ -1,23 +1,22 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
 
-import { NotificationEntity } from './notification.entity';
-import { NotificationService } from './notification.service';
-import { NotificationResolver } from './notification.resolver';
+import { NotificationProducer }
+from './notification.producer';
 
-import { NotificationProducer } from '../../infrastructure/kafka/producers/notification.producer';
-import { NotificationConsumer } from './notification.consumer';
-import { RedisPubSubService } from './pubsub/redis.pubsub.service';
+import { KafkaModule }
+from '../../infrastructure/kafka/kafka.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([NotificationEntity])],
-  providers: [
-    NotificationService,
-    NotificationResolver,
-    NotificationProducer,
-    NotificationConsumer,
-    RedisPubSubService
+  imports: [
+    KafkaModule,
   ],
-  exports: [NotificationService],
+
+  providers: [
+    NotificationProducer,
+  ],
+
+  exports: [
+    NotificationProducer,
+  ],
 })
 export class NotificationModule {}

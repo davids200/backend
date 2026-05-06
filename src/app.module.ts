@@ -14,6 +14,8 @@ import { NotificationModule } from './modules/notification/notification.module';
 import { MetaModule } from './modules/meta/meta.module'; 
 import { CountryModule } from './modules/meta/country/country.module';
 import { LocationModule } from './modules/location/location.module';
+import { TrendingService } from './modules/feed/services/trending.service';
+import { TrendingModule } from './modules/feed/trending.module';
  
 @Module({
   imports: [
@@ -42,7 +44,8 @@ NotificationModule,
     AuthModule ,
     MinioModule, 
     LocationModule,
-    CountryModule
+    CountryModule,
+    TrendingModule
   ],
   providers: [DebugResolver],
 })

@@ -1,25 +1,104 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+} from '@nestjs/common';
+import Redis from 'ioredis'; 
 import { RedisService } from '../../../infrastructure/redis/redis.service';
 
 @Injectable()
-export class RedisPubSubService {
-  constructor(private readonly redis: RedisService) {}
+export class RedisPubSubService
+  implements OnModuleDestroy
+{
+  private readonly logger =
+    new Logger(RedisPubSubService.name);
 
-  async publish(channel: string, data: any) {
-    await this.redis
-      .getClient()
-      .publish(channel, JSON.stringify(data));
+  private readonly subscriber: Redis;
+
+  constructor(
+    private readonly redis: RedisService,
+  ) {
+
+    // ============================================
+    // SEPARATE SUBSCRIBER CONNECTION
+    // ============================================
+
+    this.subscriber =
+      this.redis.client.duplicate();
   }
 
-  async subscribe(channel: string, callback: (msg: any) => void) {
-    const sub = this.redis.getClient().duplicate();
+  // =====================================================
+  // PUBLISH EVENT
+  // =====================================================
 
-    await sub.subscribe(channel);
+  async publish(
+    channel: string,
+    data: unknown,
+  ) {
 
-    sub.on('message', (ch, message) => {
-      if (ch === channel) {
-        callback(JSON.parse(message));
-      }
-    });
+    await this.redis.client.publish(
+      channel,
+      JSON.stringify(data),
+    );
+  }
+
+  // =====================================================
+  // SUBSCRIBE TO CHANNEL
+  // =====================================================
+
+  async subscribe(
+    channel: string,
+
+    callback: (
+      message: unknown,
+    ) => void,
+  ) {
+
+    await this.subscriber.subscribe(
+      channel,
+    );
+
+    this.logger.log(
+      `Subscribed to ${channel}`,
+    );
+
+    this.subscriber.on(
+      'message',
+      async (
+        receivedChannel,
+        message,
+      ) => {
+
+        if (
+          receivedChannel !== channel
+        ) {
+          return;
+        }
+
+        try {
+
+          const parsed =
+            JSON.parse(message);
+
+          callback(parsed);
+
+        } catch (err) {
+
+          this.logger.error(
+            `Invalid Redis PubSub message on ${channel}`,
+            err,
+          );
+        }
+      },
+    );
+  }
+
+  // =====================================================
+  // CLEANUP
+  // =====================================================
+
+  async onModuleDestroy() {
+
+    await this.subscriber.quit();
   }
 }

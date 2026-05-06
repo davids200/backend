@@ -8,36 +8,28 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PostModule = void 0;
 const common_1 = require("@nestjs/common");
-const post_service_1 = require("./post.service");
-const post_resolver_1 = require("./post.resolver");
-const minio_service_1 = require("../../infrastructure/minio/minio.service");
-const kafka_service_1 = require("../../infrastructure/kafka/kafka.service");
-const post_producer_1 = require("../../infrastructure/kafka/producers/post.producer");
-const kafka_module_1 = require("../../infrastructure/kafka/kafka.module");
 const typeorm_1 = require("@nestjs/typeorm");
 const post_entity_1 = require("./post.entity");
-const feed_service_1 = require("../feed/feed.service");
+const post_service_1 = require("./post.service");
+const post_producer_1 = require("./post.producer");
 let PostModule = class PostModule {
 };
 exports.PostModule = PostModule;
 exports.PostModule = PostModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            typeorm_1.TypeOrmModule.forFeature([post_entity_1.PostEntity]),
-            kafka_module_1.KafkaModule,
+            typeorm_1.TypeOrmModule.forFeature([
+                post_entity_1.PostEntity,
+            ]),
         ],
         providers: [
             post_service_1.PostService,
-            post_resolver_1.PostResolver,
-            minio_service_1.MinioService,
-            kafka_service_1.KafkaService,
             post_producer_1.PostProducer,
-            feed_service_1.FeedService
         ],
         exports: [
             post_service_1.PostService,
-            kafka_module_1.KafkaModule,
-        ]
+            post_producer_1.PostProducer,
+        ],
     })
 ], PostModule);
 //# sourceMappingURL=post.module.js.map

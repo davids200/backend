@@ -1,57 +1,132 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+} from '@nestjs/common';
 
-import { RedisFeedService } from '../../infrastructure/redis/feed/redis.feed.service';
-import { PostService } from '../post/post.service';
-import { RedisCounterService } from '../../infrastructure/redis/counters/redis.counter.service';
+import { RedisFeedService }
+from '../../infrastructure/redis/feed/redis.feed.service';
 
 @Injectable()
 export class FeedService {
+  private readonly logger =
+    new Logger(FeedService.name);
+
   constructor(
-    private readonly redisFeed: RedisFeedService,
-    private readonly postService: PostService,
-    private readonly redisCounter: RedisCounterService,
+    private readonly redisFeed:
+      RedisFeedService,
   ) {}
 
-  async getFeed(userId: string, limit = 20, offset = 0) {
-    const postIds = await this.redisFeed.getFeed(
+  // =====================================================
+  // PROCESS POST EVENT
+  // =====================================================
+
+  async processPost(params: {
+    postId: string;
+    userId: string;
+    locationId?: string;
+    createdAt: Date;
+  }) {
+
+    const {
+      postId,
       userId,
-      limit,
-      offset,
+      locationId,
+      createdAt,
+    } = params;
+
+    this.logger.log(
+      `Processing post: ${postId}`,
     );
 
-    if (!postIds.length) {
-      return { data: [], nextCursor: null };
+    // ================================================
+    // PLACEHOLDER
+    // Feed fanout logic handled here
+    // ================================================
+
+    return true;
+  }
+
+  // =====================================================
+  // GET USER FEED
+  // =====================================================
+
+  async getFeed(
+    user: {
+      id: string;
+      locationId?: string;
+    },
+
+    limit = 20,
+
+    cursor?: number,
+  ) {
+
+    // ================================================
+    // FOLLOWING FEED
+    // ================================================
+
+    const followingFeed =
+      await this.redisFeed
+        .getFeedWithCursor(
+          user.id,
+          limit,
+          cursor,
+        );
+
+    // ================================================
+    // GLOBAL TRENDING
+    // ================================================
+
+    const globalTrending =
+      await this.redisFeed
+        .getGlobalTrending(
+          limit,
+        );
+
+    // ================================================
+    // LOCATION TRENDING
+    // ================================================
+
+    let localTrending: string[] = [];
+
+    if (user.locationId) {
+
+      localTrending =
+        await this.redisFeed
+          .getLocationTrending(
+            user.locationId,
+            limit,
+          );
     }
 
-    const [posts, counters] = await Promise.all([
-      this.postService.getPostsByIds(postIds),
-      this.redisCounter.getBulkCounts(postIds),
-    ]);
+    // ================================================
+    // MERGE FEEDS
+    // ================================================
 
-    const postMap = new Map(posts.map((p) => [p.id, p]));
+    const merged = [
+      ...followingFeed,
+      ...globalTrending,
+      ...localTrending,
+    ];
 
-    const feed = postIds
-      .map((postId) => {
-        const post = postMap.get(postId);
-        if (!post) return null;
+    // ================================================
+    // REMOVE DUPLICATES
+    // ================================================
 
-        const counter = counters[postId] || {
-          likes: 0,
-          comments: 0,
-        };
+    const uniquePosts = [
+      ...new Set(merged),
+    ];
 
-        return {
-          ...post,
-          likes: counter.likes,
-          comments: counter.comments,
-        };
-      })
-      .filter(Boolean);
+    // ================================================
+    // NEXT CURSOR
+    // ================================================
+
+    const nextCursor =
+      (cursor || 0) + limit;
 
     return {
-      data: feed,
-      nextCursor:
-        postIds.length === limit ? offset + limit : null,
+      posts: uniquePosts,
+      nextCursor,
     };
   }
 }

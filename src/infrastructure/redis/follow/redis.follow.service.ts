@@ -1,67 +1,123 @@
 import { Injectable } from '@nestjs/common';
-import { RedisService } from '../redis.service';
+
+import { RedisService }
+from '../redis.service';
 
 @Injectable()
 export class RedisFollowService {
-  constructor(private readonly redis: RedisService) {}
+  constructor(
+    private readonly redis: RedisService,
+  ) {}
 
-  private followersKey(userId: string) {
-    return `followers:${userId}`;
+  // =====================================================
+  // FOLLOW USER
+  // =====================================================
+
+  async followUser(
+    followerId: string,
+    followingId: string,
+  ) {
+
+    // user follows someone
+    await this.redis.client.sadd(
+      `following:${followerId}`,
+      followingId,
+    );
+
+    // target gains follower
+    await this.redis.client.sadd(
+      `followers:${followingId}`,
+      followerId,
+    );
   }
 
-  private followingKey(userId: string) {
-    return `following:${userId}`;
+  // =====================================================
+  // UNFOLLOW USER
+  // =====================================================
+
+  async unfollowUser(
+    followerId: string,
+    followingId: string,
+  ) {
+
+    await this.redis.client.srem(
+      `following:${followerId}`,
+      followingId,
+    );
+
+    await this.redis.client.srem(
+      `followers:${followingId}`,
+      followerId,
+    );
   }
 
-  // =========================
-  // FOLLOW
-  // =========================
-  async follow(followerId: string, followingId: string) {
-    const client = this.redis.getClient();
-
-    await Promise.all([
-      client.sadd(this.followingKey(followerId), followingId),
-      client.sadd(this.followersKey(followingId), followerId),
-    ]);
-  }
-
-  // =========================
-  // UNFOLLOW
-  // =========================
-  async unfollow(followerId: string, followingId: string) {
-    const client = this.redis.getClient();
-
-    await Promise.all([
-      client.srem(this.followingKey(followerId), followingId),
-      client.srem(this.followersKey(followingId), followerId),
-    ]);
-  }
-
-  // =========================
+  // =====================================================
   // GET FOLLOWERS
-  // =========================
-  async getFollowers(userId: string): Promise<string[]> {
-    return this.redis.getClient().smembers(this.followersKey(userId));
+  // =====================================================
+
+  async getFollowers(
+    userId: string,
+  ): Promise<string[]> {
+
+    return this.redis.client.smembers(
+      `followers:${userId}`,
+    );
   }
 
-  // =========================
+  // =====================================================
   // GET FOLLOWING
-  // =========================
-  async getFollowing(userId: string): Promise<string[]> {
-    return this.redis.getClient().smembers(this.followingKey(userId));
+  // =====================================================
+
+  async getFollowing(
+    userId: string,
+  ): Promise<string[]> {
+
+    return this.redis.client.smembers(
+      `following:${userId}`,
+    );
   }
 
-  // =========================
-  // CHECK RELATION
-  // =========================
+  // =====================================================
+  // CHECK IF FOLLOWING
+  // =====================================================
+
   async isFollowing(
     followerId: string,
     followingId: string,
   ): Promise<boolean> {
-    const result = await this.redis
-      .getClient()
-      .sismember(this.followingKey(followerId), followingId);
+
+    const result =
+      await this.redis.client.sismember(
+        `following:${followerId}`,
+        followingId,
+      );
 
     return result === 1;
+  }
+
+  // =====================================================
+  // FOLLOWER COUNT
+  // =====================================================
+
+  async getFollowersCount(
+    userId: string,
+  ): Promise<number> {
+
+    return this.redis.client.scard(
+      `followers:${userId}`,
+    );
+  }
+
+  // =====================================================
+  // FOLLOWING COUNT
+  // =====================================================
+
+  async getFollowingCount(
+    userId: string,
+  ): Promise<number> {
+
+    return this.redis.client.scard(
+      `following:${userId}`,
+    );
   }
 }

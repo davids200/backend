@@ -25,15 +25,16 @@ let FeedResolver = class FeedResolver {
         this.feedService = feedService;
     }
     async getFeed(user, limit, cursor) {
-        return this.feedService.getFeed(user.userId, limit, cursor);
+        return this.feedService.getFeed(user, limit, cursor);
     }
 };
 exports.FeedResolver = FeedResolver;
 __decorate([
     (0, graphql_1.Query)(() => feed_response_1.FeedResponse),
+    (0, graphql_1.Query)(() => feed_response_1.FeedResponse),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
-    __param(1, (0, graphql_1.Args)('limit', { nullable: true })),
-    __param(2, (0, graphql_1.Args)('cursor', { nullable: true })),
+    __param(1, (0, graphql_1.Args)('limit', { type: () => Number, defaultValue: 20 })),
+    __param(2, (0, graphql_1.Args)('cursor', { type: () => Number, nullable: true })),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object, Number, Number]),
     __metadata("design:returntype", Promise)

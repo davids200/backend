@@ -1,53 +1,69 @@
-import { Module, Global } from '@nestjs/common';
-import { KafkaService } from './kafka.service';
+import {
+  Module,
+  Global,
+} from '@nestjs/common';
 
-// producers
-import { PostProducer } from './producers/post.producer';
-import { FollowProducer } from './producers/follow.producer';
-import { NotificationProducer } from './producers/notification.producer';
+import { KafkaService }
+from './kafka.service';
 
-// consumers
-import { FeedConsumer } from './consumers/feed.consumer';
-import { NotificationConsumer } from '../../modules/notification/notification.consumer';
+// =====================================================
+// PRODUCERS
+// =====================================================
 
-// workers
-import { ScyllaModule } from '../scylladb/scylla.module';
-import { PostgresModule } from '../postgresql/postgres.module';
-import { RedisModule } from '../redis/redis.module';
-import { FeedWorker } from '../../workers/feed/feed.worker';
-import { LocationProducer } from './location.producer';
-import { LocationFeedRepository } from '../scylladb/location.feed.repo';
-import { LocationModule } from '../../modules/location/location.module';
+import { PostProducer }
+from '../../modules/post/post.producer';
+
+import { FollowProducer }
+from '../../modules/follow/follow.producer';
+
+import { NotificationProducer }
+from '../../modules/notification/notification.producer';
+
+import { LocationProducer }
+from '../../modules/location/location.producer';
 
 @Global()
 @Module({
-  imports:[
-    ScyllaModule,
-    PostgresModule,
-    RedisModule,
-    LocationModule
-  ],
   providers: [
-    KafkaService,
-LocationProducer,
-    // producers
-    PostProducer,
-    FollowProducer,
-    NotificationProducer,
-LocationFeedRepository,
-    // consumers
-    FeedConsumer,
-    // NotificationConsumer,
 
-    // workers
-    FeedWorker,
-  ],
-  exports: [
+    // ================================================
+    // CORE KAFKA
+    // ================================================
+
     KafkaService,
+
+    // ================================================
+    // PRODUCERS
+    // ================================================
+
     PostProducer,
+
     FollowProducer,
+
     NotificationProducer,
-    LocationProducer
+
+    LocationProducer,
+  ],
+
+  exports: [
+
+    // ================================================
+    // CORE KAFKA
+    // ================================================
+
+    KafkaService,
+
+    // ================================================
+    // PRODUCERS
+    // ================================================
+
+    PostProducer,
+
+    FollowProducer,
+
+    NotificationProducer,
+
+    LocationProducer,
   ],
 })
 export class KafkaModule {}

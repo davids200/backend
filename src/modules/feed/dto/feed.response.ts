@@ -1,18 +1,13 @@
-import { Field, ObjectType } from "@nestjs/graphql";
+import { Field, Int, ObjectType } from "@nestjs/graphql";
+import { FeedItem } from "./get-feed.input";
 
-@ObjectType()
-export class FeedItem {
-  @Field() postId!: string;
-  @Field() authorId!: string;
-  @Field() createdAt!: Date;
-  @Field({ nullable: true }) content?: string;
-}
+ 
 
 @ObjectType()
 export class FeedResponse {
   @Field(() => [FeedItem])
   data!: FeedItem[];
 
-  @Field({ nullable: true })
-  nextCursor?: Date;
+  @Field(() => Int, { nullable: true })
+  nextCursor?: number;
 }

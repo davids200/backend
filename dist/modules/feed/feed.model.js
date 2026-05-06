@@ -9,37 +9,42 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.FeedItem = void 0;
+exports.FeedItemModel = void 0;
 const graphql_1 = require("@nestjs/graphql");
-let FeedItem = class FeedItem {
-    user_id;
-    post_id;
-    author_id;
-    location_id;
-    created_at;
+let FeedItemModel = class FeedItemModel {
+    id;
+    content;
+    authorId;
+    createdAt;
+    likes;
+    comments;
 };
-exports.FeedItem = FeedItem;
+exports.FeedItemModel = FeedItemModel;
+__decorate([
+    (0, graphql_1.Field)(() => graphql_1.ID),
+    __metadata("design:type", String)
+], FeedItemModel.prototype, "id", void 0);
 __decorate([
     (0, graphql_1.Field)(),
     __metadata("design:type", String)
-], FeedItem.prototype, "user_id", void 0);
+], FeedItemModel.prototype, "content", void 0);
 __decorate([
     (0, graphql_1.Field)(),
     __metadata("design:type", String)
-], FeedItem.prototype, "post_id", void 0);
-__decorate([
-    (0, graphql_1.Field)(),
-    __metadata("design:type", String)
-], FeedItem.prototype, "author_id", void 0);
-__decorate([
-    (0, graphql_1.Field)({ nullable: true }),
-    __metadata("design:type", String)
-], FeedItem.prototype, "location_id", void 0);
+], FeedItemModel.prototype, "authorId", void 0);
 __decorate([
     (0, graphql_1.Field)(),
     __metadata("design:type", Date)
-], FeedItem.prototype, "created_at", void 0);
-exports.FeedItem = FeedItem = __decorate([
+], FeedItemModel.prototype, "createdAt", void 0);
+__decorate([
+    (0, graphql_1.Field)(() => graphql_1.Int),
+    __metadata("design:type", Number)
+], FeedItemModel.prototype, "likes", void 0);
+__decorate([
+    (0, graphql_1.Field)(() => graphql_1.Int),
+    __metadata("design:type", Number)
+], FeedItemModel.prototype, "comments", void 0);
+exports.FeedItemModel = FeedItemModel = __decorate([
     (0, graphql_1.ObjectType)()
-], FeedItem);
+], FeedItemModel);
 //# sourceMappingURL=feed.model.js.map

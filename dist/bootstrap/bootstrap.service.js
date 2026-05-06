@@ -15,8 +15,8 @@ const common_1 = require("@nestjs/common");
 const scylla_service_1 = require("../infrastructure/scylladb/scylla.service");
 const kafka_service_1 = require("../infrastructure/kafka/kafka.service");
 const minio_service_1 = require("../infrastructure/minio/minio.service");
-const feed_consumer_1 = require("../infrastructure/kafka/consumers/feed.consumer");
-const notification_consumer_1 = require("../modules/notification/notification.consumer");
+const feed_consumer_1 = require("../workers/feed/feed.consumer");
+const notification_consumer_1 = require("../workers/notification/notification.consumer");
 let BootstrapService = BootstrapService_1 = class BootstrapService {
     scylla;
     kafka;
@@ -44,8 +44,8 @@ let BootstrapService = BootstrapService_1 = class BootstrapService {
             await this.kafka.onModuleInit();
             this.logger.log('✔ Kafka producer initialized');
             // 4. Start consumers explicitly (IMPORTANT)
-            await this.feedConsumer.onModuleInit();
-            this.logger.log('✔ Feed consumer started');
+            // await this.feedConsumer.onModuleInit();
+            // this.logger.log('✔ Feed consumer started');
             await this.notificationConsumer.onModuleInit();
             this.logger.log('✔ Notification consumer started');
             this.logger.log('🔥 Bootstrap complete — system is live');

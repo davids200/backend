@@ -54,8 +54,13 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
     this.consumer = consumer;
   }
 
+
+
   async onModuleDestroy() {
     await this.producer?.disconnect();
     await this.consumer?.disconnect();
   }
+
+
+  
 }

@@ -1,133 +1,176 @@
-import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
-import { Kafka } from 'kafkajs'; 
-import { PostgresService } from '../../infrastructure/postgresql/postgres.service';
-import { RedisFeedService } from '../../infrastructure/redis/feed/redis.feed.service';
-import { CELEBRITY_THRESHOLD } from '../../modules/feed/feed.constants';
+import {
+  Injectable,
+  Logger,
+} from '@nestjs/common';
+
+import {
+  EventPattern,
+  Payload,
+} from '@nestjs/microservices';
+
+import { PostgresService }
+from '../../infrastructure/postgresql/postgres.service';
+
+import { RedisFeedService }
+from '../../infrastructure/redis/feed/redis.feed.service';
+
+import { CELEBRITY_THRESHOLD }
+from '../../modules/feed/feed.constants';
+
+import { KAFKA_TOPICS }
+from '../../common/constants/kafka-topics.constants';
 
 @Injectable()
-export class FeedWorker implements OnModuleInit {
-  private readonly logger = new Logger(FeedWorker.name);
-
-  private kafka = new Kafka({
-    clientId: 'feed-worker',
-    brokers: ['localhost:9092'],
-  });
-
-  private consumer = this.kafka.consumer({
-    groupId: 'feed-group',
-  });
+export class FeedWorker {
+  private readonly logger =
+    new Logger(FeedWorker.name);
 
   constructor(
-    private readonly postgres: PostgresService,
-    private readonly redisFeed: RedisFeedService,
+    private readonly postgres:
+      PostgresService,
+
+    private readonly redisFeed:
+      RedisFeedService,
   ) {}
 
-  async onModuleInit() {
-    await this.start();
-  }
+  // =====================================================
+  // POST CREATED EVENT
+  // =====================================================
 
-private async start() {
-await this.consumer.connect();
+  @EventPattern(
+    KAFKA_TOPICS.POST_CREATED,
+  )
+  async handlePostCreated(
+    @Payload()
+    payload: {
+      postId: string;
+      userId: string;
+      createdAt: Date;
+    },
+  ) {
 
-await this.consumer.subscribe({
-topic: 'post.created',
-fromBeginning: false,
-});
-this.logger.log('🚀 Feed Worker Started');
+    const {
+      postId,
+      userId,
+      createdAt,
+    } = payload;
 
+    try {
 
+      // ================================================
+      // GET FOLLOWERS
+      // ================================================
 
+      const followers =
+        await this.postgres.query(
+          `
+          SELECT follower_id
+          FROM follows
+          WHERE following_id = $1
+          `,
+          [userId],
+        );
 
+      const followerCount =
+        followers?.rowCount ?? 0;
 
+      // ================================================
+      // CELEBRITY DETECTION
+      // ================================================
 
+      const isCelebrity =
+        followerCount >
+        CELEBRITY_THRESHOLD;
 
+      if (isCelebrity) {
 
-    //runs continuously
-    //executes this block for every Kafka message
-await this.consumer.run({
-eachMessage: async ({ message }) => {
-try {
-if (!message.value) return;
+        this.logger.log(
+          `🔥 Celebrity detected: ${userId}`,
+        );
 
-const event = JSON.parse(message.value.toString());
-const { postId, userId } = event;
+        // ============================================
+        // DO NOT FANOUT
+        // ============================================
 
+        return;
+      }
 
+      // ================================================
+      // FOLLOWER LIST
+      // ================================================
 
-// ============== GET FOLLOWERS=========================
-const followers = await this.postgres.query(
-`SELECT follower_id FROM follows WHERE following_id = $1`,
-[userId],
-);
+      const followerList =
+        followers.rows;
 
-//////////////////COUNT FOLLOWERS SO THAT YOU DETECT BIG ACCOUNTS//////////
-const followerCount = followers?.rowCount ?? 0;
-const isCelebrity = followerCount > CELEBRITY_THRESHOLD;  /// isCelebrity/big account
+      if (!followerList.length) {
+        return;
+      }
 
-if (isCelebrity) {
-this.logger.log(`🔥 Celebrity detected: ${userId}`);
-// ❌ DO NOT fanout
-return;
-}
-          
+      // ================================================
+      // SIMPLE SCORE
+      // ================================================
 
+      const score =
+        new Date(createdAt)
+          .getTime();
 
-const followerList = followers.rows;
+      // ================================================
+      // PUSH TO REDIS FEEDS
+      // ================================================
 
-if (!followerList.length) return;
+      const BATCH_SIZE = 500;
 
-// =========================
-// SCORE (simple for now)
-// =========================
-const score = Date.now();
+      for (
+        let i = 0;
+        i < followerList.length;
+        i += BATCH_SIZE
+      ) {
 
+        const batch =
+          followerList.slice(
+            i,
+            i + BATCH_SIZE,
+          );
 
+        await Promise.all(
 
+          batch.map((follower) =>
 
-
-
-
-
-
-
-          // =========================
-          // PUSH TO REDIS FEEDS
-          // =========================
-          //listens for new posts
-          //ignores old events
-          const tasks = followerList.map((f) =>
             this.redisFeed.addToFeed(
-              f.follower_id,
+              follower.follower_id,
               postId,
               score,
             ),
-          );
+          ),
+        );
+      }
 
+      // ================================================
+      // TRIM FEEDS
+      // ================================================
 
-         // executes all writes in parallel
-          await Promise.all(tasks);
+      await Promise.all(
 
+        followerList.map((follower) =>
 
+          this.redisFeed.trimFeed(
+            follower.follower_id,
+          ),
+        ),
+      );
 
+      this.logger.log(
+        `✅ Feed updated for ${followerList.length} users`,
+      );
 
+    } catch (err) {
 
-          // =========================
-          // TRIM FEEDS (IMPORTANT)
-          // =========================
-          //keeps only latest 500 posts,deletes older ones
-          await Promise.all(
-            followerList.map((f) =>
-              this.redisFeed.trimFeed(f.follower_id),
-            ),
-          );
+      this.logger.error(
+        'Feed Worker Error',
+        err,
+      );
 
-          this.logger.log(
-            `Feed updated for ${followerList.length} users`,
-          );
-        } catch (err) {
-          this.logger.error('Feed Worker Error', err);
-        }
-      },
-    });
+      throw err;
+    }
   }
 }

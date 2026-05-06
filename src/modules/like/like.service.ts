@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
-import { LikeProducer } from '../../infrastructure/kafka/producers/like.producer';
+import { Injectable } from '@nestjs/common'; 
 import { LikeTargetType } from './like.entity';
+import { LikeProducer } from './like.producer';
 
 @Injectable()
 export class LikeService {

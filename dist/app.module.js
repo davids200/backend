@@ -22,6 +22,7 @@ const notification_module_1 = require("./modules/notification/notification.modul
 const meta_module_1 = require("./modules/meta/meta.module");
 const country_module_1 = require("./modules/meta/country/country.module");
 const location_module_1 = require("./modules/location/location.module");
+const trending_module_1 = require("./modules/feed/trending.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -53,7 +54,8 @@ exports.AppModule = AppModule = __decorate([
             auth_module_1.AuthModule,
             minio_module_1.MinioModule,
             location_module_1.LocationModule,
-            country_module_1.CountryModule
+            country_module_1.CountryModule,
+            trending_module_1.TrendingModule
         ],
         providers: [debug_resolver_1.DebugResolver],
     })
