@@ -8,12 +8,17 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.KafkaModule = void 0;
 const common_1 = require("@nestjs/common");
+// =====================================================
+// CORE
+// =====================================================
 const kafka_service_1 = require("./kafka.service");
+// =====================================================
+// PRODUCERS
+// =====================================================
 const post_producer_1 = require("../../modules/post/post.producer");
 const follow_producer_1 = require("../../modules/follow/follow.producer");
 const notification_producer_1 = require("../../modules/notification/notification.producer");
 const location_producer_1 = require("../../modules/location/location.producer");
-const auth_consumer_1 = require("../../workers/auth/auth.consumer");
 let KafkaModule = class KafkaModule {
 };
 exports.KafkaModule = KafkaModule;
@@ -21,16 +26,21 @@ exports.KafkaModule = KafkaModule = __decorate([
     (0, common_1.Global)(),
     (0, common_1.Module)({
         providers: [
+            // ================================================
+            // CORE
+            // ================================================
             kafka_service_1.KafkaService,
+            // ================================================
+            // PRODUCERS
+            // ================================================
             post_producer_1.PostProducer,
             follow_producer_1.FollowProducer,
             notification_producer_1.NotificationProducer,
             location_producer_1.LocationProducer,
-            auth_consumer_1.AuthConsumer,
         ],
         exports: [
             // ================================================
-            // CORE KAFKA
+            // CORE
             // ================================================
             kafka_service_1.KafkaService,
             // ================================================

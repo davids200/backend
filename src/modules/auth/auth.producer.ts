@@ -46,15 +46,17 @@ export class AuthProducer {
   // OTP REQUESTED
   // =====================================================
 
-  async otpRequested(data: {
-    type: 'email' | 'phone';
-    value: string;
-  }) {
-
-    await this.kafka.emit(
-      'auth.otp.requested',
-      data,
-      data.value,
-    );
+  async otpRequested(data: {type: 'email' | 'phone'; value: string;}) {
+    await this.kafka.emit('auth.otp.requested',data,data.value,);
   }
+
+
+
+
+async suspiciousLogin(data: {userId: string;sessionId: string;}) {
+  await this.kafka.emit('auth.suspicious.login',data,data.userId,);
+}
+
+
+
 }

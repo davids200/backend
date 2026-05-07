@@ -10,13 +10,12 @@ import { FeedModule } from './modules/feed/feed.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UserEntity } from './modules/user/entities/user.entity';
 import { MinioModule } from './infrastructure/minio/minio.module';
-import { NotificationModule } from './modules/notification/notification.module';
 import { MetaModule } from './modules/meta/meta.module'; 
 import { CountryModule } from './modules/meta/country/country.module';
 import { LocationModule } from './modules/location/location.module';
 import { TrendingService } from './modules/feed/services/trending.service';
 import { TrendingModule } from './modules/feed/trending.module';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config'; 
  
 @Module({
   imports: [
@@ -43,7 +42,6 @@ ConfigModule.forRoot({  //WITHOUT THIS,You cannot safely use:process.env.JWT_SEC
 isGlobal: true,
 }),
 
-NotificationModule,
     PostModule,
     MetaModule,
     FeedModule,

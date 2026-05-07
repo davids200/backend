@@ -12,7 +12,13 @@ import { KafkaModule }from '../../infrastructure/kafka/kafka.module';
 import { JwtStrategy } from './strategies/apple.strategy';
 import { RedisOtpService } from '../../infrastructure/redis/otp/redis.otp.service';
 import { RedisAuthRateLimitService } from '../../infrastructure/redis/auth/redis.auth-rate-limit.service';
-
+import { GoogleStrategy } from './strategies/google.strategy';
+import { AuthController } from './auth.controller';
+import { AuthSecurityService } from './security/auth-security.service';
+import { DeviceService } from './device/device.service'; 
+import { SmsGatewayService } from '../notification/channels/sms/sms-gateway.service';
+import { TwilioProvider } from '../notification/channels/sms/providers/twilio.provider';
+import { CustomSmsProvider } from '../notification/channels/sms/providers/custom-sms.provider';
 
 @Module({
   imports: [
@@ -44,7 +50,16 @@ import { RedisAuthRateLimitService } from '../../infrastructure/redis/auth/redis
     JwtStrategy,
     RedisOtpService,
     RedisAuthRateLimitService,
+    GoogleStrategy,
+    AuthSecurityService,
+    DeviceService,
+  SmsGatewayService,
+TwilioProvider,
+CustomSmsProvider,
   ],
+  controllers: [
+  AuthController,
+],
 
   exports: [
     AuthService,

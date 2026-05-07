@@ -21,6 +21,13 @@ const kafka_module_1 = require("../../infrastructure/kafka/kafka.module");
 const apple_strategy_1 = require("./strategies/apple.strategy");
 const redis_otp_service_1 = require("../../infrastructure/redis/otp/redis.otp.service");
 const redis_auth_rate_limit_service_1 = require("../../infrastructure/redis/auth/redis.auth-rate-limit.service");
+const google_strategy_1 = require("./strategies/google.strategy");
+const auth_controller_1 = require("./auth.controller");
+const auth_security_service_1 = require("./security/auth-security.service");
+const device_service_1 = require("./device/device.service");
+const sms_gateway_service_1 = require("../notification/channels/sms/sms-gateway.service");
+const twilio_provider_1 = require("../notification/channels/sms/providers/twilio.provider");
+const custom_sms_provider_1 = require("../notification/channels/sms/providers/custom-sms.provider");
 let AuthModule = class AuthModule {
 };
 exports.AuthModule = AuthModule;
@@ -51,6 +58,15 @@ exports.AuthModule = AuthModule = __decorate([
             apple_strategy_1.JwtStrategy,
             redis_otp_service_1.RedisOtpService,
             redis_auth_rate_limit_service_1.RedisAuthRateLimitService,
+            google_strategy_1.GoogleStrategy,
+            auth_security_service_1.AuthSecurityService,
+            device_service_1.DeviceService,
+            sms_gateway_service_1.SmsGatewayService,
+            twilio_provider_1.TwilioProvider,
+            custom_sms_provider_1.CustomSmsProvider,
+        ],
+        controllers: [
+            auth_controller_1.AuthController,
         ],
         exports: [
             auth_service_1.AuthService,

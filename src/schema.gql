@@ -66,6 +66,7 @@ type Mutation {
   register(data: RegisterInput!): AuthResponse!
   requestPasswordReset(data: RequestPasswordResetInput!): Boolean!
   resetPassword(data: ResetPasswordInput!): Boolean!
+  revokeSession(sessionId: String!): Boolean!
   sendOtp(data: SendOtpInput!): Boolean!
   updateProfile(data: UpdateProfileInput!): String!
   verifyOtp(data: VerifyOtpInput!): Boolean!
@@ -81,6 +82,7 @@ type Query {
   me: UserModel!
   ping: String!
   schools(locationId: String!): [String!]!
+  sessions: [SessionModel!]!
 }
 
 input RefreshTokenInput {
@@ -110,6 +112,20 @@ input ResetPasswordInput {
 input SendOtpInput {
   type: String!
   value: String!
+}
+
+type SessionModel {
+  browser: String
+  city: String
+  country: String
+  createdAt: DateTime!
+  deviceName: String
+  ipAddress: String
+  lastActiveAt: DateTime
+  platform: String
+  revoked: Boolean!
+  sessionId: String!
+  suspicious: Boolean!
 }
 
 input UpdateProfileInput {

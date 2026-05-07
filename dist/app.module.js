@@ -18,7 +18,6 @@ const feed_module_1 = require("./modules/feed/feed.module");
 const auth_module_1 = require("./modules/auth/auth.module");
 const user_entity_1 = require("./modules/user/entities/user.entity");
 const minio_module_1 = require("./infrastructure/minio/minio.module");
-const notification_module_1 = require("./modules/notification/notification.module");
 const meta_module_1 = require("./modules/meta/meta.module");
 const country_module_1 = require("./modules/meta/country/country.module");
 const location_module_1 = require("./modules/location/location.module");
@@ -51,7 +50,6 @@ exports.AppModule = AppModule = __decorate([
             config_1.ConfigModule.forRoot({
                 isGlobal: true,
             }),
-            notification_module_1.NotificationModule,
             post_module_1.PostModule,
             meta_module_1.MetaModule,
             feed_module_1.FeedModule,

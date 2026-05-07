@@ -1,77 +1,117 @@
-import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
-import { Kafka } from 'kafkajs';
+import {
+  Injectable,
+  Logger,
+  OnModuleInit,
+} from '@nestjs/common';
 
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm'; 
-import { NotificationEntity } from '../../modules/notification/notification.entity';
-import { RedisPubSubService } from '../../modules/notification/pubsub/redis.pubsub.service';
-import { KAFKA_TOPICS } from '../../common/constants/kafka-topics.constants';
+import { KafkaService }
+from '../../infrastructure/kafka/kafka.service';
+
+import { NotificationService }
+from '../../modules/notification/notification.service';
+
 @Injectable()
-export class NotificationConsumer implements OnModuleInit {
-  private readonly logger = new Logger(NotificationConsumer.name);
-
-  private kafka = new Kafka({
-    clientId: 'social-app',
-    brokers: ['localhost:9092'],
-  });
-
-  private consumer = this.kafka.consumer({
-    groupId: 'notification-group',
-  });
+export class NotificationConsumer
+  implements OnModuleInit
+{
+  private readonly logger =
+    new Logger(
+      NotificationConsumer.name,
+    );
 
   constructor(
-    @InjectRepository(NotificationEntity)
-    private readonly repo: Repository<NotificationEntity>,
-    private readonly pubsub: RedisPubSubService,
+
+    private readonly kafka:
+      KafkaService,
+
+    private readonly notifications:
+      NotificationService,
   ) {}
 
   async onModuleInit() {
+
     await this.start();
   }
 
+  // =====================================================
+  // START
+  // =====================================================
+
   private async start() {
-    await this.consumer.connect();
 
-    await this.consumer.subscribe({
-      topic: KAFKA_TOPICS.NOTIFICATION_SEND,
-    });
+    await this.kafka.consume(
 
-  //  this.logger.log('🚀 Notification Consumer started');
+      'notification-group',
 
-    await this.consumer.run({
-      eachMessage: async ({ message }) => {
-        if (!message.value) return;
+      'notification.inapp.created',
+
+      async (message) => {
+
+        if (!message.value) {
+          return;
+        }
 
         try {
-          const event = JSON.parse(message.value.toString());
 
-          const { userId, actorId, type, targetId } = event;
+          const event =
+            JSON.parse(
+              message.value.toString(),
+            );
 
-       
-       
-       
-          // =========================
-          // 1. SAVE TO DB
-          // =========================
-          const notification = await this.repo.save({
-            userId,
-            actorId,
-            type,
-            targetId,
-          });
+          await this.handleNotification(
+            event,
+          );
 
-          
-
-          // =========================
-          // 2. REALTIME PUSH (REDIS PUB/SUB)
-          // =========================
-          await this.pubsub.publish(`user:${userId}`, notification);
-
-        //  this.logger.log(`🔔 Notification for user ${userId}`);
         } catch (err) {
-          this.logger.error('Notification error', err);
+
+          this.logger.error(
+            'Notification consumer error',
+            err,
+          );
         }
       },
-    });
+    );
+
+    this.logger.log(
+      '✅ NotificationConsumer started',
+    );
+  }
+
+  // =====================================================
+  // HANDLE NOTIFICATION
+  // =====================================================
+
+  private async handleNotification(
+    event: {
+
+      userId: string;
+
+      actorId?: string;
+
+      type: string;
+
+      referenceId?: string;
+    },
+  ) {
+
+    await this.notifications
+      .create({
+
+        userId:
+          event.userId,
+
+        actorId:
+          event.actorId,
+
+        type:
+          event.type,
+
+        referenceId:
+          event.referenceId,
+      });
+
+    this.logger.log(
+      `Notification created for ${event.userId}`,
+    );
   }
 }

@@ -15,5 +15,6 @@ HASHTAG_CREATED:'hashtag.created',
   NOTIFICATION_SEND: 'notification.send',
   LOCATION_UPDATED:'location.updated',
   USER_LOCATION_JOINED:'location.joined',
-  LOCATION_INITIALIZED:'location.initialized'
+  LOCATION_INITIALIZED:'location.initialized',
+  NOTIFICATION_OTP_REQUESTED:'notification.otp.requested'
 } as const;

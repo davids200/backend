@@ -1,44 +1,87 @@
-import {
-  Injectable,
+import {  Injectable,
   UnauthorizedException,
   BadRequestException,
 } from '@nestjs/common';
 
-import {  InjectRepository,} from '@nestjs/typeorm';
-import {  Repository,} from 'typeorm';
-import {  JwtService,} from '@nestjs/jwt';
+import {
+  InjectRepository,
+} from '@nestjs/typeorm';
+
+import {
+  Repository,
+} from 'typeorm';
+
+import {
+  JwtService,
+} from '@nestjs/jwt';
+
 import * as argon2 from 'argon2';
-import { randomUUID } from 'crypto';
-import {  AuthIdentityEntity,  AuthProvider,} from './entities/auth-identity.entity';
-import { AuthSessionEntity }from './entities/auth-session.entity';import { UserService }from '../user/user.service';
-import { LoginInput }from './dto/login.input';
-import { RegisterInput }from './dto/register.input';
-import { JwtPayload }from './interfaces/jwt-payload.interface';
-import { hashPassword }from './utils/hash-password.util';
-import { verifyPassword }from './utils/verify-password.util';
-import { generateOtp }from './utils/generate-otp.util';
-import { RedisOtpService }from '../../infrastructure/redis/otp/redis.otp.service';
-import { AuthProducer }from './auth.producer';
-import { RedisAuthRateLimitService }from '../../infrastructure/redis/auth/redis.auth-rate-limit.service';
+
+import { randomUUID }
+from 'crypto';
+
+import {
+  AuthIdentityEntity,
+  AuthProvider,
+} from './entities/auth-identity.entity';
+
+import { AuthSessionEntity }
+from './entities/auth-session.entity';
+
+import { UserService }
+from '../user/user.service';
+
+import { LoginInput }
+from './dto/login.input';
+
+import { RegisterInput }
+from './dto/register.input';
+
+import { JwtPayload }
+from './interfaces/jwt-payload.interface';
+
+import { hashPassword }
+from './utils/hash-password.util';
+
+import { verifyPassword }
+from './utils/verify-password.util';
+
+import { generateOtp }
+from './utils/generate-otp.util';
+
+import { RedisOtpService }
+from '../../infrastructure/redis/otp/redis.otp.service';
+
+import { RedisAuthRateLimitService }
+from '../../infrastructure/redis/auth/redis.auth-rate-limit.service';
+
+import { AuthProducer }
+from './auth.producer';
+
+import { AuthSecurityService }
+from './security/auth-security.service';
+import { DeviceInfo } from './device/device.types';
+import { KAFKA_TOPICS } from '../../common/constants/kafka-topics.constants';
+import { NotificationProducer } from '../notification/notification.producer';
 
 @Injectable()
 export class AuthService {
 
   constructor(
 
-    @InjectRepository(
-      AuthIdentityEntity,
-    )
-    private readonly identityRepo:
-      Repository<AuthIdentityEntity>,
-      private readonly authRateLimit:
-  RedisAuthRateLimitService,
+    // =====================================================
+    // REPOSITORIES
+    // =====================================================
 
-    @InjectRepository(
-      AuthSessionEntity,
-    )
-    private readonly sessionRepo:
-      Repository<AuthSessionEntity>,
+    @InjectRepository(      AuthIdentityEntity,    )
+    private readonly identityRepo:      Repository<AuthIdentityEntity>,
+    @InjectRepository(      AuthSessionEntity,    )
+    private readonly sessionRepo:      Repository<AuthSessionEntity>,
+    private readonly notificationProducer:NotificationProducer,
+
+    // =====================================================
+    // SERVICES
+    // =====================================================
 
     private readonly users:
       UserService,
@@ -49,8 +92,14 @@ export class AuthService {
     private readonly redisOtp:
       RedisOtpService,
 
+    private readonly authRateLimit:
+      RedisAuthRateLimitService,
+
     private readonly authProducer:
       AuthProducer,
+
+    private readonly security:
+      AuthSecurityService,
   ) {}
 
   // =====================================================
@@ -164,7 +213,7 @@ export class AuthService {
       );
 
     // ================================================
-    // EMAIL IDENTITY
+    // CREATE EMAIL IDENTITY
     // ================================================
 
     if (data.email) {
@@ -191,7 +240,7 @@ export class AuthService {
     }
 
     // ================================================
-    // PHONE IDENTITY
+    // CREATE PHONE IDENTITY
     // ================================================
 
     if (data.phone) {
@@ -230,16 +279,32 @@ export class AuthService {
   // LOGIN
   // =====================================================
 
-  async login(data: LoginInput,) {
+  async login(
+  data: LoginInput,
+  deviceInfo?: DeviceInfo,
+)
+  {
 
-const attempts =await this.authRateLimit.getLoginAttempts(data.login,);
-if (attempts >= 5) {
-throw new UnauthorizedException(
-'Too many login attempts',
-);
-}
+    // ================================================
+    // RATE LIMIT
+    // ================================================
 
+    const attempts =
+      await this.authRateLimit
+        .getLoginAttempts(
+          data.login,
+        );
 
+    if (attempts >= 5) {
+
+      throw new UnauthorizedException(
+        'Too many login attempts',
+      );
+    }
+
+    // ================================================
+    // FIND IDENTITY
+    // ================================================
 
     const identity =
       await this.identityRepo.findOne({
@@ -263,33 +328,76 @@ throw new UnauthorizedException(
         ],
       });
 
-    if (!identity || !identity.passwordHash    ) {
+    if (
+      !identity ||
+      !identity.passwordHash
+    ) {
+
       throw new UnauthorizedException(
         'Invalid credentials',
       );
     }
 
-const valid =
-await verifyPassword(
-identity.passwordHash,
-data.password,
+    // ================================================
+    // VERIFY PASSWORD
+    // ================================================
+
+    const valid =
+      await verifyPassword(
+        identity.passwordHash,
+        data.password,
+      );
+
+    if (!valid) {
+
+      await this.authRateLimit
+        .incrementLoginAttempts(
+          data.login,
+        );
+
+      throw new UnauthorizedException(
+        'Invalid credentials',
+      );
+    }
+
+    // ================================================
+    // CLEAR RATE LIMIT
+    // ================================================
+
+    await this.authRateLimit
+      .clearLoginAttempts(
+        data.login,
+      );
+
+    // ================================================
+    // ISSUE TOKENS
+    // ================================================
+
+   return this.generateTokens(
+  identity.userId,
+  deviceInfo,
 );
+  }
 
-if (!valid) {
-await this.authRateLimit.incrementLoginAttempts(data.login,);
-throw new UnauthorizedException('Invalid credentials',);
-}
-await this.authRateLimit.clearLoginAttempts(data.login,);
-return this.generateTokens(identity.userId,);
-}
 
-  // =====================================================
+
+
+
+
+
+ 
   // GENERATE TOKENS
   // =====================================================
 
   async generateTokens(
-    userId: string,
-  ) {
+  userId: string,
+  deviceInfo?: DeviceInfo,
+)
+  {
+
+    // ================================================
+    // SESSION
+    // ================================================
 
     const sessionId =
       randomUUID();
@@ -321,7 +429,8 @@ return this.generateTokens(identity.userId,);
         },
         {
           secret:
-            process.env.JWT_REFRESH_SECRET,
+            process.env
+              .JWT_REFRESH_SECRET,
 
           expiresIn:
             '30d',
@@ -338,29 +447,68 @@ return this.generateTokens(identity.userId,);
       );
 
     // ================================================
-    // STORE SESSION
+    // LOAD PREVIOUS SESSIONS
     // ================================================
 
-    await this.sessionRepo.save({
+    const previousSessions =
+      await this.sessionRepo.find({
+        where: {
+          userId,
+        },
+      });
 
-      sessionId,
+// SECURITY CHECK
+const suspicious =
+this.security.isSuspicious({
+currentCountry:deviceInfo?.country,
+currentBrowser:deviceInfo?.browser,
+currentPlatform:deviceInfo?.platform,
+previousSessions,
+});
 
-      userId,
 
-      refreshTokenHash,
 
-      revoked:
-        false,
-    });
+
+  // STORE SESSION 
+await this.sessionRepo.save({
+  sessionId,
+  userId,
+  refreshTokenHash,
+  suspicious,
+  revoked:false,
+  ipAddress:deviceInfo?.ipAddress,
+  browser:deviceInfo?.browser,
+  platform:deviceInfo?.platform,
+  deviceName:deviceInfo?.deviceName,
+});
 
     // ================================================
-    // FETCH USER
+    // EMIT SECURITY EVENT
+    // ================================================
+
+    if (suspicious) {
+
+      await this.authProducer
+        .suspiciousLogin({
+
+          userId,
+
+          sessionId,
+        });
+    }
+
+    // ================================================
+    // LOAD USER
     // ================================================
 
     const user =
       await this.users.getUser(
         userId,
       );
+
+    // ================================================
+    // RESPONSE
+    // ================================================
 
     return {
 
@@ -398,7 +546,7 @@ return this.generateTokens(identity.userId,);
   }
 
   // =====================================================
-  // GET CURRENT USER
+  // CURRENT USER
   // =====================================================
 
   async getMe(
@@ -467,7 +615,7 @@ return this.generateTokens(identity.userId,);
       );
 
     // ================================================
-    // FIND SESSIONS
+    // FIND ACTIVE SESSIONS
     // ================================================
 
     const sessions =
@@ -566,170 +714,512 @@ return this.generateTokens(identity.userId,);
   // SEND OTP
   // =====================================================
 
-async sendOtp(data: {type: 'email' | 'phone'; value: string;}) {
-const requests =  await this.authRateLimit.getOtpRequests(data.value,);
+  async sendOtp(data: {
+    type: 'email' | 'phone';
+    value: string;
+  }) {
 
-if (requests >= Number(process.env.OTP_ATTEMPTS)) {
-throw new BadRequestException('Too many OTP requests',);
-}
+    // ================================================
+    // OTP RATE LIMIT
+    // ================================================
 
-await this.authRateLimit.incrementOtpRequests(data.value,);
+    const requests =
+      await this.authRateLimit
+        .getOtpRequests(
+          data.value,
+        );
 
-// GENERATE OTP
-const otp = generateOtp();
-// STORE OTP
-await this.redisOtp.saveOtp({type:data.type,value:data.value,otp,});
+    if (
+      requests >=
+      Number(
+        process.env
+          .OTP_ATTEMPTS,
+      )
+    ) {
 
-// EMIT EVENT
-await this.authProducer.otpRequested({type:data.type,value:data.value,});
-  
-// TEMP LOG
-console.log(`OTP for ${data.value}: ${otp}`,);
-return true;
-}
+      throw new BadRequestException(
+        'Too many OTP requests',
+      );
+    }
 
- 
-// VERIFY OTP
-async verifyOtp(data: {type: 'email' | 'phone'; value: string; otp: string;}) { 
-const attempts = await this.redisOtp.getAttempts({type:data.type,value:data.value,});
+    // ================================================
+    // INCREMENT COUNTER
+    // ================================================
 
-if (attempts >= Number(process.env.MAXIMUM_LOGIN_ATTEMPT)) {
-throw new UnauthorizedException('Too many attempts',);
-} 
-// GET STORED OTP 
-const storedOtp =await this.redisOtp.getOtp({type:data.type,value:data.value,});
+    await this.authRateLimit
+      .incrementOtpRequests(
+        data.value,
+      );
 
-// INVALID OTP
-if (!storedOtp || storedOtp !== data.otp) {
-await this.redisOtp.incrementAttempts({type:data.type,value:data.value,});
-throw new UnauthorizedException('Invalid OTP',);
-}
-    
-// FIND IDENTITY 
-const identity =await this.identityRepo.findOne({where: [{provider:data.type === 'email'? AuthProvider.EMAIL: AuthProvider.PHONE,
-providerUserId:data.value,},],});
-// MARK VERIFIED
-if (identity) {
-identity.isVerified =true;
-await this.identityRepo.save(identity,);
-}
+    // ================================================
+    // GENERATE OTP
+    // ================================================
 
-// CLEANUP
-await this.redisOtp.deleteOtp({type:data.type,value:data.value,});
-await this.redisOtp.clearAttempts({type:data.type,value:data.value,});
+    const otp =
+      generateOtp();
 
-return true;
-}
+    // ================================================
+    // STORE OTP
+    // ================================================
 
+    await this.redisOtp.saveOtp({
 
+      type:
+        data.type,
 
+      value:
+        data.value,
 
-async requestPasswordReset(data: {
-  type: 'email' | 'phone';
-  value: string;
-}) {
-
-  // ================================================
-  // CHECK USER EXISTS
-  // ================================================
-
-  const identity =
-    await this.identityRepo.findOne({
-      where: [
-        {
-          provider:
-            data.type === 'email'
-              ? AuthProvider.EMAIL
-              : AuthProvider.PHONE,
-
-          providerUserId:
-            data.value,
-        },
-      ],
+      otp,
     });
 
-  // ================================================
-  // SILENT FAIL
-  // ================================================
+    // ================================================
+    // EMIT EVENT
+    // ================================================
 
-  if (!identity) {
+    this.notificationProducer.emit(KAFKA_TOPICS.NOTIFICATION_OTP_REQUESTED,{type: data.type,value: data.value,  },
+);
+
+    // ================================================
+    // TEMP LOG
+    // ================================================
+
+    console.log(
+      `OTP for ${data.value}: ${otp}`,
+    );
 
     return true;
   }
 
-  // ================================================
-  // REUSE OTP SYSTEM
-  // ================================================
-
-  await this.sendOtp({
-    type:
-      data.type,
-
-    value:
-      data.value,
-  });
-
-  return true;
-}
-
-
-async resetPassword(data: {
-  type: 'email' | 'phone';
-  value: string;
-  otp: string;
-  newPassword: string;
-}) {
-
+  // =====================================================
   // VERIFY OTP
-  const storedOtp =
-    await this.redisOtp.getOtp({type:data.type,value:data.value,});
+  // =====================================================
 
-  if (!storedOtp || storedOtp !== data.otp) {
-    throw new UnauthorizedException(
-      'Invalid OTP',
-    );
-  }
+  async verifyOtp(data: {
+    type: 'email' | 'phone';
+    value: string;
+    otp: string;
+  }) {
 
-  // FIND IDENTITY
-  const identity =
-    await this.identityRepo.findOne({
-      where: [
-        {
-          provider:
-            data.type === 'email'
-              ? AuthProvider.EMAIL
-              : AuthProvider.PHONE,
+    // ================================================
+    // CHECK ATTEMPTS
+    // ================================================
 
-          providerUserId:
+    const attempts =
+      await this.redisOtp
+        .getAttempts({
+
+          type:
+            data.type,
+
+          value:
             data.value,
-        },
-      ],
+        });
+
+    if (
+      attempts >=
+      Number(
+        process.env
+          .MAXIMUM_LOGIN_ATTEMPT,
+      )
+    ) {
+
+      throw new UnauthorizedException(
+        'Too many attempts',
+      );
+    }
+
+    // ================================================
+    // GET STORED OTP
+    // ================================================
+
+    const storedOtp =
+      await this.redisOtp.getOtp({
+
+        type:
+          data.type,
+
+        value:
+          data.value,
+      });
+
+    // ================================================
+    // INVALID OTP
+    // ================================================
+
+    if (
+      !storedOtp ||
+      storedOtp !== data.otp
+    ) {
+
+      await this.redisOtp
+        .incrementAttempts({
+
+          type:
+            data.type,
+
+          value:
+            data.value,
+        });
+
+      throw new UnauthorizedException(
+        'Invalid OTP',
+      );
+    }
+
+    // ================================================
+    // FIND IDENTITY
+    // ================================================
+
+    const identity =
+      await this.identityRepo.findOne({
+        where: [
+          {
+            provider:
+              data.type === 'email'
+                ? AuthProvider.EMAIL
+                : AuthProvider.PHONE,
+
+            providerUserId:
+              data.value,
+          },
+        ],
+      });
+
+    // ================================================
+    // MARK VERIFIED
+    // ================================================
+
+    if (identity) {
+
+      identity.isVerified =
+        true;
+
+      await this.identityRepo.save(
+        identity,
+      );
+    }
+
+    // ================================================
+    // CLEANUP
+    // ================================================
+
+    await this.redisOtp.deleteOtp({
+
+      type:
+        data.type,
+
+      value:
+        data.value,
     });
 
-  if (!identity) {
+    await this.redisOtp
+      .clearAttempts({
 
-    throw new UnauthorizedException(
-      'Identity not found',
+        type:
+          data.type,
+
+        value:
+          data.value,
+      });
+
+    return true;
+  }
+
+  // =====================================================
+  // REQUEST PASSWORD RESET
+  // =====================================================
+
+  async requestPasswordReset(data: {
+    type: 'email' | 'phone';
+    value: string;
+  }) {
+
+    const identity =
+      await this.identityRepo.findOne({
+        where: [
+          {
+            provider:
+              data.type === 'email'
+                ? AuthProvider.EMAIL
+                : AuthProvider.PHONE,
+
+            providerUserId:
+              data.value,
+          },
+        ],
+      });
+
+    // silent fail
+    if (!identity) {
+      return true;
+    }
+
+    await this.sendOtp({
+
+      type:
+        data.type,
+
+      value:
+        data.value,
+    });
+
+    return true;
+  }
+
+  // =====================================================
+  // RESET PASSWORD
+  // =====================================================
+
+  async resetPassword(data: {
+    type: 'email' | 'phone';
+    value: string;
+    otp: string;
+    newPassword: string;
+  }) {
+
+    // ================================================
+    // VERIFY OTP
+    // ================================================
+
+    const storedOtp =
+      await this.redisOtp.getOtp({
+
+        type:
+          data.type,
+
+        value:
+          data.value,
+      });
+
+    if (
+      !storedOtp ||
+      storedOtp !== data.otp
+    ) {
+
+      throw new UnauthorizedException(
+        'Invalid OTP',
+      );
+    }
+
+    // ================================================
+    // FIND IDENTITY
+    // ================================================
+
+    const identity =
+      await this.identityRepo.findOne({
+        where: [
+          {
+            provider:
+              data.type === 'email'
+                ? AuthProvider.EMAIL
+                : AuthProvider.PHONE,
+
+            providerUserId:
+              data.value,
+          },
+        ],
+      });
+
+    if (!identity) {
+
+      throw new UnauthorizedException(
+        'Identity not found',
+      );
+    }
+
+    // ================================================
+    // HASH PASSWORD
+    // ================================================
+
+    identity.passwordHash =
+      await hashPassword(
+        data.newPassword,
+      );
+
+    await this.identityRepo.save(
+      identity,
+    );
+
+    // ================================================
+    // DELETE OTP
+    // ================================================
+
+    await this.redisOtp.deleteOtp({
+
+      type:
+        data.type,
+
+      value:
+        data.value,
+    });
+
+    // ================================================
+    // REVOKE SESSIONS
+    // ================================================
+
+    await this.sessionRepo.update(
+      {
+        userId:
+          identity.userId,
+      },
+      {
+        revoked:
+          true,
+      },
+    );
+
+    return true;
+  }
+
+  // =====================================================
+  // GOOGLE LOGIN
+  // =====================================================
+
+  async loginWithGoogle(data: {
+    providerUserId: string;
+    email?: string;
+    displayName?: string;
+    avatar?: string;
+  }) {
+
+    // ================================================
+    // FIND GOOGLE IDENTITY
+    // ================================================
+
+    let identity =
+      await this.identityRepo.findOne({
+        where: {
+
+          provider:
+            AuthProvider.GOOGLE,
+
+          providerUserId:
+            data.providerUserId,
+        },
+      });
+
+    // ================================================
+    // EXISTING USER
+    // ================================================
+
+    if (identity) {
+
+      return this.generateTokens(
+        identity.userId,
+      );
+    }
+
+    // ================================================
+    // CREATE USER
+    // ================================================
+
+    const username =
+      `google_${Date.now()}`;
+
+    const user =
+      await this.users.createUser({
+
+        username,
+
+        displayName:
+          data.displayName,
+
+        avatar:
+          data.avatar,
+
+        isVerified:
+          true,
+
+        onboardingCompleted:
+          false,
+      });
+
+    // ================================================
+    // CREATE IDENTITY
+    // ================================================
+
+    identity =
+      await this.identityRepo.save({
+
+        userId:
+          user.id,
+
+        provider:
+          AuthProvider.GOOGLE,
+
+        providerUserId:
+          data.providerUserId,
+
+        email:
+          data.email,
+
+        isVerified:
+          true,
+      });
+
+    // ================================================
+    // ISSUE TOKENS
+    // ================================================
+
+    return this.generateTokens(
+      user.id,
     );
   }
 
-  
-  // HASH NEW PASSWORD
-  identity.passwordHash =await hashPassword(data.newPassword,);
-  await this.identityRepo.save(identity,);
+  // =====================================================
+  // GET SESSIONS
+  // =====================================================
 
-  // ================================================
-  // DELETE OTP
-  // ================================================
+  async getSessions(
+    userId: string,
+  ) {
 
-  await this.redisOtp.deleteOtp({type:data.type,value:data.value,});
-  
-  // REVOKE OLD SESSIONS
-  await this.sessionRepo.update({ userId:identity.userId,}, {
-      revoked: true,    },
-  );
+    return this.sessionRepo.find({
 
-  return true;
-}
+      where: {
+        userId,
+      },
 
+      order: {
+        createdAt:
+          'DESC',
+      },
+    });
+  }
+
+  // =====================================================
+  // REVOKE SESSION
+  // =====================================================
+
+  async revokeSession(
+    userId: string,
+    sessionId: string,
+  ) {
+
+    const session =
+      await this.sessionRepo.findOne({
+        where: {
+
+          userId,
+
+          sessionId,
+        },
+      });
+
+    if (!session) {
+
+      throw new UnauthorizedException(
+        'Session not found',
+      );
+    }
+
+    session.revoked = true;
+
+    await this.sessionRepo.save(
+      session,
+    );
+
+    return true;
+  }
 }

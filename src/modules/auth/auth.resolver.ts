@@ -18,27 +18,60 @@ import { SendOtpInput } from './dto/send-otp.input';
 import { VerifyOtpInput } from './dto/verify-otp.input';
 import { RequestPasswordResetInput } from './dto/request-password-reset.input';
 import { ResetPasswordInput } from './dto/reset-password.input';
+import { SessionModel } from './models/session.model';
+import {   Context,} from '@nestjs/graphql';
+import { Request } from 'express';
+import { DeviceService } from './device/device.service';
 
 @Resolver()
 export class AuthResolver {
   constructor(
-    private readonly auth:
-      AuthService,
+    private readonly auth:AuthService,
+    private readonly device:  DeviceService,
   ) {}
 
-  // =====================================================
-  // REGISTER
-  // =====================================================
-  @Mutation(() => Boolean)
+  
+
+@Query(() => [SessionModel])
+@UseGuards(GqlAuthGuard)
+async sessions(
+@CurrentUser()
+user: any,
+) {
+return this.auth.getSessions(user.id,);
+}
+
+@Query(() => UserModel)
+@UseGuards(GqlAuthGuard)
+async me(@CurrentUser()user: any,
+) {
+return this.auth.getMe(
+user.id,
+);
+}
+
+
+
+
+@Mutation(() => Boolean)
+@UseGuards(GqlAuthGuard)
+async revokeSession(
+  @CurrentUser()  user: any,  @Args('sessionId')  sessionId: string,
+) {
+  return this.auth.revokeSession(user.id,sessionId,);
+}
+
+// REGISTER 
+@Mutation(() => Boolean)
 @UseGuards(GqlAuthGuard)
 async logout(  @CurrentUser() user: any,) {
-  return this.auth.logout( user.sessionId, );
+return this.auth.logout( user.sessionId, );
 }
 
 
 @Mutation(() => AuthResponse)
 async refreshToken(  @Args('data')  data: RefreshTokenInput,) {
-  return this.auth.refreshToken(    data.refreshToken,  );
+return this.auth.refreshToken(    data.refreshToken,  );
 }
 
 
@@ -63,8 +96,11 @@ return this.auth.resetPassword(data,);
    
   // LOGIN 
 @Mutation(() => AuthResponse)
-async login(@Args('data') data: LoginInput,) {
-  return this.auth.login(data,);
+async login(@Args('data')data: LoginInput, @Context() context: {req: Request;},
+) {
+
+  const deviceInfo =this.device.extract(context.req,);
+  return this.auth.login(data,deviceInfo,  );
 }
 
 
@@ -90,17 +126,6 @@ async verifyOtp(
   );
 }
 
-@Query(() => UserModel)
-@UseGuards(GqlAuthGuard)
-async me(
-  @CurrentUser()
-  user: any,
-) {
-
-  return this.auth.getMe(
-    user.id,
-  );
-}
 
 
 

@@ -218,4 +218,36 @@ export class RedisCounterService {
 
     return counts;
   }
+
+
+
+// =====================================================
+// FOLLOWERS
+// =====================================================
+
+private followersKey(userId: string,) {
+  return `followers:${userId}`;
+}
+
+private followingKey(userId: string,) {
+  return `following:${userId}`;
+}
+
+async incrementFollowers(  userId: string,) {
+  await this.redis.client.incr(this.followersKey(userId),);
+}
+
+async decrementFollowers(userId: string,) {
+  await this.redis.client.decr(this.followersKey(userId),);
+}
+
+async incrementFollowing(userId: string,) {
+  await this.redis.client.incr(this.followingKey(userId),);
+}
+
+async decrementFollowing(userId: string,) {
+  await this.redis.client.decr(this.followingKey(userId),);
+}
+
+
 }

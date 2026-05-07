@@ -1,28 +1,58 @@
-import { Injectable } from '@nestjs/common'; 
-import { KafkaService } from '../../infrastructure/kafka/kafka.service';
-import { KAFKA_TOPICS } from '../../common/constants/kafka-topics.constants';
+import {
+  Injectable,
+} from '@nestjs/common';
+
+import { KafkaService }
+from '../../infrastructure/kafka/kafka.service';
+
 @Injectable()
 export class FollowProducer {
-  constructor(private readonly kafka: KafkaService) {}
+
+  constructor(
+    private readonly kafka:
+      KafkaService,
+  ) {}
+
+  // =====================================================
+  // FOLLOW CREATED
+  // =====================================================
 
   async followCreated(data: {
+
     followerId: string;
+
     followingId: string;
+
+    createdAt: string;
   }) {
-    return this.kafka.emit(
-      KAFKA_TOPICS.FOLLOW_CREATED,
+
+    await this.kafka.emit(
+
+      'follow.created',
+
       data,
-      data.followerId, // 🔥 key = follower
+
+      data.followerId,
     );
   }
 
+  // =====================================================
+  // FOLLOW REMOVED
+  // =====================================================
+
   async followRemoved(data: {
+
     followerId: string;
+
     followingId: string;
   }) {
-    return this.kafka.emit(
-      KAFKA_TOPICS.FOLLOW_REMOVED,
+
+    await this.kafka.emit(
+
+      'follow.removed',
+
       data,
+
       data.followerId,
     );
   }
