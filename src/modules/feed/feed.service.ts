@@ -34,9 +34,9 @@ export class FeedService {
       createdAt,
     } = params;
 
-    this.logger.log(
-      `Processing post: ${postId}`,
-    );
+    // this.logger.log(
+    //   `Processing post: ${postId}`,
+    // );
 
     // ================================================
     // PLACEHOLDER

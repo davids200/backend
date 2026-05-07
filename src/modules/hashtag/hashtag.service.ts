@@ -103,16 +103,16 @@ export class HashtagService {
         }
       }
 
-      this.logger.log(
-        `✅ Hashtags processed for post ${postId}`,
-      );
+    //   this.logger.log(
+    //     `✅ Hashtags processed for post ${postId}`,
+    //   );
 
     } catch (err) {
 
-      this.logger.error(
-        'Hashtag processing failed',
-        err,
-      );
+    //   this.logger.error(
+    //     'Hashtag processing failed',
+    //     err,
+    //   );
 
       throw err;
     }

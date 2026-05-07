@@ -16,6 +16,7 @@ import { CountryModule } from './modules/meta/country/country.module';
 import { LocationModule } from './modules/location/location.module';
 import { TrendingService } from './modules/feed/services/trending.service';
 import { TrendingModule } from './modules/feed/trending.module';
+import { ConfigModule } from '@nestjs/config';
  
 @Module({
   imports: [
@@ -37,6 +38,11 @@ import { TrendingModule } from './modules/feed/trending.module';
       sortSchema: true,
       context: ({ req }) => ({ req }),
     }),
+    
+ConfigModule.forRoot({  //WITHOUT THIS,You cannot safely use:process.env.JWT_SECRET
+isGlobal: true,
+}),
+
 NotificationModule,
     PostModule,
     MetaModule,

@@ -1,36 +1,53 @@
 import { Module } from '@nestjs/common';
-import { PassportModule } from '@nestjs/passport';
-import { JwtModule } from '@nestjs/jwt';
+import { TypeOrmModule }from '@nestjs/typeorm';
+import { JwtModule }from '@nestjs/jwt';
+import { AuthService }from './auth.service';
+import { AuthResolver }from './auth.resolver';
+import { AuthProducer }from './auth.producer'; 
+import { AuthIdentityEntity }from './entities/auth-identity.entity';
+import { AuthSessionEntity }from './entities/auth-session.entity';
+import { UserModule }from '../user/user.module';
+import { RedisModule }from '../../infrastructure/redis/redis.module';
+import { KafkaModule }from '../../infrastructure/kafka/kafka.module';
+import { JwtStrategy } from './strategies/apple.strategy';
+import { RedisOtpService } from '../../infrastructure/redis/otp/redis.otp.service';
+import { RedisAuthRateLimitService } from '../../infrastructure/redis/auth/redis.auth-rate-limit.service';
 
-import { AuthResolver } from './auth.resolver';
-import { AuthService } from './auth.service';
-import { JwtStrategy } from './strategies/jwt.strategy';
-import { AppJwtService } from './app-jwt.service';
-
-import { jwtConstants } from './jwt.config';
-
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { UserEntity } from '../user/entities/user.entity'; 
 
 @Module({
   imports: [
+    // DATABASE
+    TypeOrmModule.forFeature([
+      AuthIdentityEntity,
+      AuthSessionEntity,
+    ]),
+    // JWT
     JwtModule.register({
-      secret: jwtConstants.secret,
-    }),
-    PassportModule.register({ defaultStrategy: 'jwt' }),
-     JwtModule.register({
-      secret: jwtConstants.secret,
+      secret:
+        process.env.JWT_SECRET,
+
       signOptions: {
         expiresIn: '15m',
       },
     }),
-    TypeOrmModule.forFeature([UserEntity]),  
+
+    // DEPENDENCIES
+    UserModule,
+    RedisModule,
+    KafkaModule,
   ],
+
   providers: [
-    AuthResolver,
     AuthService,
+    AuthResolver,
+    AuthProducer,
     JwtStrategy,
-    AppJwtService,
+    RedisOtpService,
+    RedisAuthRateLimitService,
+  ],
+
+  exports: [
+    AuthService,
   ],
 })
 export class AuthModule {}

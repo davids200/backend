@@ -33,7 +33,7 @@ export class ScyllaService implements OnModuleInit {
     // ✅ STEP 4: ensure table exists
     await this.client.execute(FEED_TABLE);
 
-    this.logger.log('✔ ScyllaDB connected and schema initialized');
+   // this.logger.log('✔ ScyllaDB connected and schema initialized');
   }
 
   async insertFeedFanout(data: {

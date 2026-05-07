@@ -150,7 +150,9 @@ let UserService = UserService_1 = class UserService {
                 userId,
                 newLocationId,
             });
-            this.logger.log(`Location initialized for ${userId}`);
+            // this.logger.log(
+            //   `Location initialized for ${userId}`,
+            // );
             return user;
         }
         // ================================================

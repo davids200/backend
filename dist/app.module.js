@@ -23,6 +23,7 @@ const meta_module_1 = require("./modules/meta/meta.module");
 const country_module_1 = require("./modules/meta/country/country.module");
 const location_module_1 = require("./modules/location/location.module");
 const trending_module_1 = require("./modules/feed/trending.module");
+const config_1 = require("@nestjs/config");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -46,6 +47,9 @@ exports.AppModule = AppModule = __decorate([
                 playground: true,
                 sortSchema: true,
                 context: ({ req }) => ({ req }),
+            }),
+            config_1.ConfigModule.forRoot({
+                isGlobal: true,
             }),
             notification_module_1.NotificationModule,
             post_module_1.PostModule,

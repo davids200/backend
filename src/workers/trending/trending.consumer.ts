@@ -108,9 +108,9 @@ export class TrendingConsumer {
         locationId,
       });
 
-      this.logger.log(
-        `🔥 Trending updated: ${postId} (${event})`,
-      );
+      // this.logger.log(
+      //   `🔥 Trending updated: ${postId} (${event})`,
+      // );
 
     } catch (err) {
 

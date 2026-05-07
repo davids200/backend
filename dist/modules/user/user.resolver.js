@@ -17,10 +17,9 @@ const graphql_1 = require("@nestjs/graphql");
 const common_1 = require("@nestjs/common");
 const user_service_1 = require("./user.service");
 const update_profile_input_1 = require("./dto/update-profile.input");
-const add_education_input_1 = require("./dto/add-education.input");
+const create_user_inputs_1 = require("./dto/create-user.inputs");
 const gql_auth_guard_1 = require("../auth/guards/gql-auth.guard");
 const current_user_decorator_1 = require("../auth/decorators/current-user.decorator");
-const create_user_inputs_1 = require("./dto/create-user.inputs");
 let UserResolver = class UserResolver {
     service;
     constructor(service) {
@@ -51,23 +50,6 @@ let UserResolver = class UserResolver {
     }
     getProfile(user) {
         return this.service.getProfile(user.id);
-    }
-    // =========================
-    // EDUCATION
-    // =========================
-    addEducation(user, data) {
-        return this.service.addEducation(user.id, {
-            ...data,
-            startDate: data.startDate
-                ? new Date(data.startDate)
-                : undefined,
-            endDate: data.endDate
-                ? new Date(data.endDate)
-                : undefined,
-        });
-    }
-    getEducation(user) {
-        return this.service.getEducation(user.id);
     }
 };
 exports.UserResolver = UserResolver;
@@ -102,23 +84,6 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], UserResolver.prototype, "getProfile", null);
-__decorate([
-    (0, graphql_1.Mutation)(() => String),
-    (0, common_1.UseGuards)(gql_auth_guard_1.GqlAuthGuard),
-    __param(0, (0, current_user_decorator_1.CurrentUser)()),
-    __param(1, (0, graphql_1.Args)('data')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, add_education_input_1.AddEducationInput]),
-    __metadata("design:returntype", void 0)
-], UserResolver.prototype, "addEducation", null);
-__decorate([
-    (0, graphql_1.Query)(() => String),
-    (0, common_1.UseGuards)(gql_auth_guard_1.GqlAuthGuard),
-    __param(0, (0, current_user_decorator_1.CurrentUser)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
-    __metadata("design:returntype", void 0)
-], UserResolver.prototype, "getEducation", null);
 exports.UserResolver = UserResolver = __decorate([
     (0, graphql_1.Resolver)(),
     __metadata("design:paramtypes", [user_service_1.UserService])

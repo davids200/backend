@@ -84,10 +84,10 @@ export class RedisPubSubService
 
         } catch (err) {
 
-          this.logger.error(
-            `Invalid Redis PubSub message on ${channel}`,
-            err,
-          );
+          // this.logger.error(
+          //   `Invalid Redis PubSub message on ${channel}`,
+          //   err,
+          // );
         }
       },
     );

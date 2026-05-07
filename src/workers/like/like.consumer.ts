@@ -37,7 +37,7 @@ export class LikeConsumer implements OnModuleInit {
     await this.consumer.subscribe({ topic: 'like.created' });
     await this.consumer.subscribe({ topic: 'like.removed' });
 
-    this.logger.log('🚀 Like Consumer started');
+    //this.logger.log('🚀 Like Consumer started');
 
     await this.consumer.run({
       eachMessage: async ({ topic, message }) => {

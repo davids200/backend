@@ -3,46 +3,22 @@ import {
   Global,
 } from '@nestjs/common';
 
-import { KafkaService }
-from './kafka.service';
-
-// =====================================================
-// PRODUCERS
-// =====================================================
-
-import { PostProducer }
-from '../../modules/post/post.producer';
-
-import { FollowProducer }
-from '../../modules/follow/follow.producer';
-
-import { NotificationProducer }
-from '../../modules/notification/notification.producer';
-
-import { LocationProducer }
-from '../../modules/location/location.producer';
+import { KafkaService } from './kafka.service';
+import { PostProducer } from '../../modules/post/post.producer';
+import { FollowProducer } from '../../modules/follow/follow.producer';
+import { NotificationProducer } from '../../modules/notification/notification.producer';
+import { LocationProducer } from '../../modules/location/location.producer';
+import { AuthConsumer } from '../../workers/auth/auth.consumer';
 
 @Global()
 @Module({
   providers: [
-
-    // ================================================
-    // CORE KAFKA
-    // ================================================
-
     KafkaService,
-
-    // ================================================
-    // PRODUCERS
-    // ================================================
-
     PostProducer,
-
     FollowProducer,
-
     NotificationProducer,
-
     LocationProducer,
+    AuthConsumer,
   ],
 
   exports: [

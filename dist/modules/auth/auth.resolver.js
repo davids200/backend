@@ -15,46 +15,122 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthResolver = void 0;
 const graphql_1 = require("@nestjs/graphql");
 const auth_service_1 = require("./auth.service");
-const auth_model_1 = require("./models/auth.model");
-const login_input_1 = require("./inputs/login.input");
-const register_input_1 = require("./inputs/register.input");
+const register_input_1 = require("./dto/register.input");
+const login_input_1 = require("./dto/login.input");
+const auth_response_model_1 = require("./models/auth-response.model");
+const graphql_2 = require("@nestjs/graphql");
+const common_1 = require("@nestjs/common");
+const gql_auth_guard_1 = require("./guards/gql-auth.guard");
+const current_user_decorator_1 = require("./decorators/current-user.decorator");
+const user_model_1 = require("../user/models/user.model");
+const refresh_token_input_1 = require("./dto/refresh-token.input");
+const send_otp_input_1 = require("./dto/send-otp.input");
+const verify_otp_input_1 = require("./dto/verify-otp.input");
+const request_password_reset_input_1 = require("./dto/request-password-reset.input");
+const reset_password_input_1 = require("./dto/reset-password.input");
 let AuthResolver = class AuthResolver {
-    authService;
-    constructor(authService) {
-        this.authService = authService;
+    auth;
+    constructor(auth) {
+        this.auth = auth;
     }
-    async register(input) {
-        return this.authService.register(input.email, input.password, input.username, input.locationId);
+    // =====================================================
+    // REGISTER
+    // =====================================================
+    async logout(user) {
+        return this.auth.logout(user.sessionId);
     }
-    async refreshToken(token) {
-        return this.authService.refreshToken(token);
+    async refreshToken(data) {
+        return this.auth.refreshToken(data.refreshToken);
     }
-    async login(input) {
-        return this.authService.login(input.email, input.password);
+    async register(data) {
+        return this.auth.register(data);
+    }
+    async requestPasswordReset(data) {
+        return this.auth.requestPasswordReset(data);
+    }
+    async resetPassword(data) {
+        return this.auth.resetPassword(data);
+    }
+    // LOGIN 
+    async login(data) {
+        return this.auth.login(data);
+    }
+    async sendOtp(data) {
+        return this.auth.sendOtp(data);
+    }
+    async verifyOtp(data) {
+        return this.auth.verifyOtp(data);
+    }
+    async me(user) {
+        return this.auth.getMe(user.id);
     }
 };
 exports.AuthResolver = AuthResolver;
 __decorate([
-    (0, graphql_1.Mutation)(() => auth_model_1.AuthPayload),
-    __param(0, (0, graphql_1.Args)('input')),
+    (0, graphql_1.Mutation)(() => Boolean),
+    (0, common_1.UseGuards)(gql_auth_guard_1.GqlAuthGuard),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AuthResolver.prototype, "logout", null);
+__decorate([
+    (0, graphql_1.Mutation)(() => auth_response_model_1.AuthResponse),
+    __param(0, (0, graphql_1.Args)('data')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [refresh_token_input_1.RefreshTokenInput]),
+    __metadata("design:returntype", Promise)
+], AuthResolver.prototype, "refreshToken", null);
+__decorate([
+    (0, graphql_1.Mutation)(() => auth_response_model_1.AuthResponse),
+    __param(0, (0, graphql_1.Args)('data')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [register_input_1.RegisterInput]),
     __metadata("design:returntype", Promise)
 ], AuthResolver.prototype, "register", null);
 __decorate([
-    (0, graphql_1.Mutation)(() => auth_model_1.AuthPayload),
-    __param(0, (0, graphql_1.Args)('token')),
+    (0, graphql_1.Mutation)(() => Boolean),
+    __param(0, (0, graphql_1.Args)('data')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [request_password_reset_input_1.RequestPasswordResetInput]),
     __metadata("design:returntype", Promise)
-], AuthResolver.prototype, "refreshToken", null);
+], AuthResolver.prototype, "requestPasswordReset", null);
 __decorate([
-    (0, graphql_1.Mutation)(() => auth_model_1.AuthPayload),
-    __param(0, (0, graphql_1.Args)('input')),
+    (0, graphql_1.Mutation)(() => Boolean),
+    __param(0, (0, graphql_1.Args)('data')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [reset_password_input_1.ResetPasswordInput]),
+    __metadata("design:returntype", Promise)
+], AuthResolver.prototype, "resetPassword", null);
+__decorate([
+    (0, graphql_1.Mutation)(() => auth_response_model_1.AuthResponse),
+    __param(0, (0, graphql_1.Args)('data')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [login_input_1.LoginInput]),
     __metadata("design:returntype", Promise)
 ], AuthResolver.prototype, "login", null);
+__decorate([
+    (0, graphql_1.Mutation)(() => Boolean),
+    __param(0, (0, graphql_1.Args)('data')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [send_otp_input_1.SendOtpInput]),
+    __metadata("design:returntype", Promise)
+], AuthResolver.prototype, "sendOtp", null);
+__decorate([
+    (0, graphql_1.Mutation)(() => Boolean),
+    __param(0, (0, graphql_1.Args)('data')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [verify_otp_input_1.VerifyOtpInput]),
+    __metadata("design:returntype", Promise)
+], AuthResolver.prototype, "verifyOtp", null);
+__decorate([
+    (0, graphql_2.Query)(() => user_model_1.UserModel),
+    (0, common_1.UseGuards)(gql_auth_guard_1.GqlAuthGuard),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AuthResolver.prototype, "me", null);
 exports.AuthResolver = AuthResolver = __decorate([
     (0, graphql_1.Resolver)(),
     __metadata("design:paramtypes", [auth_service_1.AuthService])

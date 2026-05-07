@@ -84,9 +84,9 @@ export class FeedWorker {
 
       if (isCelebrity) {
 
-        this.logger.log(
-          `🔥 Celebrity detected: ${userId}`,
-        );
+        // this.logger.log(
+        //   `🔥 Celebrity detected: ${userId}`,
+        // );
 
         // ============================================
         // DO NOT FANOUT

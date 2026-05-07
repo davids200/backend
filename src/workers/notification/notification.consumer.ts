@@ -36,7 +36,7 @@ export class NotificationConsumer implements OnModuleInit {
       topic: KAFKA_TOPICS.NOTIFICATION_SEND,
     });
 
-    this.logger.log('🚀 Notification Consumer started');
+  //  this.logger.log('🚀 Notification Consumer started');
 
     await this.consumer.run({
       eachMessage: async ({ message }) => {
@@ -67,7 +67,7 @@ export class NotificationConsumer implements OnModuleInit {
           // =========================
           await this.pubsub.publish(`user:${userId}`, notification);
 
-          this.logger.log(`🔔 Notification for user ${userId}`);
+        //  this.logger.log(`🔔 Notification for user ${userId}`);
         } catch (err) {
           this.logger.error('Notification error', err);
         }

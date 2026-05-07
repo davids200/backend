@@ -116,9 +116,9 @@ export class RedisTrendingService {
       weight,
     );
 
-    this.logger.log(
-      `Global trending decayed by ${weight}`,
-    );
+    // this.logger.log(
+    //   `Global trending decayed by ${weight}`,
+    // );
   }
 
   // =====================================================
@@ -141,8 +141,8 @@ export class RedisTrendingService {
       weight,
     );
 
-    this.logger.log(
-      `Location trending decayed: ${locationId}`,
-    );
+    // this.logger.log(
+    //   `Location trending decayed: ${locationId}`,
+    // );
   }
 }

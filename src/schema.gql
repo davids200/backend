@@ -2,9 +2,10 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
-type AuthPayload {
+type AuthResponse {
   accessToken: String!
   refreshToken: String!
+  user: UserModel!
 }
 
 type CountryModel {
@@ -19,6 +20,14 @@ input CreateLocationInput {
   longitude: Float
   name: String!
   parentId: String
+}
+
+input CreateUserInput {
+  countryId: String
+  dateOfBirth: String
+  email: String!
+  password: String!
+  username: String!
 }
 
 """
@@ -41,7 +50,7 @@ type LocationEntity {
 }
 
 input LoginInput {
-  email: String!
+  login: String!
   password: String!
 }
 
@@ -50,23 +59,80 @@ type Mutation {
   createEducationLevel(name: String!, order: Float!): String!
   createLocation(data: CreateLocationInput!): LocationEntity!
   createSchool(locationId: String!, name: String!): String!
-  login(input: LoginInput!): AuthPayload!
-  refreshToken(token: String!): AuthPayload!
-  register(input: RegisterInput!): AuthPayload!
+  createUser(data: CreateUserInput!): String!
+  login(data: LoginInput!): AuthResponse!
+  logout: Boolean!
+  refreshToken(data: RefreshTokenInput!): AuthResponse!
+  register(data: RegisterInput!): AuthResponse!
+  requestPasswordReset(data: RequestPasswordResetInput!): Boolean!
+  resetPassword(data: ResetPasswordInput!): Boolean!
+  sendOtp(data: SendOtpInput!): Boolean!
+  updateProfile(data: UpdateProfileInput!): String!
+  verifyOtp(data: VerifyOtpInput!): Boolean!
 }
 
 type Query {
   countries: [CountryModel!]!
   educationLevels: [String!]!
+  getProfile: String!
+  getUser(id: String!): String!
   location(id: String!): LocationEntity
   locationTree(id: String!): LocationEntity!
+  me: UserModel!
   ping: String!
   schools(locationId: String!): [String!]!
 }
 
+input RefreshTokenInput {
+  refreshToken: String!
+}
+
 input RegisterInput {
-  email: String!
-  locationId: String!
-  password: String!
+  displayName: String
+  email: String
+  password: String
+  phone: String
   username: String!
+}
+
+input RequestPasswordResetInput {
+  type: String!
+  value: String!
+}
+
+input ResetPasswordInput {
+  newPassword: String!
+  otp: String!
+  type: String!
+  value: String!
+}
+
+input SendOtpInput {
+  type: String!
+  value: String!
+}
+
+input UpdateProfileInput {
+  avatarUrl: String
+  bio: String
+  fullName: String
+  location: String
+}
+
+type UserModel {
+  avatar: String
+  bio: String
+  displayName: String
+  id: String!
+  isCelebrity: Boolean!
+  isVerified: Boolean!
+  locationId: String
+  onboardingCompleted: Boolean!
+  username: String!
+}
+
+input VerifyOtpInput {
+  otp: String!
+  type: String!
+  value: String!
 }

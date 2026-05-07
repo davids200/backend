@@ -5,9 +5,12 @@ class UserMapper {
     static toDto(user) {
         return {
             id: user.id,
-            email: user.email,
             username: user.username,
-            location_id: user.locationId
+            displayName: user.displayName,
+            avatar: user.avatar,
+            bio: user.bio,
+            locationId: user.locationId,
+            isVerified: user.isVerified,
         };
     }
     static toDtoList(users) {

@@ -34,7 +34,7 @@ let ScyllaService = ScyllaService_1 = class ScyllaService {
         this.client.keyspace = 'social_app';
         // ✅ STEP 4: ensure table exists
         await this.client.execute(feed_schema_1.FEED_TABLE);
-        this.logger.log('✔ ScyllaDB connected and schema initialized');
+        // this.logger.log('✔ ScyllaDB connected and schema initialized');
     }
     async insertFeedFanout(data) {
         const query = `

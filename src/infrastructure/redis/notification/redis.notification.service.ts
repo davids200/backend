@@ -44,11 +44,22 @@ export class RedisNotificationService {
       timestamp,
     } = params;
 
+    // ================================================
+    // SAFE TIMESTAMP
+    // ================================================
+
+    const now = Date.now();
+
+    const safeTimestamp =
+      timestamp &&
+      timestamp > 0
+        ? Math.min(timestamp, now)
+        : now;
+
     await this.redis.client.zadd(
       this.notificationKey(userId),
 
-      (timestamp || Date.now())
-        .toString(),
+      safeTimestamp.toString(),
 
       notificationId,
     );
@@ -100,7 +111,7 @@ export class RedisNotificationService {
   }
 
   // =====================================================
-  // CLEAR NOTIFICATIONS
+  // CLEAR ALL NOTIFICATIONS
   // =====================================================
 
   async clearNotifications(
@@ -121,10 +132,17 @@ export class RedisNotificationService {
     max = 500,
   ) {
 
+    const key =
+      this.notificationKey(userId);
+
     const total =
       await this.redis.client.zcard(
-        this.notificationKey(userId),
+        key,
       );
+
+    // ================================================
+    // NOTHING TO TRIM
+    // ================================================
 
     if (total <= max) {
       return;
@@ -133,15 +151,19 @@ export class RedisNotificationService {
     const removeCount =
       total - max;
 
+    // ================================================
+    // REMOVE OLDEST
+    // ================================================
+
     await this.redis.client
       .zremrangebyrank(
-        this.notificationKey(userId),
+        key,
         0,
         removeCount - 1,
       );
 
-    this.logger.log(
-      `Trimmed notifications for ${userId}`,
-    );
+    // this.logger.log(
+    //   `Trimmed ${removeCount} notifications for ${userId}`,
+    // );
   }
 }

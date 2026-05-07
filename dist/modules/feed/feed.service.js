@@ -24,7 +24,9 @@ let FeedService = FeedService_1 = class FeedService {
     // =====================================================
     async processPost(params) {
         const { postId, userId, locationId, createdAt, } = params;
-        this.logger.log(`Processing post: ${postId}`);
+        // this.logger.log(
+        //   `Processing post: ${postId}`,
+        // );
         // ================================================
         // PLACEHOLDER
         // Feed fanout logic handled here

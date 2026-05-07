@@ -8,38 +8,52 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthModule = void 0;
 const common_1 = require("@nestjs/common");
-const passport_1 = require("@nestjs/passport");
-const jwt_1 = require("@nestjs/jwt");
-const auth_resolver_1 = require("./auth.resolver");
-const auth_service_1 = require("./auth.service");
-const jwt_strategy_1 = require("./strategies/jwt.strategy");
-const app_jwt_service_1 = require("./app-jwt.service");
-const jwt_config_1 = require("./jwt.config");
 const typeorm_1 = require("@nestjs/typeorm");
-const user_entity_1 = require("../user/entities/user.entity");
+const jwt_1 = require("@nestjs/jwt");
+const auth_service_1 = require("./auth.service");
+const auth_resolver_1 = require("./auth.resolver");
+const auth_producer_1 = require("./auth.producer");
+const auth_identity_entity_1 = require("./entities/auth-identity.entity");
+const auth_session_entity_1 = require("./entities/auth-session.entity");
+const user_module_1 = require("../user/user.module");
+const redis_module_1 = require("../../infrastructure/redis/redis.module");
+const kafka_module_1 = require("../../infrastructure/kafka/kafka.module");
+const apple_strategy_1 = require("./strategies/apple.strategy");
+const redis_otp_service_1 = require("../../infrastructure/redis/otp/redis.otp.service");
+const redis_auth_rate_limit_service_1 = require("../../infrastructure/redis/auth/redis.auth-rate-limit.service");
 let AuthModule = class AuthModule {
 };
 exports.AuthModule = AuthModule;
 exports.AuthModule = AuthModule = __decorate([
     (0, common_1.Module)({
         imports: [
+            // DATABASE
+            typeorm_1.TypeOrmModule.forFeature([
+                auth_identity_entity_1.AuthIdentityEntity,
+                auth_session_entity_1.AuthSessionEntity,
+            ]),
+            // JWT
             jwt_1.JwtModule.register({
-                secret: jwt_config_1.jwtConstants.secret,
-            }),
-            passport_1.PassportModule.register({ defaultStrategy: 'jwt' }),
-            jwt_1.JwtModule.register({
-                secret: jwt_config_1.jwtConstants.secret,
+                secret: process.env.JWT_SECRET,
                 signOptions: {
                     expiresIn: '15m',
                 },
             }),
-            typeorm_1.TypeOrmModule.forFeature([user_entity_1.UserEntity]),
+            // DEPENDENCIES
+            user_module_1.UserModule,
+            redis_module_1.RedisModule,
+            kafka_module_1.KafkaModule,
         ],
         providers: [
-            auth_resolver_1.AuthResolver,
             auth_service_1.AuthService,
-            jwt_strategy_1.JwtStrategy,
-            app_jwt_service_1.AppJwtService,
+            auth_resolver_1.AuthResolver,
+            auth_producer_1.AuthProducer,
+            apple_strategy_1.JwtStrategy,
+            redis_otp_service_1.RedisOtpService,
+            redis_auth_rate_limit_service_1.RedisAuthRateLimitService,
+        ],
+        exports: [
+            auth_service_1.AuthService,
         ],
     })
 ], AuthModule);

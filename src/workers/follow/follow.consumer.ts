@@ -36,7 +36,7 @@ export class FollowConsumer implements OnModuleInit {
       fromBeginning: false,
     });
 
-    this.logger.log('🚀 Follow Consumer started');
+   // this.logger.log('🚀 Follow Consumer started');
 
     await this.consumer.run({
       eachMessage: async ({ topic, message }) => {

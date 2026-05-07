@@ -9,43 +9,57 @@ import {
 
 @Entity('users')
 export class UserEntity {
+
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
   @Index()
-  @Column({ unique: true })
-  email!: string;
-
-  @Index()
-  @Column({ unique: true })
+  @Column({    unique: true,  })
   username!: string;
 
-  @Column()
-  password!: string;
+  @Column({ nullable: true,  })
+  displayName?: string;
 
-  @Column({ nullable: true })
+  @Column({    nullable: true,    type: 'text',  })
+  avatar?: string;
+
+  @Column({    nullable: true,    type: 'text',  })
+  coverPhoto?: string;
+
+  @Column({    nullable: true,    type: 'text',  })
+  bio?: string;
+
+
+  @Column({    nullable: true,  })
   locationId?: string;
 
-  @Column({ default: false })
+  @Column({    nullable: true,  })
+  countryId!: string;
+
+
+  @Column({    default: false,  })
+  isVerified!: boolean;
+
+  @Column({    default: false,  })
   isCelebrity!: boolean;
 
-  @Column({ nullable: true, type: 'text' })
-  refreshToken?: string;
-
-  @Column({ type: 'date', nullable: true })
-  dateOfBirth?: Date;
-
-  @Column({ default: false })
+  @Column({    default: false,  })
   isMinor!: boolean;
 
-  @Column({ nullable: true })
-  countryId?: string;
-
-  @Column({ default: true })
+  @Column({    default: true,  })
   isActive!: boolean;
 
-  @Column({ default: false })
-  isEmailVerified!: boolean;
+  @Column({    default: false,  })
+  onboardingCompleted!: boolean;
+
+  
+
+  @Column({    type: 'date',    nullable: true,  })
+  dateOfBirth?: Date;
+
+
+  @Column({    type: 'timestamp',    nullable: true,  })
+  lastSeenAt?: Date;
 
   @CreateDateColumn()
   createdAt!: Date;

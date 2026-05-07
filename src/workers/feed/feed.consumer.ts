@@ -14,7 +14,8 @@ from '../../common/constants/kafka-topics.constants';
 @Controller()
 export class FeedConsumer {
   constructor(
-    private readonly feedService: FeedService,
+    private readonly feedService:
+      FeedService,
   ) {}
 
   @EventPattern(
@@ -26,12 +27,22 @@ export class FeedConsumer {
       postId: string;
       userId: string;
       locationId?: string;
-      createdAt: Date;
+
+      // Kafka delivers string
+      createdAt: string;
     },
   ) {
 
-    await this.feedService.processPost(
-      payload,
-    );
+    await this.feedService.processPost({
+
+      ...payload,
+
+      // ============================================
+      // SAFE DATE NORMALIZATION
+      // ============================================
+
+      createdAt:
+        new Date(payload.createdAt),
+    });
   }
 }

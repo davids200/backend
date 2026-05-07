@@ -20,31 +20,31 @@ export class BootstrapService implements OnApplicationBootstrap {
   ) {}
 
   async onApplicationBootstrap() {
-    this.logger.log('🚀 Bootstrapping system...');
+   // this.logger.log('🚀 Bootstrapping system...');
 
     try {
       // 1. Init ScyllaDB schema
       await this.scylla.onModuleInit();
-      this.logger.log('✔ ScyllaDB initialized');
+     // this.logger.log('✔ ScyllaDB initialized');
 
       // 2. Init MinIO buckets
       await this.minio.onModuleInit();
-      this.logger.log('✔ MinIO initialized');
+     // this.logger.log('✔ MinIO initialized');
 
       // 3. Init Kafka producer
       await this.kafka.onModuleInit();
-      this.logger.log('✔ Kafka producer initialized');
+     // this.logger.log('✔ Kafka producer initialized');
 
       // 4. Start consumers explicitly (IMPORTANT)
       // await this.feedConsumer.onModuleInit();
       // this.logger.log('✔ Feed consumer started');
 
       await this.notificationConsumer.onModuleInit();
-      this.logger.log('✔ Notification consumer started');
+    //  this.logger.log('✔ Notification consumer started');
 
-      this.logger.log('🔥 Bootstrap complete — system is live');
+    //  this.logger.log('🔥 Bootstrap complete — system is live');
     } catch (error) {
-      this.logger.error('❌ Bootstrap failed', error);
+     // this.logger.error('❌ Bootstrap failed', error);
       throw error;
     }
   }

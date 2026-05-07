@@ -5,22 +5,45 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
+var KafkaService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.KafkaService = void 0;
 const common_1 = require("@nestjs/common");
 const kafkajs_1 = require("kafkajs");
-let KafkaService = class KafkaService {
+let KafkaService = KafkaService_1 = class KafkaService {
+    logger = new common_1.Logger(KafkaService_1.name);
+    // =====================================================
+    // KAFKA INSTANCE
+    // =====================================================
     kafka = new kafkajs_1.Kafka({
         clientId: 'social-app',
         brokers: ['localhost:9092'],
     });
+    // =====================================================
+    // PRODUCER
+    // =====================================================
     producer;
-    consumer;
+    // =====================================================
+    // ACTIVE CONSUMERS
+    // =====================================================
+    consumers = [];
+    // =====================================================
+    // MODULE INIT
+    // =====================================================
     async onModuleInit() {
-        this.producer = this.kafka.producer();
+        this.producer =
+            this.kafka.producer({
+                // Fix KafkaJS v2 partition warning
+                createPartitioner: kafkajs_1.Partitioners.LegacyPartitioner,
+            });
         await this.producer.connect();
+        // this.logger.log(
+        //   '✅ Kafka producer connected',
+        // );
     }
-    // ✅ PRODUCER
+    // =====================================================
+    // PRODUCE EVENT
+    // =====================================================
     async emit(topic, value, key) {
         await this.producer.send({
             topic,
@@ -32,28 +55,54 @@ let KafkaService = class KafkaService {
             ],
         });
     }
-    // ✅ CONSUMER WRAPPER
+    // =====================================================
+    // CONSUMER WRAPPER
+    // =====================================================
     async consume(groupId, topic, handler) {
-        const consumer = this.kafka.consumer({ groupId });
+        const consumer = this.kafka.consumer({
+            groupId,
+        });
         await consumer.connect();
         await consumer.subscribe({
             topic,
             fromBeginning: false,
         });
         await consumer.run({
-            eachMessage: async ({ message }) => {
-                await handler(message);
+            eachMessage: async ({ message, }) => {
+                try {
+                    if (!message.value) {
+                        return;
+                    }
+                    const parsed = JSON.parse(message.value.toString());
+                    await handler(parsed);
+                }
+                catch (err) {
+                    // this.logger.error(
+                    //   `Kafka consumer error (${topic})`,
+                    //   err,
+                    // );
+                }
             },
         });
-        this.consumer = consumer;
+        // ================================================
+        // TRACK CONSUMERS
+        // ================================================
+        this.consumers.push(consumer);
+        this.logger.log(`✅ Kafka consumer started: ${topic}`);
     }
+    // =====================================================
+    // MODULE DESTROY
+    // =====================================================
     async onModuleDestroy() {
         await this.producer?.disconnect();
-        await this.consumer?.disconnect();
+        for (const consumer of this.consumers) {
+            await consumer.disconnect();
+        }
+        this.logger.log('🛑 Kafka connections closed');
     }
 };
 exports.KafkaService = KafkaService;
-exports.KafkaService = KafkaService = __decorate([
+exports.KafkaService = KafkaService = KafkaService_1 = __decorate([
     (0, common_1.Injectable)()
 ], KafkaService);
 //# sourceMappingURL=kafka.service.js.map
