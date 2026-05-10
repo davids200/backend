@@ -12,6 +12,12 @@ export class UserModel {
   @Field()
   username?: string;
 
+  @Field()
+  phone?: string;
+
+  @Field()
+  email?: string;
+
   @Field({
     nullable: true,
   })

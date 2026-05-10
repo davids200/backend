@@ -22,13 +22,14 @@ const apple_strategy_1 = require("./strategies/apple.strategy");
 const redis_otp_service_1 = require("../../infrastructure/redis/otp/redis.otp.service");
 const redis_auth_rate_limit_service_1 = require("../../infrastructure/redis/auth/redis.auth-rate-limit.service");
 const google_strategy_1 = require("./strategies/google.strategy");
-const auth_controller_1 = require("./auth.controller");
+//import { AuthController } from './auth.controller';
 const auth_security_service_1 = require("./security/auth-security.service");
 const device_service_1 = require("./device/device.service");
 const sms_gateway_service_1 = require("../notification/channels/sms/sms-gateway.service");
 const twilio_provider_1 = require("../notification/channels/sms/providers/twilio.provider");
 const custom_sms_provider_1 = require("../notification/channels/sms/providers/custom-sms.provider");
 const config_1 = require("@nestjs/config");
+const session_cache_service_1 = require("./services/session-cache.service");
 let AuthModule = class AuthModule {
 };
 exports.AuthModule = AuthModule;
@@ -68,12 +69,14 @@ exports.AuthModule = AuthModule = __decorate([
             sms_gateway_service_1.SmsGatewayService,
             twilio_provider_1.TwilioProvider,
             custom_sms_provider_1.CustomSmsProvider,
+            session_cache_service_1.SessionCacheService
         ],
-        controllers: [
-            auth_controller_1.AuthController,
-        ],
+        //   controllers: [
+        //   AuthController,
+        // ],
         exports: [
             auth_service_1.AuthService,
+            session_cache_service_1.SessionCacheService
         ],
     })
 ], AuthModule);

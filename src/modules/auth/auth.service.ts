@@ -1,83 +1,38 @@
-import {  Injectable,
-  UnauthorizedException,
-  BadRequestException,
-} from '@nestjs/common';
-
-import {
-  InjectRepository,
-} from '@nestjs/typeorm';
-
-import {
-  Repository,
-} from 'typeorm';
-
-import {
-  JwtService,
-} from '@nestjs/jwt';
-
+import {  Injectable,  UnauthorizedException,  BadRequestException,} from '@nestjs/common';
+import {  InjectRepository,} from '@nestjs/typeorm';
+import {  Repository,} from 'typeorm';
+import {  JwtService,} from '@nestjs/jwt';
 import * as argon2 from 'argon2';
+import { randomUUID }from 'crypto';
+import {  AuthIdentityEntity,  AuthProvider,} from './entities/auth-identity.entity';
+import { AuthSessionEntity }from './entities/auth-session.entity';
+import { UserService }from '../user/user.service';
+import { LoginInput }from './dto/login.input';
+import { RegisterInput }from './dto/register.input';
+import { JwtPayload }from './interfaces/jwt-payload.interface';
+import { hashPassword }from './utils/hash-password.util'; 
 
-import { randomUUID }
-from 'crypto';
-
-import {
-  AuthIdentityEntity,
-  AuthProvider,
-} from './entities/auth-identity.entity';
-
-import { AuthSessionEntity }
-from './entities/auth-session.entity';
-
-import { UserService }
-from '../user/user.service';
-
-import { LoginInput }
-from './dto/login.input';
-
-import { RegisterInput }
-from './dto/register.input';
-
-import { JwtPayload }
-from './interfaces/jwt-payload.interface';
-
-import { hashPassword }
-from './utils/hash-password.util';
-
-import { verifyPassword }
-from './utils/verify-password.util';
-
-import { generateOtp }
-from './utils/generate-otp.util';
-
-import { RedisOtpService }
-from '../../infrastructure/redis/otp/redis.otp.service';
-
-import { RedisAuthRateLimitService }
-from '../../infrastructure/redis/auth/redis.auth-rate-limit.service';
-
-import { AuthProducer }
-from './auth.producer';
-
-import { AuthSecurityService }
-from './security/auth-security.service';
+import { RedisOtpService }from '../../infrastructure/redis/otp/redis.otp.service';
+import { RedisAuthRateLimitService }from '../../infrastructure/redis/auth/redis.auth-rate-limit.service';
+import { AuthProducer }from './auth.producer';
+import { AuthSecurityService }from './security/auth-security.service';
 import { DeviceInfo } from './device/device.types';
 import { KAFKA_TOPICS } from '../../common/constants/kafka-topics.constants';
 import { NotificationProducer } from '../notification/notification.producer';
+import { SessionCacheService } from './services/session-cache.service';
+import { generateOtp } from './utils/generate-otp.util';
+import { verifyPassword } from './utils/verify-password.util';
 
 @Injectable()
 export class AuthService {
 
   constructor(
-
-    // =====================================================
-    // REPOSITORIES
-    // =====================================================
-
     @InjectRepository(      AuthIdentityEntity,    )
     private readonly identityRepo:      Repository<AuthIdentityEntity>,
     @InjectRepository(      AuthSessionEntity,    )
     private readonly sessionRepo:      Repository<AuthSessionEntity>,
     private readonly notificationProducer:NotificationProducer,
+    private readonly sessionCache:  SessionCacheService,
 
     // =====================================================
     // SERVICES
@@ -482,29 +437,19 @@ await this.sessionRepo.save({
   deviceName:deviceInfo?.deviceName,
 });
 
-    // ================================================
+await this.sessionCache.cacheSession(sessionId,userId,); //CACHE SESSION AFTER LOGIN
+
+ 
     // EMIT SECURITY EVENT
-    // ================================================
-
     if (suspicious) {
-
-      await this.authProducer
-        .suspiciousLogin({
-
-          userId,
-
-          sessionId,
-        });
+      await this.authProducer.suspiciousLogin({userId,sessionId,});
     }
 
     // ================================================
     // LOAD USER
     // ================================================
 
-    const user =
-      await this.users.getUser(
-        userId,
-      );
+    const user =      await this.users.getUser(userId,      );
 
     // ================================================
     // RESPONSE
@@ -686,29 +631,54 @@ await this.sessionRepo.save({
   // LOGOUT
   // =====================================================
 
-  async logout(
-    sessionId: string,
-  ) {
+async logout(
+  sessionId: string,
+) {
 
-    const session =
-      await this.sessionRepo.findOne({
-        where: {
-          sessionId,
-        },
-      });
+  // ============================================
+  // FIND SESSION
+  // ============================================
 
-    if (!session) {
-      return true;
-    }
+  const session =
+    await this.sessionRepo.findOne({
 
-    session.revoked = true;
+      where: {
+        sessionId,
+      },
+    });
 
-    await this.sessionRepo.save(
-      session,
-    );
+  // ============================================
+  // SESSION NOT FOUND
+  // ============================================
 
+  if (!session) {
     return true;
   }
+
+  // ============================================
+  // REVOKE SESSION
+  // ============================================
+
+  session.revoked = true;
+
+  session.lastSeenAt =
+    new Date();
+
+  await this.sessionRepo.save(
+    session,
+  );
+
+  // ============================================
+  // REMOVE REDIS CACHE
+  // ============================================
+
+  await this.sessionCache
+    .removeSession(
+      sessionId,
+    );
+
+  return true;
+}
 
   // =====================================================
   // SEND OTP

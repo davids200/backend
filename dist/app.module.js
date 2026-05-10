@@ -67,7 +67,7 @@ exports.AppModule = AppModule = __decorate([
             scylla_module_1.ScyllaModule,
             follow_module_1.FollowModule,
             like_module_1.LikeModule,
-            notification_module_1.NotificationModule
+            notification_module_1.NotificationModule,
         ],
         providers: [
             debug_resolver_1.DebugResolver,

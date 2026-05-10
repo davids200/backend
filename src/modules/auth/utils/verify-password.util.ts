@@ -1,13 +1,13 @@
-import * as argon2
-from 'argon2';
+import * as bcrypt
+from 'bcrypt';
 
 export async function verifyPassword(
-  hash: string,
   password: string,
+  hash: string,
 ) {
 
-  return argon2.verify(
-    hash,
+  return bcrypt.compare(
     password,
+    hash,
   );
 }

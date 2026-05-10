@@ -56,25 +56,27 @@ const auth_identity_entity_1 = require("./entities/auth-identity.entity");
 const auth_session_entity_1 = require("./entities/auth-session.entity");
 const user_service_1 = require("../user/user.service");
 const hash_password_util_1 = require("./utils/hash-password.util");
-const verify_password_util_1 = require("./utils/verify-password.util");
-const generate_otp_util_1 = require("./utils/generate-otp.util");
 const redis_otp_service_1 = require("../../infrastructure/redis/otp/redis.otp.service");
 const redis_auth_rate_limit_service_1 = require("../../infrastructure/redis/auth/redis.auth-rate-limit.service");
 const auth_producer_1 = require("./auth.producer");
 const auth_security_service_1 = require("./security/auth-security.service");
 const kafka_topics_constants_1 = require("../../common/constants/kafka-topics.constants");
 const notification_producer_1 = require("../notification/notification.producer");
+const session_cache_service_1 = require("./services/session-cache.service");
+const generate_otp_util_1 = require("./utils/generate-otp.util");
+const verify_password_util_1 = require("./utils/verify-password.util");
 let AuthService = class AuthService {
     identityRepo;
     sessionRepo;
     notificationProducer;
+    sessionCache;
     users;
     jwt;
     redisOtp;
     authRateLimit;
     authProducer;
     security;
-    constructor(identityRepo, sessionRepo, notificationProducer, 
+    constructor(identityRepo, sessionRepo, notificationProducer, sessionCache, 
     // =====================================================
     // SERVICES
     // =====================================================
@@ -82,6 +84,7 @@ let AuthService = class AuthService {
         this.identityRepo = identityRepo;
         this.sessionRepo = sessionRepo;
         this.notificationProducer = notificationProducer;
+        this.sessionCache = sessionCache;
         this.users = users;
         this.jwt = jwt;
         this.redisOtp = redisOtp;
@@ -284,15 +287,10 @@ let AuthService = class AuthService {
             platform: deviceInfo?.platform,
             deviceName: deviceInfo?.deviceName,
         });
-        // ================================================
+        await this.sessionCache.cacheSession(sessionId, userId); //CACHE SESSION AFTER LOGIN
         // EMIT SECURITY EVENT
-        // ================================================
         if (suspicious) {
-            await this.authProducer
-                .suspiciousLogin({
-                userId,
-                sessionId,
-            });
+            await this.authProducer.suspiciousLogin({ userId, sessionId, });
         }
         // ================================================
         // LOAD USER
@@ -385,16 +383,32 @@ let AuthService = class AuthService {
     // LOGOUT
     // =====================================================
     async logout(sessionId) {
+        // ============================================
+        // FIND SESSION
+        // ============================================
         const session = await this.sessionRepo.findOne({
             where: {
                 sessionId,
             },
         });
+        // ============================================
+        // SESSION NOT FOUND
+        // ============================================
         if (!session) {
             return true;
         }
+        // ============================================
+        // REVOKE SESSION
+        // ============================================
         session.revoked = true;
+        session.lastSeenAt =
+            new Date();
         await this.sessionRepo.save(session);
+        // ============================================
+        // REMOVE REDIS CACHE
+        // ============================================
+        await this.sessionCache
+            .removeSession(sessionId);
         return true;
     }
     // =====================================================
@@ -672,6 +686,7 @@ exports.AuthService = AuthService = __decorate([
     __metadata("design:paramtypes", [typeorm_2.Repository,
         typeorm_2.Repository,
         notification_producer_1.NotificationProducer,
+        session_cache_service_1.SessionCacheService,
         user_service_1.UserService,
         jwt_1.JwtService,
         redis_otp_service_1.RedisOtpService,

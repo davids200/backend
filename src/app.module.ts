@@ -21,6 +21,7 @@ import { KafkaModule } from './infrastructure/kafka/kafka.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { FollowModule } from './modules/follow/follow.module';
 import { LikeModule } from './modules/like/like.module';
+import { SessionCacheService } from './modules/auth/services/session-cache.service';
  
 @Module({
   imports: [
@@ -59,7 +60,8 @@ isGlobal: true,
     ScyllaModule,
     FollowModule,
     LikeModule,
-    NotificationModule
+    NotificationModule,
+     
   ],
   providers: [
     DebugResolver,

@@ -1,6 +1,6 @@
 export function generateOtp(
   length = 6,
-): string {
+) {
 
   let otp = '';
 

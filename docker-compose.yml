@@ -35,17 +35,11 @@ services:
   # =====================================================
 
   scylla:
-
     image: scylladb/scylla
-
     container_name: social_scylla
-
     ports:
-
       - "9042:9042"
-
     volumes:
-
       - scylla_data:/var/lib/scylla
 
   # =====================================================
@@ -53,21 +47,14 @@ services:
   # =====================================================
 
   redis:
-
     image: redis:7
-
     container_name: social_redis
-
     ports:
-
       - "6379:6379"
-
     volumes:
-
       - redis_data:/data
 
       - ./infrastructure/redis/redis.conf:/usr/local/etc/redis/redis.conf
-
     command:
       [
         "redis-server",
@@ -105,27 +92,16 @@ services:
   # =====================================================
 
   minio:
-
     image: minio/minio
-
     container_name: social_minio
-
     ports:
-
       - "9000:9000"
-
       - "9001:9001"
-
     command: server /data --console-address ":9001"
-
     environment:
-
       MINIO_ROOT_USER: admin
-
       MINIO_ROOT_PASSWORD: password
-
     volumes:
-
       - minio_data:/data
 
 # =====================================================
@@ -133,13 +109,8 @@ services:
 # =====================================================
 
 volumes:
-
   postgres_data:
-
   redis_data:
-
   kafka_data:
-
   scylla_data:
-
   minio_data:
