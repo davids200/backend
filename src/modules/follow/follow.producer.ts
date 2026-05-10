@@ -1,9 +1,10 @@
-import {
-  Injectable,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 
 import { KafkaService }
 from '../../infrastructure/kafka/kafka.service';
+
+import { KAFKA_TOPICS }
+from '../../common/constants/kafka-topics.constants';
 
 @Injectable()
 export class FollowProducer {
@@ -22,13 +23,11 @@ export class FollowProducer {
     followerId: string;
 
     followingId: string;
-
-    createdAt: string;
   }) {
 
     await this.kafka.emit(
 
-      'follow.created',
+      KAFKA_TOPICS.FOLLOW_CREATED,
 
       data,
 
@@ -49,7 +48,7 @@ export class FollowProducer {
 
     await this.kafka.emit(
 
-      'follow.removed',
+      KAFKA_TOPICS.FOLLOW_REMOVED,
 
       data,
 

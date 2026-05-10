@@ -14,6 +14,9 @@ export class PostModel {
   @Field(() => [String], { nullable: true })
   mediaUrls?: string[];
 
+  @Field({ nullable: true })
+  locationId?: string;
+
   @Field()
   createdAt!: Date;
 }

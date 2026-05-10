@@ -15,27 +15,47 @@ const class_validator_1 = require("class-validator");
 let CreatePostInput = class CreatePostInput {
     locationId;
     content;
+    visibility;
     media;
+    mediaIds;
+    mentions;
 };
 exports.CreatePostInput = CreatePostInput;
 __decorate([
-    (0, graphql_1.Field)(),
+    (0, graphql_1.Field)({ nullable: true, }),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreatePostInput.prototype, "locationId", void 0);
 __decorate([
-    (0, graphql_1.Field)({ nullable: true }),
-    (0, class_validator_1.IsOptional)(),
+    (0, graphql_1.Field)(),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.MaxLength)(2000),
     __metadata("design:type", String)
 ], CreatePostInput.prototype, "content", void 0);
 __decorate([
-    (0, graphql_1.Field)(() => [String], { nullable: true }),
+    (0, graphql_1.Field)({ nullable: true, }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreatePostInput.prototype, "visibility", void 0);
+__decorate([
+    (0, graphql_1.Field)(() => [String], { nullable: true, }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsArray)(),
     __metadata("design:type", Array)
 ], CreatePostInput.prototype, "media", void 0);
+__decorate([
+    (0, graphql_1.Field)(() => [String], { nullable: true, }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsArray)(),
+    __metadata("design:type", Array)
+], CreatePostInput.prototype, "mediaIds", void 0);
+__decorate([
+    (0, graphql_1.Field)(() => [String], { nullable: true, }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsArray)(),
+    __metadata("design:type", Array)
+], CreatePostInput.prototype, "mentions", void 0);
 exports.CreatePostInput = CreatePostInput = __decorate([
     (0, graphql_1.InputType)()
 ], CreatePostInput);

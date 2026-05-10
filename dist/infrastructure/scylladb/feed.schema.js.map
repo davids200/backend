@@ -1,1 +1,1 @@
-{"version":3,"file":"feed.schema.js","sourceRoot":"","sources":["../../../src/infrastructure/scylladb/feed.schema.ts"],"names":[],"mappings":";;;AAAa,QAAA,UAAU,GAAG;;;;;;;;;;CAUzB,CAAC"}
+{"version":3,"file":"feed.schema.js","sourceRoot":"","sources":["../../../src/infrastructure/scylladb/feed.schema.ts"],"names":[],"mappings":";;;AACa,QAAA,UAAU,GAAG;;;;;;;;;;;;;;;CAezB,CAAC"}

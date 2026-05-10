@@ -11,14 +11,15 @@ const common_1 = require("@nestjs/common");
 const redis_service_1 = require("./redis.service");
 const redis_feed_service_1 = require("./feed/redis.feed.service");
 const redis_counter_service_1 = require("./counters/redis.counter.service");
+const redis_post_guard_service_1 = require("./post/redis-post-guard.service");
 let RedisModule = class RedisModule {
 };
 exports.RedisModule = RedisModule;
 exports.RedisModule = RedisModule = __decorate([
     (0, common_1.Global)(),
     (0, common_1.Module)({
-        providers: [redis_service_1.RedisService, redis_feed_service_1.RedisFeedService, redis_counter_service_1.RedisCounterService],
-        exports: [redis_service_1.RedisService, redis_feed_service_1.RedisFeedService, redis_counter_service_1.RedisCounterService],
+        providers: [redis_service_1.RedisService, redis_feed_service_1.RedisFeedService, redis_counter_service_1.RedisCounterService, redis_post_guard_service_1.RedisPostGuardService],
+        exports: [redis_service_1.RedisService, redis_feed_service_1.RedisFeedService, redis_counter_service_1.RedisCounterService, redis_post_guard_service_1.RedisPostGuardService],
     })
 ], RedisModule);
 //# sourceMappingURL=redis.module.js.map

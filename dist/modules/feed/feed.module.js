@@ -12,23 +12,27 @@ const feed_service_1 = require("./feed.service");
 const feed_consumer_1 = require("../../workers/feed/feed.consumer");
 const kafka_module_1 = require("../../infrastructure/kafka/kafka.module");
 const redis_module_1 = require("../../infrastructure/redis/redis.module");
+const feed_producer_1 = require("./feed.producer");
+const scylla_module_1 = require("../../infrastructure/scylladb/scylla.module");
+const location_module_1 = require("../location/location.module");
 let FeedModule = class FeedModule {
 };
 exports.FeedModule = FeedModule;
 exports.FeedModule = FeedModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            kafka_module_1.KafkaModule,
             redis_module_1.RedisModule,
+            kafka_module_1.KafkaModule,
+            scylla_module_1.ScyllaModule,
+            location_module_1.LocationModule,
         ],
         providers: [
             feed_service_1.FeedService,
-        ],
-        controllers: [
-            feed_consumer_1.FeedConsumer,
+            feed_producer_1.FeedProducer,
+            feed_consumer_1.FeedConsumer
         ],
         exports: [
-            feed_service_1.FeedService,
+            feed_service_1.FeedService, feed_producer_1.FeedProducer, feed_consumer_1.FeedConsumer,
         ],
     })
 ], FeedModule);

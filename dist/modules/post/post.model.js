@@ -16,6 +16,7 @@ let PostModel = class PostModel {
     userId;
     content;
     mediaUrls;
+    locationId;
     createdAt;
 };
 exports.PostModel = PostModel;
@@ -35,6 +36,10 @@ __decorate([
     (0, graphql_1.Field)(() => [String], { nullable: true }),
     __metadata("design:type", Array)
 ], PostModel.prototype, "mediaUrls", void 0);
+__decorate([
+    (0, graphql_1.Field)({ nullable: true }),
+    __metadata("design:type", String)
+], PostModel.prototype, "locationId", void 0);
 __decorate([
     (0, graphql_1.Field)(),
     __metadata("design:type", Date)

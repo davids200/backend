@@ -16,13 +16,18 @@ const debug_resolver_1 = require("./debug/debug.resolver");
 const post_module_1 = require("./modules/post/post.module");
 const feed_module_1 = require("./modules/feed/feed.module");
 const auth_module_1 = require("./modules/auth/auth.module");
-const user_entity_1 = require("./modules/user/entities/user.entity");
 const minio_module_1 = require("./infrastructure/minio/minio.module");
 const meta_module_1 = require("./modules/meta/meta.module");
 const country_module_1 = require("./modules/meta/country/country.module");
 const location_module_1 = require("./modules/location/location.module");
 const trending_module_1 = require("./modules/feed/trending.module");
 const config_1 = require("@nestjs/config");
+const scylla_module_1 = require("./infrastructure/scylladb/scylla.module");
+const bootstrap_service_1 = require("./bootstrap/bootstrap.service");
+const kafka_module_1 = require("./infrastructure/kafka/kafka.module");
+const notification_module_1 = require("./modules/notification/notification.module");
+const follow_module_1 = require("./modules/follow/follow.module");
+const like_module_1 = require("./modules/like/like.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -37,7 +42,7 @@ exports.AppModule = AppModule = __decorate([
                 password: 'admin',
                 database: 'social_app',
                 autoLoadEntities: true,
-                entities: [user_entity_1.UserEntity],
+                // entities: [UserEntity],
                 synchronize: true, // ⚠️ dev only
             }),
             graphql_1.GraphQLModule.forRoot({
@@ -57,9 +62,17 @@ exports.AppModule = AppModule = __decorate([
             minio_module_1.MinioModule,
             location_module_1.LocationModule,
             country_module_1.CountryModule,
-            trending_module_1.TrendingModule
+            trending_module_1.TrendingModule,
+            kafka_module_1.KafkaModule,
+            scylla_module_1.ScyllaModule,
+            follow_module_1.FollowModule,
+            like_module_1.LikeModule,
+            notification_module_1.NotificationModule
         ],
-        providers: [debug_resolver_1.DebugResolver],
+        providers: [
+            debug_resolver_1.DebugResolver,
+            bootstrap_service_1.BootstrapService,
+        ],
     })
 ], AppModule);
 //# sourceMappingURL=app.module.js.map

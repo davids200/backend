@@ -65,6 +65,21 @@ let MinioService = class MinioService {
         await this.client.putObject(this.bucket, filename, buffer);
         return `http://localhost:9000/${this.bucket}/${filename}`;
     }
+    // =====================================================
+    // UPLOAD BUFFER
+    // =====================================================
+    async uploadBuffer(data) {
+        const exists = await this.client.bucketExists(data.bucket);
+        // CREATE BUCKET IF MISSING
+        if (!exists) {
+            await this.client.makeBucket(data.bucket, 'us-east-1');
+        }
+        // UPLOAD OBJECT
+        await this.client.putObject(data.bucket, data.objectName, data.buffer, data.buffer.length, {
+            'Content-Type': data.mimetype,
+        });
+        return { bucket: data.bucket, objectName: data.objectName, };
+    }
 };
 exports.MinioService = MinioService;
 exports.MinioService = MinioService = __decorate([

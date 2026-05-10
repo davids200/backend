@@ -12,10 +12,15 @@ import { UserEntity } from './modules/user/entities/user.entity';
 import { MinioModule } from './infrastructure/minio/minio.module';
 import { MetaModule } from './modules/meta/meta.module'; 
 import { CountryModule } from './modules/meta/country/country.module';
-import { LocationModule } from './modules/location/location.module';
-import { TrendingService } from './modules/feed/services/trending.service';
+import { LocationModule } from './modules/location/location.module'; 
 import { TrendingModule } from './modules/feed/trending.module';
 import { ConfigModule } from '@nestjs/config'; 
+import { ScyllaModule } from './infrastructure/scylladb/scylla.module';
+import { BootstrapService } from './bootstrap/bootstrap.service';
+import { KafkaModule } from './infrastructure/kafka/kafka.module';
+import { NotificationModule } from './modules/notification/notification.module';
+import { FollowModule } from './modules/follow/follow.module';
+import { LikeModule } from './modules/like/like.module';
  
 @Module({
   imports: [
@@ -27,7 +32,7 @@ import { ConfigModule } from '@nestjs/config';
       password: 'admin',
       database: 'social_app',
       autoLoadEntities: true,
-      entities: [UserEntity],
+      // entities: [UserEntity],
       synchronize: true, // ⚠️ dev only
     }),
     GraphQLModule.forRoot<ApolloDriverConfig>({
@@ -49,9 +54,17 @@ isGlobal: true,
     MinioModule, 
     LocationModule,
     CountryModule,
-    TrendingModule
+    TrendingModule,
+    KafkaModule,
+    ScyllaModule,
+    FollowModule,
+    LikeModule,
+    NotificationModule
   ],
-  providers: [DebugResolver],
+  providers: [
+    DebugResolver,
+    BootstrapService, 
+  ],
 })
 
 

@@ -1,9 +1,7 @@
-import {
-  Injectable,
-} from '@nestjs/common';
-
-import { KafkaService }
-from '../../infrastructure/kafka/kafka.service';
+import {  Injectable,} from '@nestjs/common';
+import { KafkaService }from '../../infrastructure/kafka/kafka.service'; 
+import { OtpRequestedEvent } from '../../common/constants/contracts/events/otp-requested.event';
+import { SuspiciousLoginEvent } from '../../common/constants/contracts/events/suspicious-login.event';
 
 @Injectable()
 export class AuthProducer {
@@ -12,29 +10,17 @@ export class AuthProducer {
       KafkaService,
   ) {}
 
-  // =====================================================
+  
   // USER REGISTERED
-  // =====================================================
-
-  async userRegistered(data: {
-    userId: string;
-  }) {
-
-    await this.kafka.emit(
-      'auth.user.registered',
-      data,
-      data.userId,
+  
+  async userRegistered(data: {userId: string;}) {
+    await this.kafka.emit('auth.user.registered',data,data.userId,
     );
   }
 
-  // =====================================================
+  
   // USER LOGGED IN
-  // =====================================================
-
-  async userLoggedIn(data: {
-    userId: string;
-  }) {
-
+  async userLoggedIn(data: {    userId: string;  }) {
     await this.kafka.emit(
       'auth.user.logged_in',
       data,
@@ -42,18 +28,17 @@ export class AuthProducer {
     );
   }
 
-  // =====================================================
-  // OTP REQUESTED
-  // =====================================================
 
-  async otpRequested(data: {type: 'email' | 'phone'; value: string;}) {
+  
+  // OTP REQUESTED  
+  async otpRequested(data: OtpRequestedEvent,) {
     await this.kafka.emit('auth.otp.requested',data,data.value,);
   }
 
 
 
 
-async suspiciousLogin(data: {userId: string;sessionId: string;}) {
+async suspiciousLogin(data: SuspiciousLoginEvent,) {
   await this.kafka.emit('auth.suspicious.login',data,data.userId,);
 }
 

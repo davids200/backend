@@ -11,67 +11,82 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var PostResolver_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PostResolver = void 0;
 const graphql_1 = require("@nestjs/graphql");
 const common_1 = require("@nestjs/common");
 const post_service_1 = require("./post.service");
+const post_entity_1 = require("./post.entity");
 const create_post_input_1 = require("./dto/create-post.input");
-const post_model_1 = require("./post.model");
-const feed_service_1 = require("../feed/feed.service");
-const feed_response_1 = require("../feed/dto/feed.response");
-const user_entity_1 = require("../user/entities/user.entity");
 const gql_auth_guard_1 = require("../auth/guards/gql-auth.guard");
 const current_user_decorator_1 = require("../auth/decorators/current-user.decorator");
-let PostResolver = class PostResolver {
-    postService;
-    feedService;
-    constructor(postService, feedService) {
-        this.postService = postService;
-        this.feedService = feedService;
-    }
-    // =====================================================
-    // GET USER FEED
-    // =====================================================
-    async getFeed(user, limit, cursor) {
-        return this.feedService.getFeed(user, limit, cursor);
+let PostResolver = PostResolver_1 = class PostResolver {
+    posts;
+    logger = new common_1.Logger(PostResolver_1.name);
+    constructor(posts) {
+        this.posts = posts;
     }
     // =====================================================
     // CREATE POST
     // =====================================================
     async createPost(user, data) {
-        return this.postService.createPost(user.id, data);
+        // ================================================
+        // DEBUG USER PAYLOAD
+        // ================================================
+        this.logger.log(user);
+        const userId = user?.userId
+            || user?.id
+            || user?.sub;
+        return this.posts.createPost(userId, data);
+    }
+    // =====================================================
+    // DELETE POST
+    // =====================================================
+    async deletePost(user, postId) {
+        const userId = user?.userId
+            || user?.id
+            || user?.sub;
+        return this.posts.deletePost(postId, userId);
+    }
+    // =====================================================
+    // GET POSTS BY IDS
+    // =====================================================
+    async getPostsByIds(postIds) {
+        return this.posts.getPostsByIds(postIds);
     }
 };
 exports.PostResolver = PostResolver;
 __decorate([
-    (0, graphql_1.Query)(() => feed_response_1.FeedResponse),
     (0, common_1.UseGuards)(gql_auth_guard_1.GqlAuthGuard),
-    __param(0, (0, current_user_decorator_1.CurrentUser)()),
-    __param(1, (0, graphql_1.Args)('limit', {
-        nullable: true,
-        defaultValue: 20,
-    })),
-    __param(2, (0, graphql_1.Args)('cursor', {
-        nullable: true,
-    })),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [user_entity_1.UserEntity, Number, Number]),
-    __metadata("design:returntype", Promise)
-], PostResolver.prototype, "getFeed", null);
-__decorate([
-    (0, graphql_1.Mutation)(() => post_model_1.PostModel),
-    (0, common_1.UseGuards)(gql_auth_guard_1.GqlAuthGuard),
+    (0, graphql_1.Mutation)(() => post_entity_1.PostEntity),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __param(1, (0, graphql_1.Args)('data')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [user_entity_1.UserEntity,
-        create_post_input_1.CreatePostInput]),
+    __metadata("design:paramtypes", [Object, create_post_input_1.CreatePostInput]),
     __metadata("design:returntype", Promise)
 ], PostResolver.prototype, "createPost", null);
-exports.PostResolver = PostResolver = __decorate([
-    (0, graphql_1.Resolver)(() => post_model_1.PostModel),
-    __metadata("design:paramtypes", [post_service_1.PostService,
-        feed_service_1.FeedService])
+__decorate([
+    (0, common_1.UseGuards)(gql_auth_guard_1.GqlAuthGuard),
+    (0, graphql_1.Mutation)(() => Boolean),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, graphql_1.Args)('postId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], PostResolver.prototype, "deletePost", null);
+__decorate([
+    (0, graphql_1.Query)(() => [post_entity_1.PostEntity]),
+    __param(0, (0, graphql_1.Args)({
+        name: 'postIds',
+        type: () => [String],
+    })),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Array]),
+    __metadata("design:returntype", Promise)
+], PostResolver.prototype, "getPostsByIds", null);
+exports.PostResolver = PostResolver = PostResolver_1 = __decorate([
+    (0, graphql_1.Resolver)(() => post_entity_1.PostEntity),
+    __metadata("design:paramtypes", [post_service_1.PostService])
 ], PostResolver);
 //# sourceMappingURL=post.resolver.js.map

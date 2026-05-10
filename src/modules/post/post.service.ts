@@ -1,97 +1,210 @@
-import { Injectable } from '@nestjs/common';
-import { In, Repository } from 'typeorm';
-import { InjectRepository } from '@nestjs/typeorm';
-import { MinioService } from '../../infrastructure/minio/minio.service';
-import { PostgresService } from '../../infrastructure/postgresql/postgres.service';
-import { PostEntity } from './post.entity';
-import { CreatePostInput } from './dto/create-post.input';
-import { extractHashtags } from '../hashtag/utils/extract-hashtags.util';
-import { PostProducer } from './post.producer';
+import {
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+
+import {
+  InjectRepository,
+} from '@nestjs/typeorm';
+
+import {
+  In,
+  Repository,
+} from 'typeorm';
+
+import { PostEntity }
+from './post.entity';
+
+import { CreatePostInput }
+from './dto/create-post.input';
+
+import { PostProducer }
+from './post.producer';
+import { LocationService } from '../location/location.service';
 
 @Injectable()
 export class PostService {
-  constructor(
-    private readonly minio: MinioService,
-    private readonly postProducer: PostProducer,
-    @InjectRepository(PostEntity)
-    private readonly postRepo: Repository<PostEntity>,
-    private readonly postgres: PostgresService,
-  ) {}
+constructor(
+@InjectRepository(PostEntity,)
+private readonly repo:Repository<PostEntity>,
+private readonly producer: PostProducer,
+private locationService: LocationService
+) {}
 
   
-  // CREATE POST
-  async createPost(
-    userId: string,
-    data: CreatePostInput,
-  ) {
-    const post = await this.postRepo.save({
-      ...data,
-      userId,
-    });
-
-     
 
 
 
-    // EXTRACT HASHTAGS 
-    const hashtags = extractHashtags(
-      data.content || '',
-    );
+
+// CREATE POST
+async createPost(userId: string,input: CreatePostInput,) {   
+
+// EXTRACT MENTIONS   
+const mentions =input.content?.match(/@\w+/g,) || [];    
+// EXTRACT HASHTAGS
+const hashtags =input.content?.match(/#\w+/g,) || [];
+
+//VALIDATE LOCATION ID
+let validatedLocationId:string | undefined;
+if (input.visibility === 'public') {  validatedLocationId = undefined;
+} else {
+  if (!input.locationId) {    throw new Error('locationId is required for non-public posts',);
+  }
+
+  const location =await this.locationService.findOne(input.locationId,);
+  if (!location) {throw new Error('Invalid locationId',);
+  }
+  validatedLocationId =location.id;
+}
+
+// CREATE ENTITY
+const post = this.repo.create({
+authorId: userId,
+content: input.content,
+visibility: input.visibility || 'public',
+locationId: validatedLocationId,
+});
 
     
-// EMIT POST CREATED EVENT
-await this.postProducer.postCreated({
-postId: post.id,userId,
-locationId: post.locationId,
-createdAt: post.createdAt,
-});
+    // SAVE TO POSTGRES
+    
 
-// EMIT HASHTAG EVENT
-if (hashtags.length > 0) {
+    const saved =
+      await this.repo.save(
+        post,
+      );
 
-await this.postProducer.hashtagCreated({
-postId: post.id,userId,hashtags,locationId: post.locationId,createdAt: post.createdAt,
-});
-}
+    
+    // EMIT EVENT
+    
 
-return post;
-}
+    await this.producer.postCreated({
+
+      postId:
+        saved.id,
+
+      authorId:
+        saved.authorId,
+
+      content:
+        saved.content,
+
+      visibility:
+        saved.visibility,
+
+      mentions,
+
+      hashtags,
+
+      mediaIds: [],
+
+      createdAt:
+        saved.createdAt.toISOString(),
+
+      locationId:
+        saved.locationId,
+    });
+
+    return saved;
+  }
 
   
+  // GET POST
+  
 
+  async getPostById(
+    id: string,
+  ) {
 
+    const post =
+      await this.repo.findOne({
 
-// GET FOLLOWING 
-async getFollowing(userId: string) {
-const result =
-await this.postgres.query(
-`
-SELECT  u.id,u.is_celebrity FROM follows f JOIN users u ON u.id = f.following_id
-WHERE f.follower_id = $1
-`,
-[userId],
-);
-return result.rows;
-}
- 
+        where: {
+          id,
+        },
+      });
 
+    if (!post) {
 
-// GET POSTS BY IDS
-async getPostsByIds(
-postIds: string[],
-): Promise<PostEntity[]> {
+      throw new NotFoundException(
+        'Post not found',
+      );
+    }
 
-if (!postIds.length) {
-return [];
-}
-return this.postRepo.find({
-where: {
-id: In(postIds),
-},
+    return post;
+  }
+
+  
+  // GET POSTS BY IDS
+  
+
+  async getPostsByIds(
+    ids: string[],
+  ) {
+
+    if (!ids.length) {
+      return [];
+    }
+
+    return this.repo.find({
+
+      where: {
+        id: In(ids),
+      },
+    });
+  }
+
+  
+  // DELETE POST
+  
+
+  async deletePost(
+
+    id: string,
+
+    userId: string,
+  ) {
+
+    const post =
+      await this.repo.findOne({
+
+        where: {
+          id,
+        },
+      });
+
+    if (!post) {
+
+      throw new NotFoundException(
+        'Post not found',
+      );
+    }
+
+    if (
+      post.authorId !== userId
+    ) {
+
+      throw new Error(
+        'Unauthorized',
+      );
+    }
+
+    await this.repo.delete(
+      id,
+    );
+
+   await this.producer.postRemoved({
+
+  postId:
+    post.id,
+
+  authorId:
+    post.authorId,
+
+  removedAt:
+    new Date().toISOString(),
 });
-}
 
-
-
-
+    return true;
+  }
 }

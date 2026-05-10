@@ -14,73 +14,115 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PostService = void 0;
 const common_1 = require("@nestjs/common");
-const typeorm_1 = require("typeorm");
-const typeorm_2 = require("@nestjs/typeorm");
-const minio_service_1 = require("../../infrastructure/minio/minio.service");
-const postgres_service_1 = require("../../infrastructure/postgresql/postgres.service");
+const typeorm_1 = require("@nestjs/typeorm");
+const typeorm_2 = require("typeorm");
 const post_entity_1 = require("./post.entity");
-const extract_hashtags_util_1 = require("../hashtag/utils/extract-hashtags.util");
 const post_producer_1 = require("./post.producer");
+const location_service_1 = require("../location/location.service");
 let PostService = class PostService {
-    minio;
-    postProducer;
-    postRepo;
-    postgres;
-    constructor(minio, postProducer, postRepo, postgres) {
-        this.minio = minio;
-        this.postProducer = postProducer;
-        this.postRepo = postRepo;
-        this.postgres = postgres;
+    repo;
+    producer;
+    locationService;
+    constructor(repo, producer, locationService) {
+        this.repo = repo;
+        this.producer = producer;
+        this.locationService = locationService;
     }
     // CREATE POST
-    async createPost(userId, data) {
-        const post = await this.postRepo.save({
-            ...data,
-            userId,
+    async createPost(userId, input) {
+        // EXTRACT MENTIONS   
+        const mentions = input.content?.match(/@\w+/g) || [];
+        // EXTRACT HASHTAGS
+        const hashtags = input.content?.match(/#\w+/g) || [];
+        //VALIDATE LOCATION ID
+        let validatedLocationId;
+        if (input.visibility === 'public') {
+            validatedLocationId = undefined;
+        }
+        else {
+            if (!input.locationId) {
+                throw new Error('locationId is required for non-public posts');
+            }
+            const location = await this.locationService.findOne(input.locationId);
+            if (!location) {
+                throw new Error('Invalid locationId');
+            }
+            validatedLocationId = location.id;
+        }
+        // CREATE ENTITY
+        const post = this.repo.create({
+            authorId: userId,
+            content: input.content,
+            visibility: input.visibility || 'public',
+            locationId: validatedLocationId,
         });
-        // EXTRACT HASHTAGS 
-        const hashtags = (0, extract_hashtags_util_1.extractHashtags)(data.content || '');
-        // EMIT POST CREATED EVENT
-        await this.postProducer.postCreated({
-            postId: post.id, userId,
-            locationId: post.locationId,
-            createdAt: post.createdAt,
+        // SAVE TO POSTGRES
+        const saved = await this.repo.save(post);
+        // EMIT EVENT
+        await this.producer.postCreated({
+            postId: saved.id,
+            authorId: saved.authorId,
+            content: saved.content,
+            visibility: saved.visibility,
+            mentions,
+            hashtags,
+            mediaIds: [],
+            createdAt: saved.createdAt.toISOString(),
+            locationId: saved.locationId,
         });
-        // EMIT HASHTAG EVENT
-        if (hashtags.length > 0) {
-            await this.postProducer.hashtagCreated({
-                postId: post.id, userId, hashtags, locationId: post.locationId, createdAt: post.createdAt,
-            });
+        return saved;
+    }
+    // GET POST
+    async getPostById(id) {
+        const post = await this.repo.findOne({
+            where: {
+                id,
+            },
+        });
+        if (!post) {
+            throw new common_1.NotFoundException('Post not found');
         }
         return post;
     }
-    // GET FOLLOWING 
-    async getFollowing(userId) {
-        const result = await this.postgres.query(`
-SELECT  u.id,u.is_celebrity FROM follows f JOIN users u ON u.id = f.following_id
-WHERE f.follower_id = $1
-`, [userId]);
-        return result.rows;
-    }
     // GET POSTS BY IDS
-    async getPostsByIds(postIds) {
-        if (!postIds.length) {
+    async getPostsByIds(ids) {
+        if (!ids.length) {
             return [];
         }
-        return this.postRepo.find({
+        return this.repo.find({
             where: {
-                id: (0, typeorm_1.In)(postIds),
+                id: (0, typeorm_2.In)(ids),
             },
         });
+    }
+    // DELETE POST
+    async deletePost(id, userId) {
+        const post = await this.repo.findOne({
+            where: {
+                id,
+            },
+        });
+        if (!post) {
+            throw new common_1.NotFoundException('Post not found');
+        }
+        if (post.authorId !== userId) {
+            throw new Error('Unauthorized');
+        }
+        await this.repo.delete(id);
+        await this.producer.postRemoved({
+            postId: post.id,
+            authorId: post.authorId,
+            removedAt: new Date().toISOString(),
+        });
+        return true;
     }
 };
 exports.PostService = PostService;
 exports.PostService = PostService = __decorate([
     (0, common_1.Injectable)(),
-    __param(2, (0, typeorm_2.InjectRepository)(post_entity_1.PostEntity)),
-    __metadata("design:paramtypes", [minio_service_1.MinioService,
+    __param(0, (0, typeorm_1.InjectRepository)(post_entity_1.PostEntity)),
+    __metadata("design:paramtypes", [typeorm_2.Repository,
         post_producer_1.PostProducer,
-        typeorm_1.Repository,
-        postgres_service_1.PostgresService])
+        location_service_1.LocationService])
 ], PostService);
 //# sourceMappingURL=post.service.js.map

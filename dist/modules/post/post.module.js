@@ -12,6 +12,12 @@ const typeorm_1 = require("@nestjs/typeorm");
 const post_entity_1 = require("./post.entity");
 const post_service_1 = require("./post.service");
 const post_producer_1 = require("./post.producer");
+const post_resolver_1 = require("./post.resolver");
+const post_consumer_1 = require("../../workers/post/post.consumer");
+const feed_module_1 = require("../feed/feed.module");
+const notification_module_1 = require("../notification/notification.module");
+const kafka_module_1 = require("../../infrastructure/kafka/kafka.module");
+const location_module_1 = require("../location/location.module");
 let PostModule = class PostModule {
 };
 exports.PostModule = PostModule;
@@ -21,14 +27,20 @@ exports.PostModule = PostModule = __decorate([
             typeorm_1.TypeOrmModule.forFeature([
                 post_entity_1.PostEntity,
             ]),
+            (0, common_1.forwardRef)(() => feed_module_1.FeedModule),
+            notification_module_1.NotificationModule,
+            kafka_module_1.KafkaModule,
+            location_module_1.LocationModule
         ],
         providers: [
             post_service_1.PostService,
             post_producer_1.PostProducer,
+            post_resolver_1.PostResolver,
+            post_consumer_1.PostConsumer,
         ],
         exports: [
             post_service_1.PostService,
-            post_producer_1.PostProducer,
+            post_consumer_1.PostConsumer,
         ],
     })
 ], PostModule);

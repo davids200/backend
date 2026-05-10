@@ -6,32 +6,36 @@ import {
   Index,
 } from 'typeorm';
 
+import {
+  ObjectType,
+  Field,
+  ID,
+} from '@nestjs/graphql';
+
+@ObjectType()
+
 @Entity('follows')
+
+@Index(
+  ['followerId', 'followingId'],
+  { unique: true },
+)
+
 export class FollowEntity {
 
+  @Field(() => ID)
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  // ================================================
-  // FOLLOWER
-  // ================================================
-
-  @Index()
+  @Field()
   @Column()
   followerId!: string;
 
-  // ================================================
-  // FOLLOWING
-  // ================================================
-
-  @Index()
+  @Field()
   @Column()
   followingId!: string;
 
-  // ================================================
-  // TIMESTAMP
-  // ================================================
-
+  @Field()
   @CreateDateColumn()
   createdAt!: Date;
 }

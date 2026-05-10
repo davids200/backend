@@ -1,8 +1,8 @@
 import {
   Injectable,
-  OnModuleInit,
-  OnModuleDestroy,
   Logger,
+  OnModuleDestroy,
+  OnModuleInit,
 } from '@nestjs/common';
 
 import {
@@ -10,7 +10,6 @@ import {
   Consumer,
   Producer,
   Partitioners,
-  KafkaMessage,
 } from 'kafkajs';
 
 @Injectable()
@@ -18,17 +17,24 @@ export class KafkaService
   implements OnModuleInit, OnModuleDestroy
 {
   private readonly logger =
-    new Logger(KafkaService.name);
+    new Logger(
+      KafkaService.name,
+    );
 
   // =====================================================
   // KAFKA INSTANCE
   // =====================================================
 
-  private readonly kafka = new Kafka({
-    clientId: 'social-app',
+  private readonly kafka =
+    new Kafka({
 
-    brokers: ['localhost:9092'],
-  });
+      clientId:
+        'social-app',
+
+      brokers: [
+        'localhost:9092',
+      ],
+    });
 
   // =====================================================
   // PRODUCER
@@ -40,7 +46,8 @@ export class KafkaService
   // ACTIVE CONSUMERS
   // =====================================================
 
-  private consumers: Consumer[] = [];
+  private readonly consumers:
+    Consumer[] = [];
 
   // =====================================================
   // MODULE INIT
@@ -48,23 +55,34 @@ export class KafkaService
 
   async onModuleInit() {
 
-    this.producer =
-      this.kafka.producer({
+    try {
 
-        // Fix KafkaJS v2 partition warning
-        createPartitioner:
-          Partitioners.LegacyPartitioner,
-      });
+      this.producer =
+        this.kafka.producer({
 
-    await this.producer.connect();
+          createPartitioner:
+            Partitioners.LegacyPartitioner,
+        });
 
-    // this.logger.log(
-    //   '✅ Kafka producer connected',
-    // );
+      await this.producer.connect();
+
+      this.logger.log(
+        '✅ Kafka producer connected',
+      );
+
+    } catch (err) {
+
+      this.logger.error(
+        '❌ Kafka producer connection failed',
+        err,
+      );
+
+      throw err;
+    }
   }
 
   // =====================================================
-  // PRODUCE EVENT
+  // EMIT EVENT
   // =====================================================
 
   async emit(
@@ -73,85 +91,167 @@ export class KafkaService
     key?: string,
   ): Promise<void> {
 
-    await this.producer.send({
-      topic,
+    try {
 
-      messages: [
-        {
-          key,
+      this.logger.log(
+        `📤 Emitting → ${topic}`,
+      );
 
-          value: JSON.stringify(
-            value,
-          ),
-        },
-      ],
-    });
+      await this.producer.send({
+
+        topic,
+
+        messages: [
+          {
+
+            key,
+
+            value:
+              JSON.stringify(
+                value,
+              ),
+          },
+        ],
+      });
+
+      this.logger.log(
+        `✅ Event emitted → ${topic}`,
+      );
+
+    } catch (err) {
+
+      this.logger.error(
+        `❌ Emit failed (${topic})`,
+        err,
+      );
+
+      throw err;
+    }
   }
 
   // =====================================================
-  // CONSUMER WRAPPER
+  // CONSUME EVENTS
   // =====================================================
 
- async consume(
-  groupId: string,
-  topic: string,
-  handler: (
-    message: KafkaMessage,
-  ) => Promise<void>,
-) {
+  async consume<T>(
 
-    const consumer =
-      this.kafka.consumer({
-        groupId,
+    groupId: string,
+
+    topic: string,
+
+    handler: (
+      payload: T,
+    ) => Promise<void>,
+  ): Promise<void> {
+
+    try {
+
+      this.logger.log(
+        `👂 Creating consumer → ${topic}`,
+      );
+
+      const consumer =
+        this.kafka.consumer({
+
+          groupId,
+        });
+
+      this.consumers.push(
+        consumer,
+      );
+
+      // ================================================
+      // CONNECT
+      // ================================================
+
+      await consumer.connect();
+
+      this.logger.log(
+        `✅ Consumer connected → ${topic}`,
+      );
+
+      // ================================================
+      // SUBSCRIBE
+      // ================================================
+
+      await consumer.subscribe({
+
+        topic,
+
+        fromBeginning: false,
       });
 
-    await consumer.connect();
+      this.logger.log(
+        `✅ Subscribed → ${topic}`,
+      );
 
-    await consumer.subscribe({
-      topic,
-      fromBeginning: false,
-    });
+      // ================================================
+      // RUN
+      // ================================================
 
-    await consumer.run({
+      consumer.run({
 
-      eachMessage: async ({
-        message,
-      }) => {
+        eachMessage: async ({
+          message,
+        }) => {
 
-        try {
+          try {
 
-          if (!message.value) {
-            return;
-          }
+            if (!message.value) {
+              return;
+            }
 
-          const parsed =
-            JSON.parse(
-              message.value.toString(),
+            this.logger.log(
+              `🔥 Event received → ${topic}`,
             );
 
-          await handler(parsed);
+            const raw =
+              message.value.toString();
 
-        } catch (err) {
+            this.logger.debug(
+              raw,
+            );
 
-          // this.logger.error(
-          //   `Kafka consumer error (${topic})`,
-          //   err,
-          // );
-        }
-      },
-    });
+            // ==========================================
+            // PARSE
+            // ==========================================
 
-    // ================================================
-    // TRACK CONSUMERS
-    // ================================================
+            const payload =
+              JSON.parse(
+                raw,
+              ) as T;
 
-    this.consumers.push(
-      consumer,
-    );
+            // ==========================================
+            // HANDLE
+            // ==========================================
 
-    this.logger.log(
-      `✅ Kafka consumer started: ${topic}`,
-    );
+            await handler(
+              payload,
+            );
+
+          } catch (err) {
+
+            this.logger.error(
+              `❌ Consume failed (${topic})`,
+              err,
+            );
+          }
+        },
+      });
+
+      this.logger.log(
+        `🚀 Consumer running → ${topic}`,
+      );
+
+    } catch (err) {
+
+      this.logger.error(
+        `❌ Consumer startup failed (${topic})`,
+        err,
+      );
+
+      throw err;
+    }
   }
 
   // =====================================================
@@ -160,15 +260,42 @@ export class KafkaService
 
   async onModuleDestroy() {
 
-    await this.producer?.disconnect();
+    try {
 
-    for (const consumer of this.consumers) {
+      // ================================================
+      // DISCONNECT PRODUCER
+      // ================================================
 
-      await consumer.disconnect();
+      if (this.producer) {
+
+        await this.producer.disconnect();
+      }
+
+      // ================================================
+      // DISCONNECT CONSUMERS
+      // ================================================
+
+      await Promise.all(
+
+        this.consumers.map(
+
+          async (consumer) => {
+
+            await consumer.disconnect();
+          },
+        ),
+      );
+
+      this.logger.log(
+        '🛑 Kafka connections closed',
+      );
+
+    } catch (err) {
+
+      this.logger.error(
+        '❌ Kafka shutdown failed',
+        err,
+      );
     }
-
-    this.logger.log(
-      '🛑 Kafka connections closed',
-    );
   }
 }

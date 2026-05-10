@@ -28,6 +28,7 @@ const device_service_1 = require("./device/device.service");
 const sms_gateway_service_1 = require("../notification/channels/sms/sms-gateway.service");
 const twilio_provider_1 = require("../notification/channels/sms/providers/twilio.provider");
 const custom_sms_provider_1 = require("../notification/channels/sms/providers/custom-sms.provider");
+const config_1 = require("@nestjs/config");
 let AuthModule = class AuthModule {
 };
 exports.AuthModule = AuthModule;
@@ -40,11 +41,14 @@ exports.AuthModule = AuthModule = __decorate([
                 auth_session_entity_1.AuthSessionEntity,
             ]),
             // JWT
-            jwt_1.JwtModule.register({
-                secret: process.env.JWT_SECRET,
-                signOptions: {
-                    expiresIn: '15m',
-                },
+            jwt_1.JwtModule.registerAsync({
+                inject: [config_1.ConfigService],
+                useFactory: (config) => ({
+                    secret: config.get('JWT_SECRET'),
+                    signOptions: {
+                        expiresIn: '1d',
+                    },
+                }),
             }),
             // DEPENDENCIES
             user_module_1.UserModule,

@@ -1,7 +1,6 @@
 import {
   Injectable,
   Logger,
-  OnModuleInit,
 } from '@nestjs/common';
 
 import { KafkaService }
@@ -10,10 +9,29 @@ from '../../infrastructure/kafka/kafka.service';
 import { NotificationService }
 from '../../modules/notification/notification.service';
 
+import { KAFKA_TOPICS }
+from '../../common/constants/kafka-topics.constants';
+
+// =====================================================
+// EVENT TYPE
+// =====================================================
+
+type NotificationCreatedEvent = {
+
+  userId: string;
+
+  actorId?: string;
+
+  type: string;
+
+  referenceId?: string;
+
+  createdAt?: string;
+};
+
 @Injectable()
-export class NotificationConsumer
-  implements OnModuleInit
-{
+export class NotificationConsumer {
+
   private readonly logger =
     new Logger(
       NotificationConsumer.name,
@@ -28,35 +46,25 @@ export class NotificationConsumer
       NotificationService,
   ) {}
 
-  async onModuleInit() {
-
-    await this.start();
-  }
-
   // =====================================================
-  // START
+  // START CONSUMER
   // =====================================================
 
-  private async start() {
+  async start() {
 
-    await this.kafka.consume(
+    this.logger.log(
+      '🚀 Starting NotificationConsumer...',
+    );
+
+    await this.kafka.consume<NotificationCreatedEvent>(
 
       'notification-group',
 
-      'notification.inapp.created',
+      KAFKA_TOPICS.NOTIFICATION_CREATED,
 
-      async (message) => {
-
-        if (!message.value) {
-          return;
-        }
+      async (event) => {
 
         try {
-
-          const event =
-            JSON.parse(
-              message.value.toString(),
-            );
 
           await this.handleNotification(
             event,
@@ -65,7 +73,7 @@ export class NotificationConsumer
         } catch (err) {
 
           this.logger.error(
-            'Notification consumer error',
+            '❌ Notification consumer error',
             err,
           );
         }
@@ -82,36 +90,27 @@ export class NotificationConsumer
   // =====================================================
 
   private async handleNotification(
-    event: {
-
-      userId: string;
-
-      actorId?: string;
-
-      type: string;
-
-      referenceId?: string;
-    },
+    event: NotificationCreatedEvent,
   ) {
 
-    await this.notifications
-      .create({
+    await this.notifications.create({
 
-        userId:
-          event.userId,
+      userId:
+        event.userId,
 
-        actorId:
-          event.actorId,
+      actorId:
+        event.actorId,
 
-        type:
-          event.type,
+      type:
+        event.type,
 
-        referenceId:
-          event.referenceId,
-      });
+      referenceId:
+        event.referenceId,
+    });
 
     this.logger.log(
-      `Notification created for ${event.userId}`,
+
+      `🔔 Notification created for ${event.userId}`,
     );
   }
 }

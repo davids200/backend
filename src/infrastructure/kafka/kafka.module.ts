@@ -7,8 +7,8 @@ import {
 // CORE
 // =====================================================
 
-import { KafkaService }
-from './kafka.service';
+import { KafkaService } from './kafka.service';
+import { KafkaBootstrapService } from './kafka.bootstrap';
 
 // =====================================================
 // PRODUCERS
@@ -29,6 +29,7 @@ import { LocationProducer } from '../../modules/location/location.producer';
     // ================================================
 
     KafkaService,
+    KafkaBootstrapService,
 
     // ================================================
     // PRODUCERS
@@ -44,11 +45,7 @@ import { LocationProducer } from '../../modules/location/location.producer';
   ],
 
   exports: [
-
-    // ================================================
-    // CORE
-    // ================================================
-
+ KafkaBootstrapService,
     KafkaService,
 
     // ================================================

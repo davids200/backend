@@ -19,6 +19,7 @@ import { DeviceService } from './device/device.service';
 import { SmsGatewayService } from '../notification/channels/sms/sms-gateway.service';
 import { TwilioProvider } from '../notification/channels/sms/providers/twilio.provider';
 import { CustomSmsProvider } from '../notification/channels/sms/providers/custom-sms.provider';
+import { ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
@@ -28,14 +29,24 @@ import { CustomSmsProvider } from '../notification/channels/sms/providers/custom
       AuthSessionEntity,
     ]),
     // JWT
-    JwtModule.register({
-      secret:
-        process.env.JWT_SECRET,
+    JwtModule.registerAsync({
 
-      signOptions: {
-        expiresIn: '15m',
-      },
-    }),
+  inject: [ConfigService],
+
+  useFactory: (
+    config: ConfigService,
+  ) => ({
+
+    secret:
+      config.get<string>(
+        'JWT_SECRET',
+      ),
+
+    signOptions: {
+      expiresIn: '1d',
+    },
+  }),
+}),
 
     // DEPENDENCIES
     UserModule,

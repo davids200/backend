@@ -47,62 +47,39 @@ from './channels/push/push.service';
 
 import { NotificationConsumer }
 from '../../workers/notification/notification.consumer';
+import { NotificationService } from './notification.service';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { NotificationEntity } from './entities/notification.entity';
 
 @Module({
 
   imports: [
-
+    TypeOrmModule.forFeature([
+  NotificationEntity,
+]),
     KafkaModule,
-
     RedisModule,
   ],
 
   providers: [
-
-    // ================================================
-    // PRODUCER
-    // ================================================
-
     NotificationProducer,
-
-    // ================================================
-    // SMS
-    // ================================================
-
     SmsGatewayService,
-
     TwilioProvider,
-
     CustomSmsProvider,
-
-    // ================================================
-    // EMAIL
-    // ================================================
-
     EmailService,
-
-    // ================================================
-    // PUSH
-    // ================================================
-
     PushService,
-
-    // ================================================
-    // WORKERS
-    // ================================================
-
     NotificationConsumer,
+    NotificationService
   ],
 
   exports: [
-
+NotificationConsumer,
     NotificationProducer,
-
+    NotificationService,
     SmsGatewayService,
-
     EmailService,
-
     PushService,
+     
   ],
 })
 export class NotificationModule {}

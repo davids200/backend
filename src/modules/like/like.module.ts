@@ -9,6 +9,9 @@ import { LikeConsumer } from '../../workers/like/like.consumer';
 @Module({
   imports: [TypeOrmModule.forFeature([LikeEntity])],
   providers: [LikeService, LikeProducer, LikeConsumer],
-  exports: [LikeService],
+  exports: [
+    LikeService,
+  LikeConsumer,
+  ],
 })
 export class LikeModule {}

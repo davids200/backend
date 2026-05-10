@@ -6,6 +6,8 @@
 
 export const KAFKA_TOPICS = {
   POST_CREATED: 'post.created',
+  POST_REMOVED:'post.removed',
+  POST_UPDATED:'post.updated',
   FOLLOW_CREATED: 'follow.created',
   FOLLOW_REMOVED: 'follow.removed',
   LIKE_CREATED: 'like.created',
@@ -16,5 +18,12 @@ HASHTAG_CREATED:'hashtag.created',
   LOCATION_UPDATED:'location.updated',
   USER_LOCATION_JOINED:'location.joined',
   LOCATION_INITIALIZED:'location.initialized',
-  NOTIFICATION_OTP_REQUESTED:'notification.otp.requested'
+  NOTIFICATION_OTP_REQUESTED:'notification.otp.requested',
+  NOTIFICATION_CREATED:'notification.created',
+  NOTIFICATION_SECURITY_ALERT:'notification.security.alert',
+  NOTIFICATION_WELCOME:'notification.welcome',
+  FEED_INVALIDATE:'feed.invaliddate',
+  FEED_FANOUT:'feed.fanout',
+  TRENDING_UPDATE:'trending.update',
+  COMMENT_DELETED:'comment.delete',
 } as const;

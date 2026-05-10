@@ -10,14 +10,22 @@ exports.ScyllaModule = void 0;
 const common_1 = require("@nestjs/common");
 const scylla_service_1 = require("./scylla.service");
 const schema_loader_1 = require("./schema.loader");
+const location_feed_repo_1 = require("./location.feed.repo");
 let ScyllaModule = class ScyllaModule {
 };
 exports.ScyllaModule = ScyllaModule;
 exports.ScyllaModule = ScyllaModule = __decorate([
     (0, common_1.Global)(),
     (0, common_1.Module)({
-        providers: [scylla_service_1.ScyllaService, schema_loader_1.ScyllaSchemaLoader],
-        exports: [scylla_service_1.ScyllaService],
+        providers: [
+            scylla_service_1.ScyllaService,
+            schema_loader_1.ScyllaSchemaLoader,
+            location_feed_repo_1.LocationFeedRepository
+        ],
+        exports: [
+            scylla_service_1.ScyllaService,
+            location_feed_repo_1.LocationFeedRepository
+        ],
     })
 ], ScyllaModule);
 //# sourceMappingURL=scylla.module.js.map

@@ -7,35 +7,171 @@ import {
   Index,
 } from 'typeorm';
 
+import {
+  ObjectType,
+  Field,
+  ID,
+} from '@nestjs/graphql';
+
+@ObjectType()
+
 @Entity('posts')
 export class PostEntity {
+
+  // =====================================================
+  // ID
+  // =====================================================
+
+  @Field(() => ID)
+
   @PrimaryGeneratedColumn('uuid')
+
   id!: string;
 
+  // =====================================================
+  // AUTHOR
+  // =====================================================
+
+  @Field()
+
   @Index()
+
   @Column()
+
   authorId!: string;
 
-  @Column({ type: 'text', nullable: true })
+  // =====================================================
+  // CONTENT
+  // =====================================================
+
+  @Field({    nullable: true,  })
+  @Column({    type: 'text',    nullable: true,
+  })
   content?: string;
 
-  @Column('text', { array: true, nullable: true })
+  // =====================================================
+  // MEDIA
+  // =====================================================
+
+  @Field(() => [String], {
+    nullable: true,
+  })
+
+  @Column('text', {
+    array: true,
+    nullable: true,
+  })
+
   media?: string[];
 
-  
+  // =====================================================
+  // LOCATION
+  // =====================================================
+
+  @Field({ nullable: true,})
   @Index()
-  @Column()
+  @Column({ nullable: true,})
   locationId!: string;
 
+  // =====================================================
+  // CREATED
+  // =====================================================
+
+  @Field()
+
   @CreateDateColumn()
+
   createdAt!: Date;
 
+  // =====================================================
+  // UPDATED
+  // =====================================================
+
+  @Field()
+
   @UpdateDateColumn()
+
   updatedAt!: Date;
 
-   @Column({ default: 0 })
+  // =====================================================
+  // LIKES
+  // =====================================================
+
+  @Field()
+
+  @Column({
+    default: 0,
+  })
+
   likes!: number;
 
-  @Column({ default: 0 })
+  // =====================================================
+  // VISIBILITY
+  // =====================================================
+
+  @Field()
+
+  @Column({
+    default: 'public',
+  })
+
+  visibility!:
+    'public'
+    | 'followers'
+    | 'private'
+    | 'local';
+
+  // =====================================================
+  // MENTIONS
+  // =====================================================
+
+  @Field(() => [String])
+
+  @Column({
+    type: 'text',
+    array: true,
+    default: [],
+  })
+
+  mentions!: string[];
+
+  // =====================================================
+  // MEDIA IDS
+  // =====================================================
+
+  @Field(() => [String])
+
+  @Column({
+    type: 'text',
+    array: true,
+    default: [],
+  })
+
+  mediaIds!: string[];
+
+  // =====================================================
+  // HASHTAGS
+  // =====================================================
+
+  @Field(() => [String])
+
+  @Column({
+    type: 'text',
+    array: true,
+    default: [],
+  })
+
+  hashtags!: string[];
+
+  // =====================================================
+  // COMMENTS
+  // =====================================================
+
+  @Field()
+
+  @Column({
+    default: 0,
+  })
+
   comments!: number;
 }

@@ -22,6 +22,15 @@ input CreateLocationInput {
   parentId: String
 }
 
+input CreatePostInput {
+  content: String!
+  locationId: String
+  media: [String!]
+  mediaIds: [String!]
+  mentions: [String!]
+  visibility: String
+}
+
 input CreateUserInput {
   countryId: String
   dateOfBirth: String
@@ -34,6 +43,17 @@ input CreateUserInput {
 A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
 """
 scalar DateTime
+
+type FollowEntity {
+  createdAt: DateTime!
+  followerId: String!
+  followingId: String!
+  id: ID!
+}
+
+input FollowUserInput {
+  followingId: String!
+}
 
 type LocationEntity {
   children: [LocationEntity]
@@ -58,8 +78,11 @@ type Mutation {
   createCountry(code: String!, name: String!): CountryModel!
   createEducationLevel(name: String!, order: Float!): String!
   createLocation(data: CreateLocationInput!): LocationEntity!
+  createPost(data: CreatePostInput!): PostEntity!
   createSchool(locationId: String!, name: String!): String!
   createUser(data: CreateUserInput!): String!
+  deletePost(postId: String!): Boolean!
+  followUser(data: FollowUserInput!, followerId: String!): FollowEntity!
   login(data: LoginInput!): AuthResponse!
   logout: Boolean!
   refreshToken(data: RefreshTokenInput!): AuthResponse!
@@ -68,13 +91,33 @@ type Mutation {
   resetPassword(data: ResetPasswordInput!): Boolean!
   revokeSession(sessionId: String!): Boolean!
   sendOtp(data: SendOtpInput!): Boolean!
+  unfollowUser(followerId: String!, followingId: String!): Boolean!
   updateProfile(data: UpdateProfileInput!): String!
   verifyOtp(data: VerifyOtpInput!): Boolean!
+}
+
+type PostEntity {
+  authorId: String!
+  comments: Float!
+  content: String
+  createdAt: DateTime!
+  hashtags: [String!]!
+  id: ID!
+  likes: Float!
+  locationId: String
+  media: [String!]
+  mediaIds: [String!]!
+  mentions: [String!]!
+  updatedAt: DateTime!
+  visibility: String!
 }
 
 type Query {
   countries: [CountryModel!]!
   educationLevels: [String!]!
+  followers(userId: String!): [FollowEntity!]!
+  following(userId: String!): [FollowEntity!]!
+  getPostsByIds(postIds: [String!]!): [PostEntity!]!
   getProfile: String!
   getUser(id: String!): String!
   location(id: String!): LocationEntity

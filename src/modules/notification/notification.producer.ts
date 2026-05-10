@@ -1,9 +1,10 @@
-import {
-  Injectable,
-} from '@nestjs/common';
-
-import { KafkaService }
-from '../../infrastructure/kafka/kafka.service';
+import {  Injectable,} from '@nestjs/common';
+import { KafkaService }from '../../infrastructure/kafka/kafka.service';
+import { KAFKA_TOPICS }from '../../common/constants/kafka-topics.constants'; 
+import { OtpRequestedEvent } from '../../common/constants/contracts/events/otp-requested.event';
+import { SecurityAlertEvent } from '../../common/constants/contracts/events/security-alert.event';
+import { WelcomeNotificationEvent } from '../../common/constants/contracts/events/welcome-notification.event';
+import { NotificationCreatedEvent } from '../../common/constants/contracts/events/notification-created.event';
 
 @Injectable()
 export class NotificationProducer {
@@ -14,7 +15,7 @@ export class NotificationProducer {
   ) {}
 
   // =====================================================
-  // GENERIC EVENT
+  // GENERIC EMIT
   // =====================================================
 
   async emit(
@@ -24,11 +25,8 @@ export class NotificationProducer {
   ) {
 
     await this.kafka.emit(
-
       topic,
-
       payload,
-
       key,
     );
   }
@@ -37,17 +35,12 @@ export class NotificationProducer {
   // OTP
   // =====================================================
 
-  async otpRequested(data: {
-    type: 'email' | 'phone';
-    value: string;
-  }) {
-
+  async otpRequested(
+    data: OtpRequestedEvent,
+  ) {
     await this.emit(
-
-      'notification.otp.requested',
-
+      KAFKA_TOPICS.NOTIFICATION_OTP_REQUESTED,
       data,
-
       data.value,
     );
   }
@@ -56,19 +49,12 @@ export class NotificationProducer {
   // SECURITY ALERT
   // =====================================================
 
-  async securityAlert(data: {
-    userId: string;
-    email?: string;
-    device?: string;
-    location?: string;
-  }) {
-
+  async securityAlert(
+    data: SecurityAlertEvent,
+  ) {
     await this.emit(
-
-      'notification.security.alert',
-
+      KAFKA_TOPICS.NOTIFICATION_SECURITY_ALERT,
       data,
-
       data.userId,
     );
   }
@@ -77,39 +63,27 @@ export class NotificationProducer {
   // WELCOME
   // =====================================================
 
-  async welcome(data: {
-    userId: string;
-    email?: string;
-    username?: string;
-  }) {
-
+  async welcome(
+    data: WelcomeNotificationEvent,
+  ) {
     await this.emit(
-
-      'notification.welcome',
-
+      KAFKA_TOPICS.NOTIFICATION_WELCOME,
       data,
-
       data.userId,
     );
   }
 
+  // =====================================================
+  // IN-APP NOTIFICATION
+  // =====================================================
 
-
-
-// =====================================================
-// IN-APP NOTIFICATION
-// =====================================================
-
-async sendNotification(data: {
-userId: string;
-type: string;
-referenceId?: string;
-actorId?: string;
-createdAt?: string;
-}) {
-await this.emit('notification.inapp.created',data,data.userId,);
-}
-
-
-
+  async sendNotification(
+    data: NotificationCreatedEvent,
+  ) {
+    await this.emit(
+      KAFKA_TOPICS.NOTIFICATION_CREATED,
+      data,
+      data.userId,
+    );
+  }
 }
