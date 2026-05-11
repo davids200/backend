@@ -9,22 +9,31 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ScyllaModule = void 0;
 const common_1 = require("@nestjs/common");
 const scylla_service_1 = require("./scylla.service");
-const schema_loader_1 = require("./schema.loader");
-const location_feed_repo_1 = require("./location.feed.repo");
+const home_feed_repo_1 = require("./repositories/feed/home.feed.repo");
+const user_feed_repo_1 = require("./repositories/feed/user.feed.repo");
+const hashtag_feed_repo_1 = require("./repositories/feed/hashtag.feed.repo");
+const location_feed_repo_1 = require("./repositories/feed/location.feed.repo");
+const schema_loader_1 = require("./schema/schema.loader");
 let ScyllaModule = class ScyllaModule {
 };
 exports.ScyllaModule = ScyllaModule;
 exports.ScyllaModule = ScyllaModule = __decorate([
-    (0, common_1.Global)(),
     (0, common_1.Module)({
+        imports: [],
         providers: [
             scylla_service_1.ScyllaService,
             schema_loader_1.ScyllaSchemaLoader,
-            location_feed_repo_1.LocationFeedRepository
+            home_feed_repo_1.HomeFeedRepository,
+            user_feed_repo_1.UserFeedRepository,
+            location_feed_repo_1.LocationFeedRepository,
+            hashtag_feed_repo_1.HashtagFeedRepository,
         ],
         exports: [
-            scylla_service_1.ScyllaService,
-            location_feed_repo_1.LocationFeedRepository
+            scylla_service_1.ScyllaService, schema_loader_1.ScyllaSchemaLoader,
+            home_feed_repo_1.HomeFeedRepository,
+            user_feed_repo_1.UserFeedRepository,
+            location_feed_repo_1.LocationFeedRepository,
+            hashtag_feed_repo_1.HashtagFeedRepository,
         ],
     })
 ], ScyllaModule);

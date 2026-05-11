@@ -19,6 +19,7 @@ const typeorm_2 = require("typeorm");
 const post_entity_1 = require("./post.entity");
 const post_producer_1 = require("./post.producer");
 const location_service_1 = require("../location/location.service");
+const topic_detector_util_1 = require("../feed/utils/topic-detector.util");
 let PostService = class PostService {
     repo;
     producer;
@@ -34,6 +35,8 @@ let PostService = class PostService {
         const mentions = input.content?.match(/@\w+/g) || [];
         // EXTRACT HASHTAGS
         const hashtags = input.content?.match(/#\w+/g) || [];
+        // DETECT TOPICS
+        const topics = (0, topic_detector_util_1.detectTopics)(input.content || '');
         //VALIDATE LOCATION ID
         let validatedLocationId;
         if (input.visibility === 'public') {
@@ -56,7 +59,7 @@ let PostService = class PostService {
             visibility: input.visibility || 'public',
             locationId: validatedLocationId,
         });
-        // SAVE TO POSTGRES
+        // SAVE TO POSTGRES  
         const saved = await this.repo.save(post);
         // EMIT EVENT
         await this.producer.postCreated({
@@ -64,6 +67,7 @@ let PostService = class PostService {
             authorId: saved.authorId,
             content: saved.content,
             visibility: saved.visibility,
+            topics,
             mentions,
             hashtags,
             mediaIds: [],

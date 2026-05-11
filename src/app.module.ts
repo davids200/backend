@@ -13,15 +13,15 @@ import { MinioModule } from './infrastructure/minio/minio.module';
 import { MetaModule } from './modules/meta/meta.module'; 
 import { CountryModule } from './modules/meta/country/country.module';
 import { LocationModule } from './modules/location/location.module'; 
-import { TrendingModule } from './modules/feed/trending.module';
-import { ConfigModule } from '@nestjs/config'; 
-import { ScyllaModule } from './infrastructure/scylladb/scylla.module';
+import { ConfigModule } from '@nestjs/config';  
 import { BootstrapService } from './bootstrap/bootstrap.service';
 import { KafkaModule } from './infrastructure/kafka/kafka.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { FollowModule } from './modules/follow/follow.module';
 import { LikeModule } from './modules/like/like.module';
 import { SessionCacheService } from './modules/auth/services/session-cache.service';
+import { ScyllaModule } from './infrastructure/scylladb/scylla.module';
+import { WorkersModule } from './workers/workers.module';
  
 @Module({
   imports: [
@@ -47,7 +47,7 @@ import { SessionCacheService } from './modules/auth/services/session-cache.servi
 ConfigModule.forRoot({  //WITHOUT THIS,You cannot safely use:process.env.JWT_SECRET
 isGlobal: true,
 }),
-
+WorkersModule,
     PostModule,
     MetaModule,
     FeedModule,
@@ -55,7 +55,6 @@ isGlobal: true,
     MinioModule, 
     LocationModule,
     CountryModule,
-    TrendingModule,
     KafkaModule,
     ScyllaModule,
     FollowModule,
@@ -64,7 +63,7 @@ isGlobal: true,
      
   ],
   providers: [
-    DebugResolver,
+    // DebugResolver,
     BootstrapService, 
   ],
 })

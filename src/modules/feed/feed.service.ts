@@ -1,132 +1,125 @@
 import {
   Injectable,
-  Logger,
 } from '@nestjs/common';
+import { FeedQueryService } from './services/feed-query.service';
 
-import { RedisFeedService }
-from '../../infrastructure/redis/feed/redis.feed.service';
 
 @Injectable()
-export class FeedService {
-  private readonly logger =
-    new Logger(FeedService.name);
-
+export class FeedService
+{
   constructor(
-    private readonly redisFeed:
-      RedisFeedService,
+
+    private readonly queryService:
+      FeedQueryService,
   ) {}
 
   // =====================================================
-  // PROCESS POST EVENT
+  // HOME FEED
   // =====================================================
 
-  async processPost(params: {
-    postId: string;
+  async getHomeFeed(params: {
+
     userId: string;
-    locationId?: string;
-    createdAt: Date;
+
+    limit?: number;
+
+    cursor?: Date;
   }) {
 
-    const {
-      postId,
-      userId,
-      locationId,
-      createdAt,
-    } = params;
-
-    // this.logger.log(
-    //   `Processing post: ${postId}`,
-    // );
-
-    // ================================================
-    // PLACEHOLDER
-    // Feed fanout logic handled here
-    // ================================================
-
-    return true;
+    return this.queryService
+      .getHomeFeed(
+        params,
+      );
   }
 
   // =====================================================
-  // GET USER FEED
+  // USER FEED
   // =====================================================
 
-  async getFeed(
-    user: {
-      id: string;
-      locationId?: string;
-    },
+  async getUserFeed(params: {
 
-    limit = 20,
+    authorId: string;
 
-    cursor?: number,
-  ) {
+    limit?: number;
 
-    // ================================================
-    // FOLLOWING FEED
-    // ================================================
+    cursor?: Date;
+  }) {
 
-    const followingFeed =
-      await this.redisFeed
-        .getFeedWithCursor(
-          user.id,
-          limit,
-          cursor,
-        );
+    const bucketDate =
+      (
+        params.cursor ||
+        new Date()
+      )
+        .toISOString()
+        .split('T')[0];
 
-    // ================================================
-    // GLOBAL TRENDING
-    // ================================================
+    return this.queryService
+      .getUserFeed({
 
-    const globalTrending =
-      await this.redisFeed
-        .getGlobalTrending(
-          limit,
-        );
+        ...params,
 
-    // ================================================
-    // LOCATION TRENDING
-    // ================================================
+        bucketDate,
+      });
+  }
 
-    let localTrending: string[] = [];
+  // =====================================================
+  // LOCATION FEED
+  // =====================================================
 
-    if (user.locationId) {
+  async getLocationFeed(params: {
 
-      localTrending =
-        await this.redisFeed
-          .getLocationTrending(
-            user.locationId,
-            limit,
-          );
-    }
+    locationId: string;
 
-    // ================================================
-    // MERGE FEEDS
-    // ================================================
+    limit?: number;
 
-    const merged = [
-      ...followingFeed,
-      ...globalTrending,
-      ...localTrending,
-    ];
+    cursor?: Date;
+  }) {
 
-    // ================================================
-    // REMOVE DUPLICATES
-    // ================================================
+    return this.queryService
+      .getLocationFeed(
+        params,
+      );
+  }
 
-    const uniquePosts = [
-      ...new Set(merged),
-    ];
+  // =====================================================
+  // HASHTAG FEED
+  // =====================================================
 
-    // ================================================
-    // NEXT CURSOR
-    // ================================================
+  async getHashtagFeed(params: {
 
-    const nextCursor =
-      (cursor || 0) + limit;
+    hashtag: string;
 
-    return {
-      posts: uniquePosts,
-      nextCursor,
-    };
+    limit?: number;
+
+    cursor?: Date;
+  }) {
+
+    return this.queryService
+      .getHashtagFeed(
+        params,
+      );
+  }
+
+  // =====================================================
+  // DISCOVERY FEED
+  // =====================================================
+
+  async getDiscoveryFeed(params: {
+
+    userId: string;
+
+    locationId?: string;
+
+    hashtags?: string[];
+
+    limit?: number;
+
+    cursor?: Date;
+  }) {
+
+    return this.queryService
+      .getDiscoveryFeed(
+        params,
+      );
   }
 }

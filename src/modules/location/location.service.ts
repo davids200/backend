@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository,IsNull } from 'typeorm';
 import { LocationEntity } from './location.entity';
 import { KafkaService } from '../../infrastructure/kafka/kafka.service';
 import { LocationNode } from './location.types';
@@ -166,4 +167,29 @@ async getLocationHierarchy(locationId: string): Promise<LocationNode[]> {
 
     return root;
   }
+
+
+
+// =====================================================
+// ROOT LOCATIONS BY COUNTRY
+// =====================================================
+
+async findRootLocationsByCountry(
+  countryId: string,
+) {
+  return this.locationRepo.find({
+    where: {
+      countryId,
+      parentId:
+        IsNull(),
+    },
+    order: {
+      name: 'ASC',
+    },
+  });
+}
+
+
+
+
 }

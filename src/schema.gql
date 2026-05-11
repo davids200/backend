@@ -44,6 +44,19 @@ A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date
 """
 scalar DateTime
 
+type FeedItem {
+  authorId: String!
+  content: String
+  createdAt: DateTime!
+  media: [String!]
+  postId: String!
+}
+
+type FeedResponse {
+  data: [FeedItem!]!
+  nextCursor: Int
+}
+
 type FollowEntity {
   createdAt: DateTime!
   followerId: String!
@@ -114,18 +127,23 @@ type PostEntity {
 
 type Query {
   countries: [CountryModel!]!
+  discoveryFeed(cursor: DateTime, hashtags: [String!], limit: Float = 20, locationId: String): FeedResponse!
   educationLevels: [String!]!
   followers(userId: String!): [FollowEntity!]!
   following(userId: String!): [FollowEntity!]!
+  getLocation(id: String!): LocationEntity
+  getLocationTree(id: String!): LocationEntity!
   getPostsByIds(postIds: [String!]!): [PostEntity!]!
   getProfile: String!
   getUser(id: String!): String!
-  location(id: String!): LocationEntity
-  locationTree(id: String!): LocationEntity!
+  hashtagFeed(cursor: DateTime, hashtag: String!, limit: Float = 20): FeedResponse!
+  homeFeed(cursor: DateTime, limit: Float = 20): FeedResponse!
+  locationFeed(cursor: DateTime, limit: Float = 20, locationId: String!): FeedResponse!
   me: UserModel!
-  ping: String!
+  rootLocations(countryId: String!): [LocationEntity!]!
   schools(locationId: String!): [String!]!
   sessions: [SessionModel!]!
+  userFeed(authorId: String!, cursor: DateTime, limit: Float = 20): FeedResponse!
 }
 
 input RefreshTokenInput {

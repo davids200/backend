@@ -1,39 +1,158 @@
-import { Resolver, Mutation, Query, Args } from '@nestjs/graphql';
-import { UseGuards } from '@nestjs/common';
+import {
+  Resolver,
+  Mutation,
+  Query,
+  Args,
+} from '@nestjs/graphql';
 
-import { CommentService } from './comment.service';
-import { GqlAuthGuard } from '../auth/guards/gql-auth.guard';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import {
+  UseGuards,
+} from '@nestjs/common';
 
-@Resolver()
+import { CommentService }
+from './comment.service';
+
+import { GqlAuthGuard }
+from '../auth/guards/gql-auth.guard';
+
+import { CurrentUser }
+from '../auth/decorators/current-user.decorator';
+
+import { CreateCommentInput }
+from './dto/create-comment.input';
+
+import { ReplyCommentInput }
+from './dto/reply-comment.input';
+import { CommentModel } from './comment.model';
+
+@Resolver(() => CommentModel)
 export class CommentResolver {
-  constructor(private service: CommentService) {}
 
-  @Mutation(() => String)
-  @UseGuards(GqlAuthGuard)
-  createComment(
-    @CurrentUser() user: any,
-    @Args('data') data: any,
+  constructor(
+
+    private readonly service:
+      CommentService,
+  ) {}
+
+  // =====================================================
+  // CREATE ROOT COMMENT
+  // =====================================================
+
+  @Mutation(() => CommentModel)
+
+  @UseGuards(
+    GqlAuthGuard,
+  )
+
+  async createComment(
+
+    @CurrentUser()
+    user: any,
+
+    @Args('data')
+    data: CreateCommentInput,
   ) {
-    return this.service.createComment(user.id, data);
+
+    return this.service
+      .createComment(
+
+        user.id,
+
+        data,
+      );
   }
 
-  @Mutation(() => String)
-  @UseGuards(GqlAuthGuard)
-  replyComment(
-    @CurrentUser() user: any,
-    @Args('data') data: any,
+  // =====================================================
+  // REPLY COMMENT
+  // =====================================================
+
+  @Mutation(() => CommentModel)
+
+  @UseGuards(
+    GqlAuthGuard,
+  )
+
+  async replyComment(
+
+    @CurrentUser()
+    user: any,
+
+    @Args('data')
+    data: ReplyCommentInput,
   ) {
-    return this.service.replyComment(user.id, data);
+
+    return this.service
+      .replyComment(
+
+        user.id,
+
+        data,
+      );
   }
 
-  @Query(() => String)
-  getComments(@Args('postId') postId: string) {
-    return this.service.getComments(postId);
+  // =====================================================
+  // GET ROOT COMMENTS
+  // =====================================================
+
+  @Query(() => [CommentModel])
+
+  async getComments(
+
+    @Args('postId')
+    postId: string,
+
+    @Args('limit', {
+      nullable: true,
+    })
+    limit?: number,
+
+    @Args('cursor', {
+      nullable: true,
+    })
+    cursor?: Date,
+  ) {
+
+    return this.service
+      .getComments({
+
+        postId,
+
+        limit,
+
+        cursor,
+      });
   }
 
-  @Query(() => String)
-  getReplies(@Args('rootId') rootId: string) {
-    return this.service.getReplies(rootId);
+  // =====================================================
+  // GET REPLIES
+  // =====================================================
+
+  @Query(() => [CommentModel])
+
+  async getReplies(
+
+    @Args('rootId')
+    rootId: string,
+
+    @Args('limit', {
+      nullable: true,
+    })
+    limit?: number,
+
+    @Args('offset', {
+      nullable: true,
+    })
+    offset?: number,
+  ) {
+
+    return this.service
+      .getReplies({
+
+        rootId,
+
+        limit,
+
+        offset,
+      });
   }
 }

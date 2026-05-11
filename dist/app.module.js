@@ -12,7 +12,6 @@ const graphql_1 = require("@nestjs/graphql");
 const typeorm_1 = require("@nestjs/typeorm");
 const apollo_1 = require("@nestjs/apollo");
 const path_1 = require("path");
-const debug_resolver_1 = require("./debug/debug.resolver");
 const post_module_1 = require("./modules/post/post.module");
 const feed_module_1 = require("./modules/feed/feed.module");
 const auth_module_1 = require("./modules/auth/auth.module");
@@ -20,14 +19,14 @@ const minio_module_1 = require("./infrastructure/minio/minio.module");
 const meta_module_1 = require("./modules/meta/meta.module");
 const country_module_1 = require("./modules/meta/country/country.module");
 const location_module_1 = require("./modules/location/location.module");
-const trending_module_1 = require("./modules/feed/trending.module");
 const config_1 = require("@nestjs/config");
-const scylla_module_1 = require("./infrastructure/scylladb/scylla.module");
 const bootstrap_service_1 = require("./bootstrap/bootstrap.service");
 const kafka_module_1 = require("./infrastructure/kafka/kafka.module");
 const notification_module_1 = require("./modules/notification/notification.module");
 const follow_module_1 = require("./modules/follow/follow.module");
 const like_module_1 = require("./modules/like/like.module");
+const scylla_module_1 = require("./infrastructure/scylladb/scylla.module");
+const workers_module_1 = require("./workers/workers.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -55,6 +54,7 @@ exports.AppModule = AppModule = __decorate([
             config_1.ConfigModule.forRoot({
                 isGlobal: true,
             }),
+            workers_module_1.WorkersModule,
             post_module_1.PostModule,
             meta_module_1.MetaModule,
             feed_module_1.FeedModule,
@@ -62,7 +62,6 @@ exports.AppModule = AppModule = __decorate([
             minio_module_1.MinioModule,
             location_module_1.LocationModule,
             country_module_1.CountryModule,
-            trending_module_1.TrendingModule,
             kafka_module_1.KafkaModule,
             scylla_module_1.ScyllaModule,
             follow_module_1.FollowModule,
@@ -70,7 +69,7 @@ exports.AppModule = AppModule = __decorate([
             notification_module_1.NotificationModule,
         ],
         providers: [
-            debug_resolver_1.DebugResolver,
+            // DebugResolver,
             bootstrap_service_1.BootstrapService,
         ],
     })

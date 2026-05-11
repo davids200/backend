@@ -13,71 +13,71 @@ export class RedisFeedService {
   // ADD TO USER FEED
   // =====================================================
 
-  async addToFeed(
-    userId: string,
-    postId: string,
-    score: number,
-  ) {
+  // async addToFeed(
+  //   userId: string,
+  //   postId: string,
+  //   score: number,
+  // ) {
 
-    return this.redis.client.zadd(
-      `feed:${userId}`,
-      score.toString(),
-      postId,
-    );
-  }
+  //   return this.redis.client.zadd(
+  //     `feed:${userId}`,
+  //     score.toString(),
+  //     postId,
+  //   );
+  // }
 
   // =====================================================
   // REMOVE POST FROM FEED
   // =====================================================
 
-  async removePost(
-    userId: string,
-    postId: string,
-  ) {
+  // async removePost(
+  //   userId: string,
+  //   postId: string,
+  // ) {
 
-    return this.redis.client.zrem(
-      `feed:${userId}`,
-      postId,
-    );
-  }
+  //   return this.redis.client.zrem(
+  //     `feed:${userId}`,
+  //     postId,
+  //   );
+  // }
 
   // =====================================================
   // SIMPLE FEED
   // =====================================================
 
-  async getFeed(
-    userId: string,
-    start = 0,
-    stop = 20,
-  ): Promise<string[]> {
+  // async getFeed(
+  //   userId: string,
+  //   start = 0,
+  //   stop = 20,
+  // ): Promise<string[]> {
 
-    return this.redis.client.zrevrange(
-      `feed:${userId}`,
-      start,
-      stop,
-    );
-  }
+  //   return this.redis.client.zrevrange(
+  //     `feed:${userId}`,
+  //     start,
+  //     stop,
+  //   );
+  // }
 
   // =====================================================
   // CURSOR PAGINATED FEED
   // =====================================================
 
-  async getFeedWithCursor(
-    userId: string,
-    limit = 20,
-    cursor?: number,
-  ): Promise<string[]> {
+  // async getFeedWithCursor(
+  //   userId: string,
+  //   limit = 20,
+  //   cursor?: number,
+  // ): Promise<string[]> {
 
-    const start = cursor || 0;
+  //   const start = cursor || 0;
 
-    const stop = start + limit - 1;
+  //   const stop = start + limit - 1;
 
-    return this.redis.client.zrevrange(
-      `feed:${userId}`,
-      start,
-      stop,
-    );
-  }
+  //   return this.redis.client.zrevrange(
+  //     `feed:${userId}`,
+  //     start,
+  //     stop,
+  //   );
+  // }
 
   // =====================================================
   // GLOBAL TRENDING
@@ -145,17 +145,17 @@ export class RedisFeedService {
 
 
 
-async trimFeed(
-  userId: string,
-  max = 500,
-) {
+// async trimFeed(
+//   userId: string,
+//   max = 500,
+// ) {
 
-  await this.redis.client.zremrangebyrank(
-    `feed:${userId}`,
-    0,
-    -max - 1,
-  );
-}
+//   await this.redis.client.zremrangebyrank(
+//     `feed:${userId}`,
+//     0,
+//     -max - 1,
+//   );
+// }
 
 
 

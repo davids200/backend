@@ -21,6 +21,7 @@ from './dto/create-post.input';
 import { PostProducer }
 from './post.producer';
 import { LocationService } from '../location/location.service';
+import { detectTopics } from '../feed/utils/topic-detector.util';
 
 @Injectable()
 export class PostService {
@@ -43,12 +44,14 @@ async createPost(userId: string,input: CreatePostInput,) {
 const mentions =input.content?.match(/@\w+/g,) || [];    
 // EXTRACT HASHTAGS
 const hashtags =input.content?.match(/#\w+/g,) || [];
+// DETECT TOPICS
+const topics = detectTopics(input.content || '',  );
 
 //VALIDATE LOCATION ID
 let validatedLocationId:string | undefined;
 if (input.visibility === 'public') {  validatedLocationId = undefined;
 } else {
-  if (!input.locationId) {    throw new Error('locationId is required for non-public posts',);
+  if (!input.locationId ) {    throw new Error('locationId is required for non-public posts',);
   }
 
   const location =await this.locationService.findOne(input.locationId,);
@@ -64,49 +67,25 @@ content: input.content,
 visibility: input.visibility || 'public',
 locationId: validatedLocationId,
 });
-
     
-    // SAVE TO POSTGRES
+// SAVE TO POSTGRES  
+const saved =  await this.repo.save(post,);
     
-
-    const saved =
-      await this.repo.save(
-        post,
-      );
-
-    
-    // EMIT EVENT
-    
-
-    await this.producer.postCreated({
-
-      postId:
-        saved.id,
-
-      authorId:
-        saved.authorId,
-
-      content:
-        saved.content,
-
-      visibility:
-        saved.visibility,
-
-      mentions,
-
-      hashtags,
-
-      mediaIds: [],
-
-      createdAt:
-        saved.createdAt.toISOString(),
-
-      locationId:
-        saved.locationId,
-    });
-
-    return saved;
-  }
+// EMIT EVENT
+await this.producer.postCreated({
+postId:saved.id,
+authorId:saved.authorId,
+content:saved.content,
+visibility:saved.visibility, 
+topics,
+mentions,
+hashtags,
+mediaIds: [],
+createdAt:saved.createdAt.toISOString(),
+locationId:saved.locationId,
+});
+return saved;
+}
 
   
   // GET POST
@@ -115,17 +94,12 @@ locationId: validatedLocationId,
   async getPostById(
     id: string,
   ) {
-
-    const post =
-      await this.repo.findOne({
-
+    const post =await this.repo.findOne({
         where: {
           id,
         },
       });
-
     if (!post) {
-
       throw new NotFoundException(
         'Post not found',
       );

@@ -8,81 +8,61 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var FeedService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FeedService = void 0;
 const common_1 = require("@nestjs/common");
-const redis_feed_service_1 = require("../../infrastructure/redis/feed/redis.feed.service");
-let FeedService = FeedService_1 = class FeedService {
-    redisFeed;
-    logger = new common_1.Logger(FeedService_1.name);
-    constructor(redisFeed) {
-        this.redisFeed = redisFeed;
+const feed_query_service_1 = require("./services/feed-query.service");
+let FeedService = class FeedService {
+    queryService;
+    constructor(queryService) {
+        this.queryService = queryService;
     }
     // =====================================================
-    // PROCESS POST EVENT
+    // HOME FEED
     // =====================================================
-    async processPost(params) {
-        const { postId, userId, locationId, createdAt, } = params;
-        // this.logger.log(
-        //   `Processing post: ${postId}`,
-        // );
-        // ================================================
-        // PLACEHOLDER
-        // Feed fanout logic handled here
-        // ================================================
-        return true;
+    async getHomeFeed(params) {
+        return this.queryService
+            .getHomeFeed(params);
     }
     // =====================================================
-    // GET USER FEED
+    // USER FEED
     // =====================================================
-    async getFeed(user, limit = 20, cursor) {
-        // ================================================
-        // FOLLOWING FEED
-        // ================================================
-        const followingFeed = await this.redisFeed
-            .getFeedWithCursor(user.id, limit, cursor);
-        // ================================================
-        // GLOBAL TRENDING
-        // ================================================
-        const globalTrending = await this.redisFeed
-            .getGlobalTrending(limit);
-        // ================================================
-        // LOCATION TRENDING
-        // ================================================
-        let localTrending = [];
-        if (user.locationId) {
-            localTrending =
-                await this.redisFeed
-                    .getLocationTrending(user.locationId, limit);
-        }
-        // ================================================
-        // MERGE FEEDS
-        // ================================================
-        const merged = [
-            ...followingFeed,
-            ...globalTrending,
-            ...localTrending,
-        ];
-        // ================================================
-        // REMOVE DUPLICATES
-        // ================================================
-        const uniquePosts = [
-            ...new Set(merged),
-        ];
-        // ================================================
-        // NEXT CURSOR
-        // ================================================
-        const nextCursor = (cursor || 0) + limit;
-        return {
-            posts: uniquePosts,
-            nextCursor,
-        };
+    async getUserFeed(params) {
+        const bucketDate = (params.cursor ||
+            new Date())
+            .toISOString()
+            .split('T')[0];
+        return this.queryService
+            .getUserFeed({
+            ...params,
+            bucketDate,
+        });
+    }
+    // =====================================================
+    // LOCATION FEED
+    // =====================================================
+    async getLocationFeed(params) {
+        return this.queryService
+            .getLocationFeed(params);
+    }
+    // =====================================================
+    // HASHTAG FEED
+    // =====================================================
+    async getHashtagFeed(params) {
+        return this.queryService
+            .getHashtagFeed(params);
+    }
+    // =====================================================
+    // DISCOVERY FEED
+    // =====================================================
+    async getDiscoveryFeed(params) {
+        return this.queryService
+            .getDiscoveryFeed(params);
     }
 };
 exports.FeedService = FeedService;
-exports.FeedService = FeedService = FeedService_1 = __decorate([
+exports.FeedService = FeedService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [redis_feed_service_1.RedisFeedService])
+    __metadata("design:paramtypes", [feed_query_service_1.FeedQueryService])
 ], FeedService);
 //# sourceMappingURL=feed.service.js.map

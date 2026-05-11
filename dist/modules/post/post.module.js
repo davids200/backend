@@ -13,7 +13,6 @@ const post_entity_1 = require("./post.entity");
 const post_service_1 = require("./post.service");
 const post_producer_1 = require("./post.producer");
 const post_resolver_1 = require("./post.resolver");
-const post_consumer_1 = require("../../workers/post/post.consumer");
 const feed_module_1 = require("../feed/feed.module");
 const notification_module_1 = require("../notification/notification.module");
 const kafka_module_1 = require("../../infrastructure/kafka/kafka.module");
@@ -36,11 +35,9 @@ exports.PostModule = PostModule = __decorate([
             post_service_1.PostService,
             post_producer_1.PostProducer,
             post_resolver_1.PostResolver,
-            post_consumer_1.PostConsumer,
         ],
         exports: [
             post_service_1.PostService,
-            post_consumer_1.PostConsumer,
         ],
     })
 ], PostModule);

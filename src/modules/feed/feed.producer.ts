@@ -10,16 +10,15 @@ export class FeedProducer {
   constructor(
     private readonly kafka:
       KafkaService,
-  ) {}
+  ) {
+
+    console.log('📰 FEED PRODUCER CONSTRUCTOR' );
+  }
 
   
   // FANOUT POST  
 async fanoutPost(data: FeedFanoutEvent,) {
-
-   console.log(
-    '📰 FEED PRODUCER CALLED',
-    data,
-  );
+   console.log('📰 FEED PRODUCER CALLED', data, );
 await this.kafka.emit(KAFKA_TOPICS.FEED_FANOUT,data,data.authorId,);
 }
 

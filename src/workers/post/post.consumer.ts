@@ -1,3 +1,5 @@
+console.log("Starting POST CONSUMER");
+
 import {  Injectable,  Logger,} from '@nestjs/common';
 import { KafkaService }from '../../infrastructure/kafka/kafka.service';
 
@@ -23,12 +25,12 @@ export class PostConsumer {
     private readonly feed: FeedProducer,
     private readonly notification: NotificationProducer,
   ) {
- this.logger.log('✅ PostConsumer Constructor...................');
+ console.log('✅ PostConsumer initialized in Constructor');
 
   }
 
   async onModuleInit(): Promise<void> {
-    this.logger.log('✅ PostConsumer initialized...............');
+     this.logger.log('✅ PostConsumer initialized...............');
 
     try {
       this.logger.log('🔥 Bootstrap starting...');
@@ -57,14 +59,10 @@ export class PostConsumer {
   // =====================================================
   // START CONSUMER
   // =====================================================
+ 
+  async start() {   
 
-  async start() {  console.log(
-  '🚀 START METHOD ENTERED',
-);
-
-    this.logger.log(
-      '🚀 Starting PostConsumer...',
-    );
+    
 
     await this.kafka.consume<PostCreatedEvent>(
 
@@ -74,10 +72,8 @@ export class PostConsumer {
 
       async (event) => {
 
-        this.logger.log(
-
-          `📩 EVENT: ${event.postId}`,
-        );
+      console.log('🔥 FEED CONSUMER STARTED',
+  );
 
         await this.handlePostCreated(
           event,
@@ -90,31 +86,14 @@ export class PostConsumer {
   // HANDLE POST CREATED
   // =====================================================
 
-  private async handlePostCreated(
-    event: PostCreatedEvent,
-  ) {
-
-    this.logger.log(
-
-      `📝 Processing: ${event.postId}`,
-    );
+  private async handlePostCreated(event: PostCreatedEvent,) { 
 
     await this.feed.fanoutPost({
-
-      postId:
-        event.postId,
-
-      authorId:
-        event.authorId,
-
-      visibility:
-        event.visibility,
-
-      createdAt:
-        event.createdAt,
-
-      locationId:
-        event.locationId,
+      postId:event.postId,
+      authorId:event.authorId,
+      visibility:event.visibility,
+      createdAt:event.createdAt,
+      locationId:event.locationId,
     });
 
     if (
@@ -127,31 +106,18 @@ export class PostConsumer {
 
           async (mentionUserId) => {
 
-            await this.notification
-              .sendNotification({
-
-                userId:
-                  mentionUserId,
-
-                actorId:
-                  event.authorId,
-
-                type:
-                  'mention',
-
-                referenceId:
-                  event.postId,
-
-                createdAt:
-                  event.createdAt,
+            await this.notification.sendNotification({
+                userId:mentionUserId,
+                actorId:event.authorId,
+                type:'mention',
+                referenceId:event.postId,
+                createdAt:event.createdAt,
               });
           },
         ),
       );
     }
 
-    this.logger.log(
-      `✅ DONE: ${event.postId}`,
-    );
+    this.logger.log(`✅ DONE: ${event.postId}`,);
   }
 }

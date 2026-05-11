@@ -1,88 +1,47 @@
-import {
-  Injectable,
-  Logger,
-  OnModuleInit,
-} from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 
-import { KafkaService }
-from '../../infrastructure/kafka/kafka.service';
+import { KafkaService } from '../../infrastructure/kafka/kafka.service';
+import { RedisService } from '../../infrastructure/redis/redis.service';
+import { LocationService } from '../../modules/location/location.service';
+import { calculateScore } from '../../modules/feed/utils/feed-ranking.util';
+import { CELEBRITY_THRESHOLD } from '../../modules/feed/feed.constants';
+import { KAFKA_TOPICS } from '../../common/constants/kafka-topics.constants';
 
-import { RedisService }
-from '../../infrastructure/redis/redis.service';
-
-import { RedisFeedService }
-from '../../infrastructure/redis/feed/redis.feed.service';
-
-import { LocationFeedRepository }
-from '../../infrastructure/scylladb/location.feed.repo';
-
-import { LocationService }
-from '../../modules/location/location.service';
-
-import { calculateScore }
-from '../../modules/feed/utils/feed-ranking.util';
-
-import { CELEBRITY_THRESHOLD }
-from '../../modules/feed/feed.constants';
-
-import { KAFKA_TOPICS }
-from '../../common/constants/kafka-topics.constants';
+// ✅ Correct paths — matches what ScyllaModule exports
+import { LocationFeedRepository } from '../../infrastructure/scylladb/repositories/feed/location.feed.repo';
+import { HomeFeedRepository } from '../../infrastructure/scylladb/repositories/feed/home.feed.repo';
+import { UserFeedRepository } from '../../infrastructure/scylladb/repositories/feed/user.feed.repo';
 
 interface FeedFanoutEvent {
-
   postId: string;
-
   authorId: string;
-
-  visibility:
-    | 'public'
-    | 'followers'
-    | 'private'
-    | 'local';
-
+  visibility: 'public' | 'followers' | 'private' | 'local';
   createdAt: string;
-
   locationId?: string;
 }
 
 @Injectable()
-export class FeedConsumer
-  implements OnModuleInit
-{
-  private readonly logger =
-    new Logger(
-      FeedConsumer.name,
-    );
+export class FeedConsumer implements OnModuleInit {
+  private readonly logger = new Logger(FeedConsumer.name);
 
   constructor(
-
-    private readonly kafka:
-      KafkaService,
-
-    private readonly redis:
-      RedisService,
-
-    private readonly redisFeed:
-      RedisFeedService,
-
-    private readonly locationFeedRepo:
-      LocationFeedRepository,
-
-    private readonly locationService:
-      LocationService,
+    private readonly kafka: KafkaService,
+    private readonly redis: RedisService,
+    private readonly locationFeedRepo: LocationFeedRepository,
+    private readonly locationService: LocationService,
+    private readonly homeFeedRepo: HomeFeedRepository,
+    private readonly userFeedRepo: UserFeedRepository,
   ) {
+console.log('✅ FeedConsumer initialized in Constructor');
 
-    this.logger.log(
-      '✅ FeedConsumer initialized',
-    );
   }
 
   // =====================================================
   // MODULE INIT
   // =====================================================
 
-  async onModuleInit() {
-
+  async onModuleInit(): Promise<void> {
+    this.logger.log('✅ FeedConsumer initialized');
     await this.start();
   }
 
@@ -90,189 +49,136 @@ export class FeedConsumer
   // START CONSUMER
   // =====================================================
 
-  async start() {
-
-    this.logger.log(
-      '🚀 Starting FeedConsumer...',
-    );
+  async start(): Promise<void> {
+    this.logger.log('🚀 Starting FeedConsumer...');
 
     await this.kafka.consume<FeedFanoutEvent>(
-
       'feed-group',
-
       KAFKA_TOPICS.FEED_FANOUT,
-
       async (event) => {
-
         try {
-
-          this.logger.log(
-
-            `📩 Feed event: ${event.postId}`,
-          );
-
-          await this.handleFeedFanout(
-            event,
-          );
-
+          this.logger.log(`📩 Feed event received: ${event.postId}`);
+          await this.handleFeedFanout(event);
         } catch (err) {
-
-          this.logger.error(
-            '❌ FeedConsumer failed',
-            err,
-          );
+          this.logger.error(`❌ FeedConsumer error on postId=${event.postId}`, err);
         }
       },
     );
 
-    this.logger.log(
-      '✅ FeedConsumer running',
-    );
+    this.logger.log('✅ FeedConsumer running');
   }
 
   // =====================================================
   // HANDLE FEED FANOUT
   // =====================================================
 
-  private async handleFeedFanout(
-    event: FeedFanoutEvent,
-  ) {
-
-    const {
-      postId,
-      authorId,
-      createdAt,
-      locationId,
-    } = event;
+  private async handleFeedFanout(event: FeedFanoutEvent): Promise<void> {
+    const { postId, authorId, createdAt, locationId } = event;
+    const createdAtDate = new Date(createdAt);
 
     // ================================================
-    // GET FOLLOWERS
+    // 1. USER FEED — always save regardless of follower count
     // ================================================
-
-    const followerList =
-      await this.redis
-        .client
-        .smembers(
-          `followers:${authorId}`,
-        );
-
-    const followerCount =
-      followerList.length;
-
-    this.logger.log(
-
-      `👥 Followers: ${followerCount}`,
-    );
-
-    // ================================================
-    // CELEBRITY CHECK
-    // ================================================
-
-    if (
-      followerCount >
-      CELEBRITY_THRESHOLD
-    ) {
-
-      this.logger.warn(
-
-        `🔥 Celebrity detected (${followerCount})`,
-      );
-
-      return;
+    try {
+      this.logger.log(`💾 Saving to UserFeed: postId=${postId} authorId=${authorId}`);
+      await this.userFeedRepo.insertPost({ authorId, postId, createdAt: createdAtDate });
+      this.logger.log(`✅ UserFeed saved: postId=${postId}`);
+    } catch (err) {
+      this.logger.error(`❌ UserFeed insert failed: postId=${postId}`, err);
     }
 
     // ================================================
-    // CALCULATE SCORE
+    // 2. GET FOLLOWERS
     // ================================================
-
-    const score =
-  calculateScore({
-
-    createdAt:
-      new Date(createdAt),
-
-    likes: 0,
-
-    comments: 0,
-
-    isFollowingAuthor: true,
-  });
+    const followerList = await this.redis.client.smembers(`followers:${authorId}`);
+    const followerCount = followerList.length;
+    this.logger.log(`👥 Followers for ${authorId}: ${followerCount}`);
 
     // ================================================
-    // REDIS FANOUT
+    // 3. CELEBRITY CHECK — skip home feed fanout only
     // ================================================
+    if (followerCount > CELEBRITY_THRESHOLD) {
+      this.logger.warn(`🔥 Celebrity detected (${followerCount} followers) — skipping home feed fanout`);
+      // Still continue to location feed below
+    } else {
 
-    const BATCH_SIZE = 500;
+      // ================================================
+      // 4. CALCULATE SCORE
+      // ================================================
+      const score = calculateScore({
+        createdAt: createdAtDate,
+        likes: 0,
+        comments: 0,
+        isFollowingAuthor: true,
+      });
 
-    for (
-      let i = 0;
-      i < followerList.length;
-      i += BATCH_SIZE
-    ) {
+      // ================================================
+      // 5. HOME FEED — batch insert for all followers
+      // ================================================
+      const BATCH_SIZE = 500;
+      this.logger.log(`📰 Starting home feed fanout for ${followerCount} followers...`);
 
-      const batch =
-        followerList.slice(
-          i,
-          i + BATCH_SIZE,
-        );
-
-      await Promise.all(
-
-        batch.map(
-
-          async (
-            followerId,
-          ) => {
-
-            await this.redisFeed
-              .addToFeed(
-
-                followerId,
-
-                postId,
-
-                score,
-              );
-          },
-        ),
-      );
-    }
-
-    this.logger.log(
-
-      `📰 Redis fanout complete: ${postId}`,
-    );
-
-    // ================================================
-    // LOCATION FEED (SCYLLA)
-    // ================================================
-
-    if (locationId) {
-
-      const hierarchy =
-        await this.locationService.getLocationHierarchy(
-            locationId,
-          );
-
-      if (
-        hierarchy?.length
-      ) {
+      for (let i = 0; i < followerList.length; i += BATCH_SIZE) {
+        const batch = followerList.slice(i, i + BATCH_SIZE);
 
         await Promise.all(
-          hierarchy.map(
-            async (loc) => {
-              await this.locationFeedRepo
-                .insertPost({locationId:loc.id,postId,authorId,createdAt:new Date(createdAt,),
-                });
-              this.logger.log(`📍 Scylla insert → ${loc.id}`,
-              );
-            },
-          ),
+          batch.map(async (followerId) => {
+            try {
+              await this.homeFeedRepo.insertPost({
+              userId: followerId,
+              postId,
+              authorId,
+              score,
+              createdAt: createdAtDate,
+              });
+            } catch (err) {
+              this.logger.error(`❌ HomeFeed insert failed: followerId=${followerId} postId=${postId}`, err);
+            }
+          }),
         );
+
+        this.logger.log(`📰 HomeFeed batch done: ${i + batch.length}/${followerCount}`);
       }
+
+      this.logger.log(`✅ HomeFeed fanout complete: postId=${postId}`);
     }
 
-    this.logger.log(`✅ Feed processed: ${postId}`,
-    );
+    // ================================================
+    // 6. LOCATION FEED — save to ScyllaDB hierarchy
+    // ================================================
+    if (locationId) {
+      this.logger.log(`📍 Processing location feed: locationId=${locationId}`);
+
+      try {
+        const hierarchy = await this.locationService.getLocationHierarchy(locationId);
+        this.logger.log(`📍 Location hierarchy resolved: ${JSON.stringify(hierarchy?.map(l => l.id))}`);
+
+        if (hierarchy?.length) {
+          await Promise.all(
+            hierarchy.map(async (loc) => {
+              try {
+                await this.locationFeedRepo.insertPost({
+                  locationId: loc.id,
+                  postId,
+                  authorId,
+                  createdAt: createdAtDate,
+                });
+                this.logger.log(`✅ LocationFeed saved: locationId=${loc.id} postId=${postId}`);
+              } catch (err) {
+                this.logger.error(`❌ LocationFeed insert failed: locationId=${loc.id} postId=${postId}`, err);
+              }
+            }),
+          );
+        } else {
+          this.logger.warn(`⚠️ No location hierarchy found for locationId=${locationId}`);
+        }
+      } catch (err) {
+        this.logger.error(`❌ getLocationHierarchy failed: locationId=${locationId}`, err);
+      }
+    } else {
+      this.logger.log(`⏭️ No locationId on event — skipping location feed`);
+    }
+
+    this.logger.log(`✅ Feed fully processed: postId=${postId}`);
   }
 }

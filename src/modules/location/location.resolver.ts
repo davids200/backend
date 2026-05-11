@@ -20,19 +20,28 @@ export class LocationResolver {
   // =========================
   // QUERIES
   // =========================
-
   // Get a single location by ID
- @Query(() => LocationEntity, { name: 'location', nullable: true })
+ @Query(() => LocationEntity, { name: 'getLocation', nullable: true })
 async getLocation(@Args('id') id: string): Promise<LocationEntity | null> {
   // Use the repository directly or via a service method
   return this.locationService['locationRepo'].findOne({ where: { id } });
 }
 
   // Get the full hierarchy tree starting from a root ID
-  @Query(() => LocationEntity, { name: 'locationTree' })
+  @Query(() => LocationEntity, { name: 'getLocationTree' })
   async getLocationTree(@Args('id') id: string) {
     return this.locationService.getLocationTree(id);
   }
+
+
+@Query(() => [LocationEntity])
+async rootLocations(
+  @Args('countryId')
+  countryId: string,
+) {
+  return this.locationService.findRootLocationsByCountry(countryId,);
+}
+  
 
   // =========================
   // FIELD RESOLVERS

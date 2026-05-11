@@ -3,6 +3,10 @@ export function calculateScore(params: {
   likes: number;
   comments: number;
   isFollowingAuthor: boolean;
+  interestScore?: number;
+  isSameLocation?: boolean;
+  shares?: number;
+  watchTime?: number;
 }) {
 
   const {
@@ -10,25 +14,30 @@ export function calculateScore(params: {
     likes,
     comments,
     isFollowingAuthor,
+    interestScore = 0,
+    isSameLocation = false,
+    shares = 0,
+    watchTime = 0,
   } = params;
 
   // ============================================
-  // SAFE DATE PARSING
+  // SAFE DATE
   // ============================================
 
   const createdTimestamp =
     new Date(createdAt).getTime();
 
-  // invalid date protection
   if (
-    Number.isNaN(createdTimestamp)
+    Number.isNaN(
+      createdTimestamp,
+    )
   ) {
+
     return 0;
   }
 
   const now = Date.now();
 
-  // prevent future timestamps
   const safeTimestamp =
     Math.min(
       createdTimestamp,
@@ -54,20 +63,38 @@ export function calculateScore(params: {
     );
 
   // ============================================
-  // ENGAGEMENT
+  // BASE SCORE
   // ============================================
 
-  let score =
-    recency +
-    likes * 2 +
-    comments * 3;
+  let score =recency +likes * 2 + comments * 3 + shares * 4 + watchTime * 0.1;
 
   // ============================================
   // FOLLOW BOOST
   // ============================================
 
-  if (isFollowingAuthor) {
+  if (
+    isFollowingAuthor
+  ) {
+
     score += 20;
+  }
+
+  // ============================================
+  // INTEREST BOOST
+  // ============================================
+
+  score +=
+    interestScore * 5;
+
+  // ============================================
+  // LOCATION BOOST
+  // ============================================
+
+  if (
+    isSameLocation
+  ) {
+
+    score += 10;
   }
 
   return Math.max(

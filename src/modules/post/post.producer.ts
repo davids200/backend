@@ -27,29 +27,15 @@ export class PostProducer {
   // POST CREATED
   // =====================================================
 
-  async postCreated(
-    data: PostCreatedEvent,
-  ) {
+  async postCreated(data: PostCreatedEvent,  ) {
 
     // TEMP TEST LOCATION
-    const payload = {
+    const payload = {...data,locationId:data.locationId,    };
 
-      ...data,
-
-      locationId:data.locationId,
-    };
-
-    console.log(
-      '📤 post.created.event',
-      payload,
-    );
-
+    console.log('📤 post.created.event',payload, );
     await this.kafka.emit(
-
       KAFKA_TOPICS.POST_CREATED,
-
       payload,
-
       payload.authorId,
     );
   }

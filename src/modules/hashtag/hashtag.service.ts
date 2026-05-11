@@ -8,14 +8,21 @@ from './hashtag.repository';
 
 import { RedisHashtagService }
 from '../../infrastructure/redis/hashtag/redis.hashtag.service';
+import { HASHTAG_TOPIC_MAP } from '../../common/constants/hashtag-topic-map.constant';
+ 
 
 @Injectable()
 export class HashtagService {
+
   private readonly logger =
-    new Logger(HashtagService.name);
+    new Logger(
+      HashtagService.name,
+    );
 
   constructor(
-    private readonly repository: HashtagRepository,
+
+    private readonly repository:
+      HashtagRepository,
 
     private readonly redisHashtag:
       RedisHashtagService,
@@ -26,95 +33,171 @@ export class HashtagService {
   // =====================================================
 
   async processHashtags(params: {
+
     postId: string;
+
     userId: string;
+
     hashtags: string[];
-    locationId?: string;
+
     createdAt: Date;
+
+    locationId?: string;
   }) {
 
     const {
+
       postId,
+
       userId,
+
       hashtags,
-      locationId,
+
       createdAt,
+
+      locationId,
     } = params;
 
-    try {
+    // ================================================
+    // NORMALIZE + DEDUPLICATE
+    // ================================================
 
-      // ===================================================
-      // PROCESS EACH HASHTAG
-      // ===================================================
+    const normalizedHashtags =
+      this.normalizeHashtags(
+        hashtags,
+      );
 
-      for (const hashtag of hashtags) {
+    // ================================================
+    // PROCESS EACH HASHTAG
+    // ================================================
 
-        // ================================================
-        // INITIAL TRENDING SCORE
-        // ================================================
+    for (
+      const hashtag
+      of normalizedHashtags
+    ) {
+
+      try {
+
+        // ============================================
+        // INITIAL SCORE
+        // ============================================
 
         const score = 10;
 
-        // ================================================
-        // SAVE HASHTAG RELATION
-        // ================================================
+        // ============================================
+        // SAVE POST ↔ HASHTAG RELATION
+        // ============================================
 
         await this.repository
           .insertHashtagByPost({
+
             postId,
+
             hashtag,
           });
 
-        // ================================================
-        // SAVE POST INSIDE HASHTAG FEED
-        // ================================================
+        // ============================================
+        // INSERT INTO HASHTAG FEED
+        // ============================================
 
         await this.repository
           .insertPostByHashtag({
+
             hashtag,
+
             score,
+
             createdAt,
+
             postId,
+
             authorId: userId,
           });
 
-        // ================================================
-        // GLOBAL HASHTAG TRENDING
-        // ================================================
+        // ============================================
+        // GLOBAL TRENDING
+        // ============================================
 
         await this.redisHashtag
           .incrementHashtagScore(
+
             hashtag,
+
             score,
           );
 
-        // ================================================
-        // LOCATION HASHTAG TRENDING
-        // ================================================
+        // ============================================
+        // LOCATION TRENDING
+        // ============================================
 
         if (locationId) {
 
           await this.redisHashtag
             .incrementLocationHashtagScore(
+
               locationId,
+
               hashtag,
+
               score,
             );
         }
+
+        // ============================================
+        // OPTIONAL TOPIC MAPPING
+        // ============================================
+
+        const topic =
+          HASHTAG_TOPIC_MAP[
+            hashtag
+          ];
+
+        if (topic) {
+
+          this.logger.debug(
+
+            `#${hashtag} mapped to topic ${topic}`,
+          );
+        }
+
+      } catch (err) {
+
+        this.logger.error(
+
+          `Failed processing hashtag: ${hashtag}`,
+
+          err,
+        );
       }
-
-    //   this.logger.log(
-    //     `✅ Hashtags processed for post ${postId}`,
-    //   );
-
-    } catch (err) {
-
-    //   this.logger.error(
-    //     'Hashtag processing failed',
-    //     err,
-    //   );
-
-      throw err;
     }
+
+    this.logger.log(
+
+      `✅ Processed ${normalizedHashtags.length} hashtags for post ${postId}`,
+    );
+  }
+
+  // =====================================================
+  // NORMALIZE HASHTAGS
+  // =====================================================
+
+  private normalizeHashtags(
+    hashtags: string[],
+  ): string[] {
+
+    const normalized =
+      hashtags.map(
+
+        (tag) =>
+
+          tag
+            .replace('#', '')
+            .trim()
+            .toLowerCase(),
+      );
+
+    return [
+      ...new Set(normalized),
+    ];
   }
 }

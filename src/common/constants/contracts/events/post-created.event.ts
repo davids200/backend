@@ -5,6 +5,7 @@ export interface PostCreatedEvent {
   authorId: string;
 
   content?: string;
+  topics?:string[];
 
   mediaIds?: string[];
 
