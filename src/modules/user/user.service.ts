@@ -284,4 +284,21 @@ export class UserService {
 
     return user;
   }
+
+
+
+
+async findAll() {
+
+  return this.userRepo.find({
+
+    order: {
+
+      createdAt: 'DESC',
+    },
+  });
+}
+
+
+
 }

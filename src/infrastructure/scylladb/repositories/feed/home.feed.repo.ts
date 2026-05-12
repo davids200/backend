@@ -1,117 +1,82 @@
-import { Injectable }
-from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ScyllaService } from '../../scylla.service';
- 
 
 @Injectable()
 export class HomeFeedRepository {
+  private readonly logger = new Logger(HomeFeedRepository.name);
 
-  constructor(
-    private readonly scylla:
-      ScyllaService,
-  ) {}
+  constructor(private readonly scylla: ScyllaService) {}
 
-  async insertPost(data: {
+// home-feed.repository.ts
 
-    userId: string;
-
-    postId: string;
-
-    authorId: string;
-
-    score: number;
-
-    createdAt: Date;
-  }) {
-
-    await this.scylla.execute(
-
-      `
-      INSERT INTO social_app.home_feed (
-
-        user_id,
-
-        created_at,
-
-        score,
-
-        post_id,
-
-        author_id
-
-      )
-
-      VALUES (?, ?, ?, ?, ?)
-      `,
-
-      [
-
-        data.userId,
-
-        data.createdAt,
-
-        data.score,
-
-        data.postId,
-
-        data.authorId,
-      ],
-    );
-  }
-
-
-  async getFeed(params: {
-
+async insertPost(data: {
   userId: string;
+  postId: string;
+  authorId: string;
+  score: number;
+  createdAt: Date;
+}) {
+  // 1. Generate the bucket_date (YYYY-MM-DD)
+  const bucketDate = data.createdAt.toISOString().split('T')[0]; 
 
+  // 2. Updated Query including bucket_date
+  const query = `
+    INSERT INTO social_app.home_feed (
+      user_id,
+      bucket_date,
+      score,
+      created_at,
+      post_id,
+      author_id
+    )
+    VALUES (?, ?, ?, ?, ?, ?)
+  `;
+
+  await this.scylla.execute(query, [
+    data.userId,
+    bucketDate,   // MUST match the schema
+    data.score,
+    data.createdAt,
+    data.postId,
+    data.authorId,
+  ]);
+}
+
+
+
+
+// home.feed.repo.ts
+
+async getFeed(params: {
+  userId: string;
+  bucketDate: string; // Added this
   limit?: number;
-
   cursor?: Date;
 }) {
+  const { userId, bucketDate, limit = 20, cursor } = params;
 
-  const {
-    userId,
-    limit = 20,
-    cursor,
-  } = params;
-
+  // IMPORTANT: Since bucket_date is part of the Partition Key, 
+  // it MUST be in the WHERE clause alongside user_id.
   let query = `
     SELECT *
     FROM social_app.home_feed
-    WHERE user_id = ?
+    WHERE user_id = ? AND bucket_date = ?
   `;
 
-  const values: any[] = [
-    userId,
-  ];
-
-  // ============================================
-  // CURSOR
-  // ============================================
+  const values: any[] = [userId, bucketDate];
 
   if (cursor) {
-
-    query += `
-      AND created_at < ?
-    `;
-
+    // Note: Since your clustering order is (score DESC, created_at DESC),
+    // pagination usually requires filtering by the score of the cursor too.
+    // For simplicity, we'll stick to created_at if your scores are similar.
+    query += ` AND created_at < ?`;
     values.push(cursor);
   }
 
-  query += `
-    LIMIT ?
-  `;
-
+  query += ` LIMIT ?`;
   values.push(limit);
 
-  const result =
-    await this.scylla.execute(
-
-      query,
-
-      values,
-    );
-
+  const result = await this.scylla.execute(query, values);
   return result.rows;
 }
 }

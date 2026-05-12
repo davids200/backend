@@ -98,7 +98,6 @@ return this.auth.resetPassword(data,);
 @Mutation(() => AuthResponse)
 async login(@Args('data')data: LoginInput, @Context() context: {req: Request;},
 ) {
-
   const deviceInfo =this.device.extract(context.req,);
   return this.auth.login(data,deviceInfo,  );
 }

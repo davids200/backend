@@ -95,16 +95,17 @@ type Mutation {
   createSchool(locationId: String!, name: String!): String!
   createUser(data: CreateUserInput!): String!
   deletePost(postId: String!): Boolean!
-  followUser(data: FollowUserInput!, followerId: String!): FollowEntity!
+  followUser(data: FollowUserInput!): FollowEntity!
   login(data: LoginInput!): AuthResponse!
   logout: Boolean!
   refreshToken(data: RefreshTokenInput!): AuthResponse!
   register(data: RegisterInput!): AuthResponse!
+  repostPost(data: RepostInput!): RepostEntity!
   requestPasswordReset(data: RequestPasswordResetInput!): Boolean!
   resetPassword(data: ResetPasswordInput!): Boolean!
   revokeSession(sessionId: String!): Boolean!
   sendOtp(data: SendOtpInput!): Boolean!
-  unfollowUser(followerId: String!, followingId: String!): Boolean!
+  unfollowUser(followingId: String!): Boolean!
   updateProfile(data: UpdateProfileInput!): String!
   verifyOtp(data: VerifyOtpInput!): Boolean!
 }
@@ -144,6 +145,7 @@ type Query {
   schools(locationId: String!): [String!]!
   sessions: [SessionModel!]!
   userFeed(authorId: String!, cursor: DateTime, limit: Float = 20): FeedResponse!
+  users: [UserEntity!]!
 }
 
 input RefreshTokenInput {
@@ -156,6 +158,19 @@ input RegisterInput {
   password: String
   phone: String
   username: String!
+}
+
+type RepostEntity {
+  createdAt: DateTime!
+  id: ID!
+  postId: String!
+  quote: String
+  userId: String!
+}
+
+input RepostInput {
+  postId: String!
+  quote: String
 }
 
 input RequestPasswordResetInput {
@@ -194,6 +209,26 @@ input UpdateProfileInput {
   bio: String
   fullName: String
   location: String
+}
+
+type UserEntity {
+  avatar: String
+  bio: String
+  countryId: String
+  coverPhoto: String
+  createdAt: DateTime!
+  dateOfBirth: DateTime
+  displayName: String
+  id: ID!
+  isActive: Boolean!
+  isCelebrity: Boolean!
+  isMinor: Boolean!
+  isVerified: Boolean!
+  lastSeenAt: DateTime
+  locationId: String
+  onboardingCompleted: Boolean!
+  updatedAt: DateTime!
+  username: String!
 }
 
 type UserModel {

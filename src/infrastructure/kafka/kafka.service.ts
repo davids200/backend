@@ -85,174 +85,86 @@ export class KafkaService
   // EMIT EVENT
   // =====================================================
 
-  async emit(
-    topic: string,
-    value: unknown,
-    key?: string,
-  ): Promise<void> {
+ async emit(
 
-    try {
+  topic: string,
 
-      this.logger.log(
-        `📤 Emitting → ${topic}`,
-      );
+  value: unknown,
 
-      await this.producer.send({
+  key?: string,
+): Promise<void> {
 
-        topic,
+  this.logger.log(
+    `📤 Emitting → ${topic}`,
+  );
 
-        messages: [
-          {
+ await this.producer.send({
+  topic,
+  messages: [
+    {
+      // Ensure key is either a string, Buffer, or null (not undefined)
+      key: key ? String(key) : null,
 
-            key,
+      // Handle the case where value might already be a string or is null
+      value: value ? JSON.stringify(value) : null,
+    },
+  ],
+});
+  
 
-            value:
-              JSON.stringify(
-                value,
-              ),
-          },
-        ],
-      });
-
-      this.logger.log(
-        `✅ Event emitted → ${topic}`,
-      );
-
-    } catch (err) {
-
-      this.logger.error(
-        `❌ Emit failed (${topic})`,
-        err,
-      );
-
-      throw err;
-    }
-  }
+  this.logger.log(
+    `✅ Event emitted → ${topic}`,
+  );
+}
 
   // =====================================================
   // CONSUME EVENTS
   // =====================================================
 
-  async consume<T>(
+async consume<T>(
 
-    groupId: string,
+  groupId: string,
 
-    topic: string,
+  topic: string,
 
-    handler: (
-      payload: T,
-    ) => Promise<void>,
-  ): Promise<void> {
+  handler: (
+    data: T,
+  ) => Promise<void>,
+) {
 
-    try {
+  const consumer =
+    this.kafka.consumer({
+      groupId,
+    });
 
-      this.logger.log(
-        `👂 Creating consumer → ${topic}`,
-      );
+  await consumer.connect();
 
-      const consumer =
-        this.kafka.consumer({
+  await consumer.subscribe({
 
-          groupId,
-        });
+    topic,
 
-      this.consumers.push(
-        consumer,
-      );
+    fromBeginning: false,
+  });
 
-      // ================================================
-      // CONNECT
-      // ================================================
+  await consumer.run({
 
-      await consumer.connect();
+    eachMessage: async ({
+      message,
+    }) => {
 
-      this.logger.log(
-        `✅ Consumer connected → ${topic}`,
-      );
+      if (!message.value) {
+        return;
+      }
 
-      // ================================================
-      // SUBSCRIBE
-      // ================================================
+      const parsed =
+        JSON.parse(
+          message.value.toString(),
+        ) as T;
 
-      await consumer.subscribe({
-
-        topic,
-
-        fromBeginning: false,
-      });
-
-      this.logger.log(
-        `✅ Subscribed → ${topic}`,
-      );
-
-      // ================================================
-      // RUN
-      // ================================================
-
-      consumer.run({
-
-        eachMessage: async ({
-          message,
-        }) => {
-
-          try {
-
-            if (!message.value) {
-              return;
-            }
-
-            this.logger.log(
-              `🔥 Event received → ${topic}`,
-            );
-
-            const raw =
-              message.value.toString();
-
-            this.logger.debug(
-              raw,
-            );
-
-            // ==========================================
-            // PARSE
-            // ==========================================
-
-            const payload =
-              JSON.parse(
-                raw,
-              ) as T;
-
-            // ==========================================
-            // HANDLE
-            // ==========================================
-
-            await handler(
-              payload,
-            );
-
-          } catch (err) {
-
-            this.logger.error(
-              `❌ Consume failed (${topic})`,
-              err,
-            );
-          }
-        },
-      });
-
-      this.logger.log(
-        `🚀 Consumer running → ${topic}`,
-      );
-
-    } catch (err) {
-
-      this.logger.error(
-        `❌ Consumer startup failed (${topic})`,
-        err,
-      );
-
-      throw err;
-    }
-  }
+      await handler(parsed);
+    },
+  });
+}
 
   // =====================================================
   // MODULE DESTROY

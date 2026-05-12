@@ -22,6 +22,7 @@ import { LikeModule } from './modules/like/like.module';
 import { SessionCacheService } from './modules/auth/services/session-cache.service';
 import { ScyllaModule } from './infrastructure/scylladb/scylla.module';
 import { WorkersModule } from './workers/workers.module';
+import { RepostModule } from './modules/repost/repost.module';
  
 @Module({
   imports: [
@@ -59,8 +60,8 @@ WorkersModule,
     ScyllaModule,
     FollowModule,
     LikeModule,
-    NotificationModule,
-     
+    NotificationModule, 
+     RepostModule
   ],
   providers: [
     // DebugResolver,

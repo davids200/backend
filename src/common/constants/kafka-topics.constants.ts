@@ -26,4 +26,7 @@ HASHTAG_CREATED:'hashtag.created',
   FEED_FANOUT:'feed.fanout',
   TRENDING_UPDATE:'trending.update',
   COMMENT_DELETED:'comment.delete',
+  BOOKMARK_CREATED:'bookmark.created',
+  BOOKMARK_REMOVED:'bookmark.removed',
+  REPOST_CREATED:'repost.created',
 } as const;

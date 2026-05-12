@@ -12,6 +12,9 @@ from './follow.service';
 import { FollowUserInput }
 from './dto/follow-user.input';
 import { FollowEntity } from './entities/follow.entity';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { UseGuards } from '@nestjs/common';
+import { GqlAuthGuard } from '../auth/guards/gql-auth.guard';
 
 @Resolver()
 export class FollowResolver {
@@ -26,45 +29,22 @@ export class FollowResolver {
   // FOLLOW USER
   // =====================================================
 
-  @Mutation(() => FollowEntity)
-  async followUser(
+@Mutation(() => FollowEntity)
 
-    @Args('followerId')
-    followerId: string,
-
-    @Args('data')
-    data: FollowUserInput,
-  ) {
-
-    return this.service.followUser(
-
-      followerId,
-
-      data.followingId,
-    );
-  }
-
+@UseGuards(GqlAuthGuard)
+async followUser(@CurrentUser('id')followerId: string, @Args('data')data: FollowUserInput,) {
+  console.log({followerId,});
+  return this.service.followUser(followerId,data.followingId,);
+}
   // =====================================================
   // UNFOLLOW USER
   // =====================================================
+@Mutation(() => Boolean)
+async unfollowUser(@CurrentUser('id') followerId: string, @Args('followingId') followingId: string,) {
+  return this.service.unfollowUser(followerId,followingId,);
+}
 
-  @Mutation(() => Boolean)
-  async unfollowUser(
-
-    @Args('followerId')
-    followerId: string,
-
-    @Args('followingId')
-    followingId: string,
-  ) {
-
-    return this.service.unfollowUser(
-
-      followerId,
-
-      followingId,
-    );
-  }
+ 
 
   // =====================================================
   // GET FOLLOWERS

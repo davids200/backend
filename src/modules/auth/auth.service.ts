@@ -234,28 +234,19 @@ export class AuthService {
   // LOGIN
   // =====================================================
 
-  async login(
-  data: LoginInput,
-  deviceInfo?: DeviceInfo,
-)
-  {
+async login(data: LoginInput,deviceInfo?: DeviceInfo,)  {
 
-    // ================================================
-    // RATE LIMIT
-    // ================================================
-
-    const attempts =
-      await this.authRateLimit
-        .getLoginAttempts(
-          data.login,
-        );
-
-    if (attempts >= 5) {
-
-      throw new UnauthorizedException(
-        'Too many login attempts',
-      );
-    }
+console.log("LoginInput",data)
+console.log("deviceInfo",deviceInfo)
+// ================================================
+// RATE LIMIT
+// ================================================
+const attempts =await this.authRateLimit.getLoginAttempts(data.login,);
+if (attempts >= 5) {
+throw new UnauthorizedException(
+'Too many login attempts',
+);
+}
 
     // ================================================
     // FIND IDENTITY
@@ -264,30 +255,20 @@ export class AuthService {
     const identity =
       await this.identityRepo.findOne({
         where: [
-
           {
-            provider:
-              AuthProvider.EMAIL,
-
-            providerUserId:
-              data.login,
+            provider:AuthProvider.EMAIL,
+            providerUserId:data.login,
           },
-
           {
-            provider:
-              AuthProvider.PHONE,
-
-            providerUserId:
-              data.login,
+            provider:AuthProvider.PHONE,
+            providerUserId:data.login,
           },
         ],
       });
 
     if (
-      !identity ||
-      !identity.passwordHash
+      !identity ||  !identity.passwordHash
     ) {
-
       throw new UnauthorizedException(
         'Invalid credentials',
       );
@@ -297,11 +278,11 @@ export class AuthService {
     // VERIFY PASSWORD
     // ================================================
 
-    const valid =
-      await verifyPassword(
-        identity.passwordHash,
-        data.password,
-      );
+   const valid =
+  await verifyPassword(
+    data.password,
+    identity.passwordHash,
+  );
 
     if (!valid) {
 
@@ -765,141 +746,101 @@ async logout(
   // VERIFY OTP
   // =====================================================
 
-  async verifyOtp(data: {
-    type: 'email' | 'phone';
-    value: string;
-    otp: string;
-  }) {
+async verifyOtp(data: {
+type: 'email' | 'phone';
+value: string;
+otp: string;
+}) {
 
-    // ================================================
-    // CHECK ATTEMPTS
-    // ================================================
+// ================================================
+// CHECK ATTEMPTS
+// ================================================
+const attempts =  await this.redisOtp.getAttempts({
+type:data.type,
+value:data.value,
+});
 
-    const attempts =
-      await this.redisOtp
-        .getAttempts({
+if (attempts >=Number(process.env.MAXIMUM_LOGIN_ATTEMPT,)) {
+  throw new UnauthorizedException('Too many attempts',);
+}
 
-          type:
-            data.type,
+    
+// GET STORED OTP
+// ================================================
+const storedOtp = await this.redisOtp.getOtp({
+type:data.type,
+value:data.value,
+});
 
-          value:
-            data.value,
-        });
+ 
+// INVALID OTP
+// ================================================
 
-    if (
-      attempts >=
-      Number(
-        process.env
-          .MAXIMUM_LOGIN_ATTEMPT,
-      )
-    ) {
+if (!storedOtp || storedOtp !== data.otp) {
+await this.redisOtp.incrementAttempts({
+type: data.type,
+value:data.value,
+});
+throw new UnauthorizedException(
+'Invalid OTP',
+);
+}
 
-      throw new UnauthorizedException(
-        'Too many attempts',
-      );
-    }
+     
+// FIND IDENTITY
+// ================================================
 
-    // ================================================
-    // GET STORED OTP
-    // ================================================
+const identity =
+  await this.identityRepo.findOne({
+    where: [
+      {
+        provider:
+          data.type === 'email'
+            ? AuthProvider.EMAIL
+            : AuthProvider.PHONE,
 
-    const storedOtp =
-      await this.redisOtp.getOtp({
-
-        type:
-          data.type,
-
-        value:
+        providerUserId:
           data.value,
-      });
+      },
+    ],
+  });
 
-    // ================================================
-    // INVALID OTP
-    // ================================================
 
-    if (
-      !storedOtp ||
-      storedOtp !== data.otp
-    ) {
 
-      await this.redisOtp
-        .incrementAttempts({
+    
+// MARK VERIFIED
+// ================================================
 
-          type:
-            data.type,
+if (identity) {
 
-          value:
-            data.value,
-        });
+identity.isVerified =
+  true;
 
-      throw new UnauthorizedException(
-        'Invalid OTP',
-      );
-    }
+await this.identityRepo.save(
+  identity,
+);
+}
 
-    // ================================================
-    // FIND IDENTITY
-    // ================================================
+   
 
-    const identity =
-      await this.identityRepo.findOne({
-        where: [
-          {
-            provider:
-              data.type === 'email'
-                ? AuthProvider.EMAIL
-                : AuthProvider.PHONE,
 
-            providerUserId:
-              data.value,
-          },
-        ],
-      });
-
-    // ================================================
-    // MARK VERIFIED
-    // ================================================
-
-    if (identity) {
-
-      identity.isVerified =
-        true;
-
-      await this.identityRepo.save(
-        identity,
-      );
-    }
-
-    // ================================================
     // CLEANUP
     // ================================================
+await this.redisOtp.deleteOtp({
+  type:data.type,
+  value:data.value,
+});
+await this.redisOtp.clearAttempts({
+    type:data.type,
+    value:data.value,
+  });
+return true;
+}
 
-    await this.redisOtp.deleteOtp({
+  
 
-      type:
-        data.type,
-
-      value:
-        data.value,
-    });
-
-    await this.redisOtp
-      .clearAttempts({
-
-        type:
-          data.type,
-
-        value:
-          data.value,
-      });
-
-    return true;
-  }
-
-  // =====================================================
   // REQUEST PASSWORD RESET
   // =====================================================
-
   async requestPasswordReset(data: {
     type: 'email' | 'phone';
     value: string;

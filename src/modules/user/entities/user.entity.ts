@@ -1,5 +1,7 @@
-import {
-  Entity,
+// src/modules/user/user.entity.ts
+
+import {  ObjectType,  Field,  ID,} from '@nestjs/graphql';
+import {  Entity,
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
@@ -7,63 +9,193 @@ import {
   Index,
 } from 'typeorm';
 
+@ObjectType()
 @Entity('users')
-export class UserEntity {
+export class UserEntity
+{
+  // =====================================================
+  // ID
+  // =====================================================
 
+  @Field(() => ID)
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
+  // =====================================================
+  // USERNAME
+  // =====================================================
+
+  @Field()
   @Index()
-  @Column({    unique: true,  })
+  @Column({
+    unique: true,
+  })
   username!: string;
 
-  @Column({ nullable: true,  })
+  // =====================================================
+  // DISPLAY NAME
+  // =====================================================
+
+  @Field({
+    nullable: true,
+  })
+  @Column({
+    nullable: true,
+  })
   displayName?: string;
 
-  @Column({    nullable: true,    type: 'text',  })
+  // =====================================================
+  // AVATAR
+  // =====================================================
+
+  @Field({
+    nullable: true,
+  })
+  @Column({
+    nullable: true,
+    type: 'text',
+  })
   avatar?: string;
 
-  @Column({    nullable: true,    type: 'text',  })
+  // =====================================================
+  // COVER PHOTO
+  // =====================================================
+
+  @Field({
+    nullable: true,
+  })
+  @Column({
+    nullable: true,
+    type: 'text',
+  })
   coverPhoto?: string;
 
-  @Column({    nullable: true,    type: 'text',  })
+  // =====================================================
+  // BIO
+  // =====================================================
+
+  @Field({
+    nullable: true,
+  })
+  @Column({
+    nullable: true,
+    type: 'text',
+  })
   bio?: string;
 
+  // =====================================================
+  // LOCATION
+  // =====================================================
 
-  @Column({    nullable: true,  })
+  @Field({
+    nullable: true,
+  })
+  @Column({
+    nullable: true,
+  })
   locationId?: string;
 
-  @Column({    nullable: true,  })
-  countryId!: string;
+  // =====================================================
+  // COUNTRY
+  // =====================================================
 
+  @Field({
+    nullable: true,
+  })
+  @Column({
+    nullable: true,
+  })
+  countryId?: string;
 
-  @Column({    default: false,  })
+  // =====================================================
+  // VERIFIED
+  // =====================================================
+
+  @Field()
+  @Column({
+    default: false,
+  })
   isVerified!: boolean;
 
-  @Column({    default: false,  })
+  // =====================================================
+  // CELEBRITY
+  // =====================================================
+
+  @Field()
+  @Column({
+    default: false,
+  })
   isCelebrity!: boolean;
 
-  @Column({    default: false,  })
+  // =====================================================
+  // MINOR
+  // =====================================================
+
+  @Field()
+  @Column({
+    default: false,
+  })
   isMinor!: boolean;
 
-  @Column({    default: true,  })
+  // =====================================================
+  // ACTIVE
+  // =====================================================
+
+  @Field()
+  @Column({
+    default: true,
+  })
   isActive!: boolean;
 
-  @Column({    default: false,  })
+  // =====================================================
+  // ONBOARDING
+  // =====================================================
+
+  @Field()
+  @Column({
+    default: false,
+  })
   onboardingCompleted!: boolean;
 
-  
+  // =====================================================
+  // DATE OF BIRTH
+  // =====================================================
 
-  @Column({    type: 'date',    nullable: true,  })
+  @Field({
+    nullable: true,
+  })
+  @Column({
+    type: 'date',
+    nullable: true,
+  })
   dateOfBirth?: Date;
 
+  // =====================================================
+  // LAST SEEN
+  // =====================================================
 
-  @Column({    type: 'timestamp',    nullable: true,  })
+  @Field({
+    nullable: true,
+  })
+  @Column({
+    type: 'timestamp',
+    nullable: true,
+  })
   lastSeenAt?: Date;
 
+  // =====================================================
+  // CREATED AT
+  // =====================================================
+
+  @Field()
   @CreateDateColumn()
   createdAt!: Date;
 
+  // =====================================================
+  // UPDATED AT
+  // =====================================================
+
+  @Field()
   @UpdateDateColumn()
   updatedAt!: Date;
 }

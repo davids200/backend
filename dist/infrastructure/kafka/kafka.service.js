@@ -50,79 +50,41 @@ let KafkaService = KafkaService_1 = class KafkaService {
     // EMIT EVENT
     // =====================================================
     async emit(topic, value, key) {
-        try {
-            this.logger.log(`📤 Emitting → ${topic}`);
-            await this.producer.send({
-                topic,
-                messages: [
-                    {
-                        key,
-                        value: JSON.stringify(value),
-                    },
-                ],
-            });
-            this.logger.log(`✅ Event emitted → ${topic}`);
-        }
-        catch (err) {
-            this.logger.error(`❌ Emit failed (${topic})`, err);
-            throw err;
-        }
+        this.logger.log(`📤 Emitting → ${topic}`);
+        await this.producer.send({
+            topic,
+            messages: [
+                {
+                    // Ensure key is either a string, Buffer, or null (not undefined)
+                    key: key ? String(key) : null,
+                    // Handle the case where value might already be a string or is null
+                    value: value ? JSON.stringify(value) : null,
+                },
+            ],
+        });
+        this.logger.log(`✅ Event emitted → ${topic}`);
     }
     // =====================================================
     // CONSUME EVENTS
     // =====================================================
     async consume(groupId, topic, handler) {
-        try {
-            this.logger.log(`👂 Creating consumer → ${topic}`);
-            const consumer = this.kafka.consumer({
-                groupId,
-            });
-            this.consumers.push(consumer);
-            // ================================================
-            // CONNECT
-            // ================================================
-            await consumer.connect();
-            this.logger.log(`✅ Consumer connected → ${topic}`);
-            // ================================================
-            // SUBSCRIBE
-            // ================================================
-            await consumer.subscribe({
-                topic,
-                fromBeginning: false,
-            });
-            this.logger.log(`✅ Subscribed → ${topic}`);
-            // ================================================
-            // RUN
-            // ================================================
-            consumer.run({
-                eachMessage: async ({ message, }) => {
-                    try {
-                        if (!message.value) {
-                            return;
-                        }
-                        this.logger.log(`🔥 Event received → ${topic}`);
-                        const raw = message.value.toString();
-                        this.logger.debug(raw);
-                        // ==========================================
-                        // PARSE
-                        // ==========================================
-                        const payload = JSON.parse(raw);
-                        // ==========================================
-                        // HANDLE
-                        // ==========================================
-                        await handler(payload);
-                    }
-                    catch (err) {
-                        this.logger.error(`❌ Consume failed (${topic})`, err);
-                    }
-                },
-            });
-            this.logger.log(`🚀 Consumer running → ${topic}`);
-        }
-        catch (err) {
-            this.logger.error(`❌ Consumer startup failed (${topic})`, err);
-            throw err;
-        }
+        const consumer = this.kafka.consumer({
+            groupId,
+        });
+        await consumer.connect();
+        await consumer.subscribe({
+            topic,
+            fromBeginning: false,
+        });
+        await consumer.run({
+            eachMessage: async ({ message, }) => {
+                if (!message.value) {
+                    return;
+                }
+                const parsed = JSON.parse(message.value.toString());
+                await handler(parsed);
+            },
+        });
     }
     // =====================================================
     // MODULE DESTROY

@@ -1,154 +1,67 @@
-import {
-  Injectable,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { KafkaService } from '../../infrastructure/kafka/kafka.service';
+import { RedisService } from '../../infrastructure/redis/redis.service';
+import { KAFKA_TOPICS } from '../../common/constants/kafka-topics.constants';
 
-import { KafkaService }
-from '../../infrastructure/kafka/kafka.service';
-
-import { RedisService }
-from '../../infrastructure/redis/redis.service';
-
-import { KAFKA_TOPICS }
-from '../../common/constants/kafka-topics.constants';
-
-type FollowCreatedEvent = {
-
-  followerId: string;
-
-  followingId: string;
-};
-
-type FollowRemovedEvent = {
-
-  followerId: string;
-
-  followingId: string;
-};
+type FollowEvent = { followerId: string; followingId: string };
 
 @Injectable()
-export class FollowConsumer {
-
-  private readonly logger =
-    new Logger(
-      FollowConsumer.name,
-    );
+export class FollowConsumer implements OnModuleInit {
+  private readonly logger = new Logger(FollowConsumer.name);
 
   constructor(
-
-    private readonly kafka:
-      KafkaService,
-
-    private readonly redis:
-      RedisService,
+    private readonly kafka: KafkaService,
+    private readonly redis: RedisService,
   ) {}
 
-  // =====================================================
-  // START CONSUMER
-  // =====================================================
+  async onModuleInit() {
+    await this.start();
+  }
 
   async start() {
+    this.logger.log('🚀 Starting FollowConsumer...');
 
-    this.logger.log(
-      '🚀 Starting FollowConsumer...',
-    );
-
-    // ================================================
     // FOLLOW CREATED
-    // ================================================
-
-    await this.kafka.consume<FollowCreatedEvent>(
-
-      'follow-group',
-
+    await this.kafka.consume<FollowEvent>(
+      'follow-created-group',
       KAFKA_TOPICS.FOLLOW_CREATED,
-
-      async (event) => {
-
-        try {
-
-          await this.handleFollowCreated(
-            event,
-          );
-
-        } catch (err) {
-
-          this.logger.error(
-            '❌ Follow created error',
-            err,
-          );
-        }
-      },
+      async (event) => this.handleFollowAction(event, 'ADD'),
     );
 
-    // ================================================
     // FOLLOW REMOVED
-    // ================================================
-
-    await this.kafka.consume<FollowRemovedEvent>(
-
-      'follow-group',
-
+    await this.kafka.consume<FollowEvent>(
+      'follow-removed-group',
       KAFKA_TOPICS.FOLLOW_REMOVED,
-
-      async (event) => {
-
-        try {
-
-          await this.handleFollowRemoved(
-            event,
-          );
-
-        } catch (err) {
-
-          this.logger.error(
-            '❌ Follow removed error',
-            err,
-          );
-        }
-      },
-    );
-
-    this.logger.log(
-      '✅ FollowConsumer started',
+      async (event) => this.handleFollowAction(event, 'REMOVE'),
     );
   }
 
-  // =====================================================
-  // HANDLE FOLLOW CREATED
-  // =====================================================
+  private async handleFollowAction(event: FollowEvent, action: 'ADD' | 'REMOVE') {
+    try {
+      // 1. Clean IDs (Handle potential object-passing bugs)
+      const fId = typeof event.followerId === 'object' ? (event.followerId as any).id : event.followerId;
+      const tId = typeof event.followingId === 'object' ? (event.followingId as any).id : event.followingId;
 
-  private async handleFollowCreated(
-    event: FollowCreatedEvent,
-  ) {
+      if (!fId || !tId || fId.includes('[object')) {
+        this.logger.error(`⚠️ Aborted: Invalid IDs detected: ${fId} -> ${tId}`);
+        return;
+      }
 
-    await this.redis.client.sadd(`followers:${event.followingId}`,
+      // 2. Use Pipeline for atomicity and speed
+      const pipeline = this.redis.client.pipeline();
+      
+      if (action === 'ADD') {
+        pipeline.sadd(`followers:${tId}`, fId);
+        pipeline.sadd(`following:${fId}`, tId);
+      } else {
+        pipeline.srem(`followers:${tId}`, fId);
+        pipeline.srem(`following:${fId}`, tId);
+      }
 
-        event.followerId,
-      );
-
-    this.logger.log(
-
-      `➕ Follow created: ${event.followerId} → ${event.followingId}`,
-    );
-  }
-
-  // =====================================================
-  // HANDLE FOLLOW REMOVED
-  // =====================================================
-
-  private async handleFollowRemoved(
-    event: FollowRemovedEvent,
-  ) {
-
-    await this.redis.client.srem(`followers:${event.followingId}`,
-
-        event.followerId,
-      );
-
-    this.logger.log(
-
-      `➖ Follow removed: ${event.followerId} → ${event.followingId}`,
-    );
+      await pipeline.exec();
+      this.logger.log(`✅ Follow Graph ${action}: ${fId} -> ${tId}`);
+    } catch (error) {
+      //this.logger.error(`❌ Follow ${action} error`, error.stack);
+    }
   }
 }

@@ -73,26 +73,35 @@ console.log('✅ FeedConsumer initialized in Constructor');
   // =====================================================
 
   private async handleFeedFanout(event: FeedFanoutEvent): Promise<void> {
+    console.log("INSIDE HANDLE FEED FANOUT")
     const { postId, authorId, createdAt, locationId } = event;
     const createdAtDate = new Date(createdAt);
 
     // ================================================
     // 1. USER FEED — always save regardless of follower count
     // ================================================
-    try {
-      this.logger.log(`💾 Saving to UserFeed: postId=${postId} authorId=${authorId}`);
+    try {       
       await this.userFeedRepo.insertPost({ authorId, postId, createdAt: createdAtDate });
       this.logger.log(`✅ UserFeed saved: postId=${postId}`);
     } catch (err) {
       this.logger.error(`❌ UserFeed insert failed: postId=${postId}`, err);
     }
+ 
 
     // ================================================
     // 2. GET FOLLOWERS
     // ================================================
-    const followerList = await this.redis.client.smembers(`followers:${authorId}`);
+    const followerList = await this.redis.client.smembers( `followers:${authorId}`,);
+
+console.log(
+  'FOLLOWER LIST',
+  followerList,
+);
     const followerCount = followerList.length;
-    this.logger.log(`👥 Followers for ${authorId}: ${followerCount}`);
+     
+
+     console.log("FOLLOWER LIST",followerList)
+    console.log("FOLLOWER COUNT",followerCount)
 
     // ================================================
     // 3. CELEBRITY CHECK — skip home feed fanout only
@@ -105,6 +114,9 @@ console.log('✅ FeedConsumer initialized in Constructor');
       // ================================================
       // 4. CALCULATE SCORE
       // ================================================
+
+ 
+
       const score = calculateScore({
         createdAt: createdAtDate,
         likes: 0,
@@ -112,6 +124,8 @@ console.log('✅ FeedConsumer initialized in Constructor');
         isFollowingAuthor: true,
       });
 
+
+       
       // ================================================
       // 5. HOME FEED — batch insert for all followers
       // ================================================
@@ -137,7 +151,8 @@ console.log('✅ FeedConsumer initialized in Constructor');
           }),
         );
 
-        this.logger.log(`📰 HomeFeed batch done: ${i + batch.length}/${followerCount}`);
+        console.log("FEED CONSUMER AFTER await this.homeFeedRepo.insertPost")
+       // this.logger.log(`📰 HomeFeed batch done: ${i + batch.length}/${followerCount}`);
       }
 
       this.logger.log(`✅ HomeFeed fanout complete: postId=${postId}`);

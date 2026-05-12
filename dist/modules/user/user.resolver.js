@@ -20,6 +20,7 @@ const update_profile_input_1 = require("./dto/update-profile.input");
 const create_user_inputs_1 = require("./dto/create-user.inputs");
 const gql_auth_guard_1 = require("../auth/guards/gql-auth.guard");
 const current_user_decorator_1 = require("../auth/decorators/current-user.decorator");
+const user_entity_1 = require("./entities/user.entity");
 let UserResolver = class UserResolver {
     service;
     constructor(service) {
@@ -41,6 +42,9 @@ let UserResolver = class UserResolver {
     // =========================
     getUser(id) {
         return this.service.getUser(id);
+    }
+    async users() {
+        return this.service.findAll();
     }
     // =========================
     // PROFILE
@@ -67,6 +71,12 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], UserResolver.prototype, "getUser", null);
+__decorate([
+    (0, graphql_1.Query)(() => [user_entity_1.UserEntity]),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], UserResolver.prototype, "users", null);
 __decorate([
     (0, graphql_1.Mutation)(() => String),
     (0, common_1.UseGuards)(gql_auth_guard_1.GqlAuthGuard),

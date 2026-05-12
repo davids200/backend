@@ -185,11 +185,12 @@ let AuthService = class AuthService {
     // LOGIN
     // =====================================================
     async login(data, deviceInfo) {
+        console.log("LoginInput", data);
+        console.log("deviceInfo", deviceInfo);
         // ================================================
         // RATE LIMIT
         // ================================================
-        const attempts = await this.authRateLimit
-            .getLoginAttempts(data.login);
+        const attempts = await this.authRateLimit.getLoginAttempts(data.login);
         if (attempts >= 5) {
             throw new common_1.UnauthorizedException('Too many login attempts');
         }
@@ -208,14 +209,13 @@ let AuthService = class AuthService {
                 },
             ],
         });
-        if (!identity ||
-            !identity.passwordHash) {
+        if (!identity || !identity.passwordHash) {
             throw new common_1.UnauthorizedException('Invalid credentials');
         }
         // ================================================
         // VERIFY PASSWORD
         // ================================================
-        const valid = await (0, verify_password_util_1.verifyPassword)(identity.passwordHash, data.password);
+        const valid = await (0, verify_password_util_1.verifyPassword)(data.password, identity.passwordHash);
         if (!valid) {
             await this.authRateLimit
                 .incrementLoginAttempts(data.login);
@@ -459,36 +459,28 @@ let AuthService = class AuthService {
         // ================================================
         // CHECK ATTEMPTS
         // ================================================
-        const attempts = await this.redisOtp
-            .getAttempts({
+        const attempts = await this.redisOtp.getAttempts({
             type: data.type,
             value: data.value,
         });
-        if (attempts >=
-            Number(process.env
-                .MAXIMUM_LOGIN_ATTEMPT)) {
+        if (attempts >= Number(process.env.MAXIMUM_LOGIN_ATTEMPT)) {
             throw new common_1.UnauthorizedException('Too many attempts');
         }
-        // ================================================
         // GET STORED OTP
         // ================================================
         const storedOtp = await this.redisOtp.getOtp({
             type: data.type,
             value: data.value,
         });
-        // ================================================
         // INVALID OTP
         // ================================================
-        if (!storedOtp ||
-            storedOtp !== data.otp) {
-            await this.redisOtp
-                .incrementAttempts({
+        if (!storedOtp || storedOtp !== data.otp) {
+            await this.redisOtp.incrementAttempts({
                 type: data.type,
                 value: data.value,
             });
             throw new common_1.UnauthorizedException('Invalid OTP');
         }
-        // ================================================
         // FIND IDENTITY
         // ================================================
         const identity = await this.identityRepo.findOne({
@@ -501,7 +493,6 @@ let AuthService = class AuthService {
                 },
             ],
         });
-        // ================================================
         // MARK VERIFIED
         // ================================================
         if (identity) {
@@ -509,21 +500,18 @@ let AuthService = class AuthService {
                 true;
             await this.identityRepo.save(identity);
         }
-        // ================================================
         // CLEANUP
         // ================================================
         await this.redisOtp.deleteOtp({
             type: data.type,
             value: data.value,
         });
-        await this.redisOtp
-            .clearAttempts({
+        await this.redisOtp.clearAttempts({
             type: data.type,
             value: data.value,
         });
         return true;
     }
-    // =====================================================
     // REQUEST PASSWORD RESET
     // =====================================================
     async requestPasswordReset(data) {

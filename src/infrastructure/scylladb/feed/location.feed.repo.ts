@@ -1,8 +1,9 @@
 import {
   Injectable,
 } from '@nestjs/common';
-import { ScyllaService } from '../scylla.service';
- 
+
+import { ScyllaService }
+from '../scylla.service';
 
 @Injectable()
 export class LocationFeedRepository {
@@ -28,9 +29,10 @@ export class LocationFeedRepository {
     createdAt: Date;
   }) {
 
-    const query = `
+    await this.scylla.execute(
 
-      INSERT INTO social.location_feed (
+      `
+      INSERT INTO social_app.location_feed (
 
         location_id,
 
@@ -39,14 +41,11 @@ export class LocationFeedRepository {
         post_id,
 
         author_id
+
       )
 
       VALUES (?, ?, ?, ?)
-    `;
-
-    await this.scylla.execute(
-
-      query,
+      `,
 
       [
 
@@ -84,10 +83,9 @@ export class LocationFeedRepository {
     } = params;
 
     let query = `
-
       SELECT *
 
-      FROM social.location_feed
+      FROM social_app.location_feed
 
       WHERE location_id = ?
     `;
@@ -95,6 +93,10 @@ export class LocationFeedRepository {
     const values: any[] = [
       locationId,
     ];
+
+    // ================================================
+    // PAGINATION
+    // ================================================
 
     if (cursor) {
 
@@ -104,6 +106,10 @@ export class LocationFeedRepository {
 
       values.push(cursor);
     }
+
+    // ================================================
+    // LIMIT
+    // ================================================
 
     query += `
       LIMIT ?
@@ -119,6 +125,17 @@ export class LocationFeedRepository {
         values,
       );
 
-    return result.rows;
+    return {
+
+      posts: result.rows,
+
+      nextCursor:
+
+        result.rows.length
+          ? result.rows[
+              result.rows.length - 1
+            ].created_at
+          : null,
+    };
   }
 }

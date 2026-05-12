@@ -7,6 +7,7 @@ import { UpdateProfileInput } from './dto/update-profile.input';
 import { CreateUserInput } from './dto/create-user.inputs';
 import { GqlAuthGuard } from '../auth/guards/gql-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { UserEntity } from './entities/user.entity';
 
 @Resolver()
 export class UserResolver {
@@ -32,6 +33,11 @@ async createUser(@Args('data') data: CreateUserInput) {
   getUser(@Args('id') id: string) {
     return this.service.getUser(id);
   }
+
+@Query(() => [UserEntity])
+async users() {
+return this.service.findAll();
+}
 
   // =========================
   // PROFILE

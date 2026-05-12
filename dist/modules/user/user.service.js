@@ -170,6 +170,13 @@ let UserService = UserService_1 = class UserService {
         }
         return user;
     }
+    async findAll() {
+        return this.userRepo.find({
+            order: {
+                createdAt: 'DESC',
+            },
+        });
+    }
 };
 exports.UserService = UserService;
 exports.UserService = UserService = UserService_1 = __decorate([
