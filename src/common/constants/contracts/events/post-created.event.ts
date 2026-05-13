@@ -15,7 +15,8 @@ export interface PostCreatedEvent {
 
   mentions?: string[];
 
-  visibility:PostVisibility
+  visibility:PostVisibility;
+  
 
   createdAt: string;
 

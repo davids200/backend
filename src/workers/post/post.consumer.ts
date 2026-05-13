@@ -94,6 +94,7 @@ export class PostConsumer {
       visibility:event.visibility,
       createdAt:event.createdAt,
       locationId:event.locationId,
+      hashtags:event.hashtags
     });
 
     if (

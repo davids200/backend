@@ -9,4 +9,5 @@ export interface FeedFanoutEvent {
   createdAt: string;
 
   locationId?: string;
+  hashtags?: string[];
 }

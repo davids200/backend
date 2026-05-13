@@ -143,6 +143,7 @@ const contentHash =
         /#\w+/g,
       ) || [];
 
+      console.log("hashtags in post service",hashtags)
     // ================================================
     // DETECT TOPICS
     // ================================================

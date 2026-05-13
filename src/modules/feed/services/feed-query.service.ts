@@ -123,7 +123,6 @@ const results: any[] = [];
 for (const row of rows) {
 
 // NORMAL POSTS 
-
 if (row.item_type === FeedItemType.POST) {
 
 const post = await this.postService.getPostById(row.post_id);

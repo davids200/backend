@@ -11,52 +11,41 @@ export class HashtagFeedRepository {
       ScyllaService,
   ) {}
 
-  async insertPost(data: {
 
-    hashtag: string;
+  
+async insertPost(data: {
+  hashtag: string;
+  postId: string;
+  authorId: string;
+  itemType: string;
+  score: number;
+  createdAt: Date;
+}) {
+  
+  const bucketDate =  data.createdAt    .toISOString()    .split('T')[0];    await this.scylla.execute(
 
-    postId: string;
-
-    authorId: string;
-
-    score: number;
-
-    createdAt: Date;
-  }) {
-
-    await this.scylla.execute(
-
-      `
-      INSERT INTO social.hashtag_feed (
-
-        hashtag,
-
-        created_at,
-
-        score,
-
-        post_id,
-
-        author_id
-
-      )
-
-      VALUES (?, ?, ?, ?, ?)
-      `,
-
-      [
-
-        data.hashtag,
-
-        data.createdAt,
-
-        data.score,
-
-        data.postId,
-
-        data.authorId,
-      ],
-    );
+  `
+  INSERT INTO social_app.hashtag_feed (
+    hashtag,
+    bucket_date,
+    score,
+    created_at,
+    post_id,
+    author_id,
+    item_type
+  )
+  VALUES (?, ?, ?, ?, ?, ?, ?)
+  `,
+  [
+    data.hashtag,
+    bucketDate,
+    data.score,
+    data.createdAt,
+    data.postId,
+    data.authorId,
+    data.itemType,
+  ],
+);
   }
 
  

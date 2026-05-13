@@ -12,14 +12,23 @@ export class FeedProducer {
       KafkaService,
   ) {
 
-    console.log('📰 FEED PRODUCER CONSTRUCTOR' );
   }
 
   
   // FANOUT POST  
-async fanoutPost(data: FeedFanoutEvent,) {
+async fanoutPost(data: FeedFanoutEvent,) { 
    console.log('📰 FEED PRODUCER CALLED', data, );
-await this.kafka.emit(KAFKA_TOPICS.FEED_FANOUT,data,data.authorId,);
+await this.kafka.emit(
+
+  KAFKA_TOPICS.FEED_FANOUT,  {
+    postId:data.postId,
+    authorId:data.authorId,
+    visibility:data.visibility,
+    locationId:data.locationId,
+    hashtags:data.hashtags,
+    createdAt:data.createdAt,
+  },
+);
 }
 
 

@@ -104,6 +104,7 @@ let PostService = class PostService {
         // EXTRACT HASHTAGS
         // ================================================
         const hashtags = safeContent.match(/#\w+/g) || [];
+        console.log("hashtags in post service", hashtags);
         // ================================================
         // DETECT TOPICS
         // ================================================

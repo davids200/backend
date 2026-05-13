@@ -31,8 +31,7 @@ export class PostProducer {
 
     // TEMP TEST LOCATION
     const payload = {...data,locationId:data.locationId,    };
-
-    console.log('📤 post.created.event',payload, );
+ 
     await this.kafka.emit(
       KAFKA_TOPICS.POST_CREATED,
       payload,

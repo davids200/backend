@@ -1,5 +1,4 @@
-import {
-  Injectable,
+import {  Injectable,
   Logger,
   OnModuleInit,
 } from '@nestjs/common';
@@ -37,36 +36,22 @@ from '../../modules/post/enums/post-visibility.enum';
 import { FeedFanoutEvent }
 from '../../common/constants/contracts/events/feed-fanout.event'; 
 import { FeedItemType } from '../../modules/feed/types/feed-item.type';
+import { HashtagFeedRepository }
+from '../../infrastructure/scylladb/repositories/feed/hashtag.feed.repo';
+
 
 @Injectable()
-export class FeedConsumer
-  implements OnModuleInit
-{
+export class FeedConsumer  implements OnModuleInit{
 
-  private readonly logger =
-    new Logger(
-      FeedConsumer.name,
-    );
-
+  private readonly logger =    new Logger(      FeedConsumer.name,    );
   constructor(
-
-    private readonly kafka:
-      KafkaService,
-
-    private readonly redis:
-      RedisService,
-
-    private readonly locationFeedRepo:
-      LocationFeedRepository,
-
-    private readonly locationService:
-      LocationService,
-
-    private readonly homeFeedRepo:
-      HomeFeedRepository,
-
-    private readonly userFeedRepo:
-      UserFeedRepository,
+    private readonly kafka:      KafkaService,
+    private readonly redis:      RedisService,
+    private readonly locationFeedRepo:      LocationFeedRepository,
+    private readonly locationService:      LocationService,
+    private readonly homeFeedRepo:      HomeFeedRepository,
+    private readonly userFeedRepo:      UserFeedRepository,
+    private readonly hashtagFeedRepo:  HashtagFeedRepository,
   ) {}
 
   // =====================================================
@@ -110,9 +95,7 @@ export class FeedConsumer
       },
     );
 
-    this.logger.log(
-      '✅ FeedConsumer running',
-    );
+    
   }
 
   // =====================================================
@@ -124,103 +107,47 @@ export class FeedConsumer
   ): Promise<void> {
 
     const {
-
       postId,
-
       authorId,
-
       createdAt,
-
       visibility,
-
       locationId,
+      hashtags = [],
     } = event;
 
-    const createdAtDate =
-      new Date(createdAt);
+    console.log(
+  'HASHTAGS  33',
+  hashtags,
+);
 
-    // ================================================
-    // USER FEED
-    // ================================================
+const createdAtDate = new Date(createdAt);
 
-    try {
+// SCORE
+const score =calculateScore({createdAt:createdAtDate,likes: 0,comments: 0,isFollowingAuthor:true,});
 
-      await this.userFeedRepo
-        .insertPost({
 
-          authorId,
+// USER FEED
+// ================================================
+try {
 
-          postId,
-          itemType:
-  FeedItemType.POST,
+await this.userFeedRepo.insertPost({authorId,postId,itemType:FeedItemType.POST,createdAt:createdAtDate,});
+} catch (err) {
+this.logger.error(`❌ UserFeed insert failed: postId=${postId}`,err,);
+}
 
-          createdAt:
-            createdAtDate,
-        });
+    
+    // FOLLOWERS 
+    const followerList =await this.redis.client.smembers(`followers:${authorId}`,);
+    const followerCount =followerList.length;
+    this.logger.log(`👥 FOLLOWER COUNT ${followerCount}`,);
 
-    } catch (err) {
-
-      this.logger.error(
-
-        `❌ UserFeed insert failed: postId=${postId}`,
-
-        err,
-      );
-    }
-
-    // ================================================
-    // FOLLOWERS
-    // ================================================
-
-    const followerList =
-      await this.redis.client
-        .smembers(
-          `followers:${authorId}`,
-        );
-
-    const followerCount =
-      followerList.length;
-
-    this.logger.log(
-      `👥 FOLLOWER COUNT ${followerCount}`,
-    );
-
-    // ================================================
+    
     // CELEBRITY CHECK
-    // ================================================
-
-    if (
-
-      followerCount >
-      FEED_CONSTANTS
-        .CELEBRITY_THRESHOLD
-    ) {
-
-      this.logger.warn(
-
-        `🔥 Celebrity detected (${followerCount} followers) — skipping home feed fanout`,
-      );
-
+    if (followerCount >FEED_CONSTANTS.CELEBRITY_THRESHOLD) {
+      this.logger.warn(`🔥 Celebrity detected (${followerCount} followers) — skipping home feed fanout`,);
     } else {
-
-      // ================================================
-      // SCORE
-      // ================================================
-
-      const score =
-        calculateScore({
-
-          createdAt:
-            createdAtDate,
-
-          likes: 0,
-
-          comments: 0,
-
-          isFollowingAuthor:
-            true,
-        });
-
+      
+     
       // ================================================
       // HOME FEED VISIBILITY
       // ================================================
@@ -318,6 +245,10 @@ export class FeedConsumer
       }
     }
 
+
+
+
+
     // ================================================
     // LOCATION FEED
     // ================================================
@@ -396,6 +327,42 @@ export class FeedConsumer
         );
       }
     }
+
+console.log("HASHTAGS .............",hashtags)
+// ================================================
+// HASHTAG FEED
+// ================================================
+if (hashtags.length) { console.log("HASHTAGS DETECTED.............")
+
+  await Promise.all(hashtags.map(async (rawHashtag) => {
+        const hashtag = rawHashtag.replace('#', '').trim().toLowerCase();
+        try {
+
+          await this.hashtagFeedRepo.insertPost({
+              hashtag,
+              postId,
+              authorId,
+              itemType:FeedItemType.POST,
+              score,
+              createdAt:createdAtDate,
+            });
+
+        } catch (err) {
+          this.logger.error(`❌ HashtagFeed insert failed: hashtag=${hashtag}`,err,);
+        }
+      },
+    ),
+  );
+
+  this.logger.log(
+
+    `#️⃣ Hashtag feed saved: ${hashtags.join(', ')}`,
+  );
+}
+
+
+
+
 
     // ================================================
     // COMPLETE
