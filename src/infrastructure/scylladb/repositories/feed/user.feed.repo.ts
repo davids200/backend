@@ -21,6 +21,7 @@ export class UserFeedRepository
   async insertPost(data: {
 
     authorId: string;
+    itemType: string;
 
     postId: string;
 
@@ -39,6 +40,7 @@ export class UserFeedRepository
         author_id,
 
         bucket_date,
+        item_type,
 
         created_at,
 
@@ -46,7 +48,7 @@ export class UserFeedRepository
 
       )
 
-      VALUES (?, ?, ?, ?)
+      VALUES (?, ?, ?,?, ?)
     `;
 
     await this.scylla.execute(
@@ -56,11 +58,9 @@ export class UserFeedRepository
       [
 
         data.authorId,
-
         bucketDate,
-
+data.itemType,
         data.createdAt,
-
         data.postId,
       ],
     );

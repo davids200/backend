@@ -1,3 +1,5 @@
+import { PostVisibility } from "../../../../modules/post/enums/post-visibility.enum";
+
 export interface PostCreatedEvent {
 
   postId: string;
@@ -13,11 +15,7 @@ export interface PostCreatedEvent {
 
   mentions?: string[];
 
-  visibility:
-    | 'public'
-    | 'followers'
-    | 'private'
-    | 'local';
+  visibility:PostVisibility
 
   createdAt: string;
 

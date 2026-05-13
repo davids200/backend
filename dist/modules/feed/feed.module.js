@@ -22,13 +22,21 @@ const feed_hydration_service_1 = require("./services/feed-hydration.service");
 const discovery_feed_service_1 = require("./services/discovery-feed.service");
 const scylla_module_1 = require("../../infrastructure/scylladb/scylla.module");
 const feed_producer_1 = require("./feed.producer");
+const repost_module_1 = require("../repost/repost.module");
+const typeorm_1 = require("@nestjs/typeorm");
+const repost_entity_1 = require("../repost/repost.entity");
+const visibility_service_1 = require("./services/visibility/visibility.service");
 let FeedModule = class FeedModule {
 };
 exports.FeedModule = FeedModule;
 exports.FeedModule = FeedModule = __decorate([
     (0, common_1.Module)({
         imports: [
+            typeorm_1.TypeOrmModule.forFeature([
+                repost_entity_1.RepostEntity,
+            ]),
             (0, common_1.forwardRef)(() => post_module_1.PostModule),
+            repost_module_1.RepostModule,
             scylla_module_1.ScyllaModule,
         ],
         providers: [
@@ -41,6 +49,7 @@ exports.FeedModule = FeedModule = __decorate([
             // INTERNAL SERVICES
             // ============================================
             feed_query_service_1.FeedQueryService,
+            visibility_service_1.VisibilityService,
             feed_hydration_service_1.FeedHydrationService,
             discovery_feed_service_1.DiscoveryFeedService,
             // ============================================

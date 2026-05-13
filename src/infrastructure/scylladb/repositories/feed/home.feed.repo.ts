@@ -12,6 +12,7 @@ export class HomeFeedRepository {
 async insertPost(data: {
   userId: string;
   postId: string;
+  itemType: string;
   authorId: string;
   score: number;
   createdAt: Date;
@@ -25,17 +26,19 @@ async insertPost(data: {
       user_id,
       bucket_date,
       score,
+      item_type,
       created_at,
       post_id,
       author_id
     )
-    VALUES (?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?,?, ?)
   `;
 
   await this.scylla.execute(query, [
     data.userId,
-    bucketDate,   // MUST match the schema
+    bucketDate,   
     data.score,
+    data.itemType,
     data.createdAt,
     data.postId,
     data.authorId,

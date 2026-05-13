@@ -37,6 +37,9 @@ let UserResolver = class UserResolver {
                 : undefined,
         });
     }
+    async updateMyLocation(userId, locationId) {
+        return this.service.updateLocation(userId, locationId);
+    }
     // =========================
     // GET USER
     // =========================
@@ -64,6 +67,14 @@ __decorate([
     __metadata("design:paramtypes", [create_user_inputs_1.CreateUserInput]),
     __metadata("design:returntype", Promise)
 ], UserResolver.prototype, "createUser", null);
+__decorate([
+    (0, graphql_1.Mutation)(() => user_entity_1.UserEntity),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, graphql_1.Args)('locationId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], UserResolver.prototype, "updateMyLocation", null);
 __decorate([
     (0, graphql_1.Query)(() => String),
     __param(0, (0, graphql_1.Args)('id')),

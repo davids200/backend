@@ -1,5 +1,5 @@
 import { TOPIC_KEYWORDS }
-from '../constants/topic-keywords.constant';
+from '../topic-keywords.constant';
 
 export function detectTopics(
   content: string,

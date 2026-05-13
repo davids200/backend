@@ -26,6 +26,17 @@ async createUser(@Args('data') data: CreateUserInput) {
   });
 }
 
+
+
+@Mutation(() => UserEntity)
+async updateMyLocation(@CurrentUser() userId: string, @Args('locationId')
+  locationId: string,
+) {
+  return this.service.updateLocation(userId,locationId,);
+}
+
+
+
   // =========================
   // GET USER
   // =========================

@@ -23,13 +23,14 @@ from '../../infrastructure/kafka/kafka.module';
 import { RedisModule }
 from '../../infrastructure/redis/redis.module';
 import { FollowEntity } from './entities/follow.entity';
+import { UserEntity } from '../user/entities/user.entity';
 
 @Module({
 
   imports: [
 
     TypeOrmModule.forFeature([
-      FollowEntity,
+      FollowEntity,UserEntity,
     ]),
 
     KafkaModule,

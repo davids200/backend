@@ -1,84 +1,93 @@
 export const FEED_SCHEMA = [
 
-`
-CREATE TABLE IF NOT EXISTS social_app.home_feed (
-
-  user_id UUID,
-
-  bucket_date DATE,
-
-  score BIGINT,
-
-  created_at TIMESTAMP,
-
-  post_id UUID,
-
-  author_id UUID,
-
-  PRIMARY KEY (
-
-    (user_id, bucket_date),
-
-    score,
-
-    created_at,
-
-    post_id
+  `
+  CREATE TABLE IF NOT EXISTS social_app.home_feed (
+    user_id UUID,
+    bucket_date DATE,
+    score BIGINT,
+    item_type TEXT,
+    created_at TIMESTAMP,
+    post_id UUID,
+    author_id UUID,
+    PRIMARY KEY ((user_id, bucket_date),
+      score,
+      created_at,
+      post_id
+    )
   )
-)
+  WITH CLUSTERING ORDER BY ( score DESC,created_at DESC, post_id DESC);
+  `,
 
-WITH CLUSTERING ORDER BY (
+  
+  
 
-  score DESC,
+  `
+  CREATE TABLE IF NOT EXISTS social_app.user_feed (
 
-  created_at DESC,
+    author_id UUID,
 
-  post_id DESC
-);
-`,
+    created_at TIMESTAMP,
+    item_type TEXT,
 
-`
-CREATE TABLE IF NOT EXISTS social_app.user_feed (
-  author_id UUID,
-  created_at TIMESTAMP,
-  post_id UUID,
-  PRIMARY KEY ((author_id),
-    created_at,
-    post_id
+    post_id UUID,
+
+    PRIMARY KEY (
+
+      (author_id),
+
+      created_at,
+
+      post_id
+    )
   )
-)
-WITH CLUSTERING ORDER BY (created_at DESC,post_id DESC);
-`,
-`
 
+  WITH CLUSTERING ORDER BY (
 
+    created_at DESC,
 
+    post_id DESC
+  );
+  `,
 
-CREATE TABLE IF NOT EXISTS social_app.location_feed (
+  // =====================================================
+  // LOCATION FEED
+  // =====================================================
 
-  location_id TEXT,
+  `
+  CREATE TABLE IF NOT EXISTS social_app.location_feed (
 
-  created_at TIMESTAMP,
+    location_id UUID,
 
-  post_id UUID,
+    bucket_date DATE,
 
-  author_id UUID,
+    score BIGINT,
+    item_type TEXT,
 
-  PRIMARY KEY (
+    created_at TIMESTAMP,
 
-    (location_id),
+    post_id UUID,
 
-    created_at,
+    author_id UUID,
 
-    post_id
+    PRIMARY KEY (
+
+      (location_id, bucket_date),
+
+      score,
+
+      created_at,
+
+      post_id
+    )
   )
-)
 
-WITH CLUSTERING ORDER BY (
+  WITH CLUSTERING ORDER BY (
 
-  created_at DESC,
+    score DESC,
 
-  post_id DESC
-);
-`,
+    created_at DESC,
+
+    post_id DESC
+  );
+  `,
 ];

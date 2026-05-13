@@ -11,7 +11,8 @@ import {
   ObjectType,
   Field,
   ID,
-} from '@nestjs/graphql';
+} from '@nestjs/graphql'; 
+import { PostVisibility } from './enums/post-visibility.enum';
 
 @ObjectType()
 
@@ -109,17 +110,9 @@ export class PostEntity {
   // VISIBILITY
   // =====================================================
 
-  @Field()
-
-  @Column({
-    default: 'public',
-  })
-
-  visibility!:
-    'public'
-    | 'followers'
-    | 'private'
-    | 'local';
+@Field()
+@Column({type: 'enum',enum: PostVisibility,default: PostVisibility.PUBLIC,})
+visibility!: PostVisibility;
 
   // =====================================================
   // MENTIONS

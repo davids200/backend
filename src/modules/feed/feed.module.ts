@@ -28,15 +28,21 @@ import { DiscoveryFeedService }
 from './services/discovery-feed.service';
 import { ScyllaModule } from '../../infrastructure/scylladb/scylla.module';
 import { FeedProducer } from './feed.producer';
+import { RepostModule } from '../repost/repost.module';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { RepostEntity } from '../repost/repost.entity';
+import { VisibilityService } from './services/visibility/visibility.service';
 
 @Module({
 
   imports: [
-
+TypeOrmModule.forFeature([
+  RepostEntity,
+]),
     forwardRef(
       () => PostModule,
     ),
-
+RepostModule,
     ScyllaModule,
   ],
 
@@ -55,7 +61,7 @@ import { FeedProducer } from './feed.producer';
     // ============================================
 
     FeedQueryService,
-
+VisibilityService,
     FeedHydrationService,
 
     DiscoveryFeedService,

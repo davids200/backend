@@ -10,29 +10,10 @@ export class FeedHydrationService {
       PostService,
   ) {}
 
-  async buildFeedResponse(
-    rows: any[],
-  ) {
-
-    const postIds =
-      rows.map(
-        (row) =>
-          row.post_id,
-      );
-
-    const posts =
-      await this.postService
-        .getPostsByIds(
-          postIds,
-        );
-
-    const nextCursor =
-      rows.length
-        ? rows[
-            rows.length - 1
-          ].created_at
-        : null;
-
+  async buildFeedResponse(rows: any[],) {
+    const postIds =rows.map((row) =>row.post_id,);
+    const posts =await this.postService.getPostsByIds(postIds,);
+    const nextCursor =rows.length? rows[rows.length - 1].created_at: null;
     return {
       posts,
       nextCursor,

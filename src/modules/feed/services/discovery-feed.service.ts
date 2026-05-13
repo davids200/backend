@@ -6,8 +6,8 @@ import { FeedQueryService }
 from './feed-query.service';
 
 @Injectable()
-export class DiscoveryFeedService
-{
+export class DiscoveryFeedService {
+
   constructor(
 
     private readonly feedQuery:
@@ -19,30 +19,23 @@ export class DiscoveryFeedService
   // =====================================================
 
   async getDiscoveryFeed(params: {
-
     userId: string;
-
     locationId?: string;
-
     hashtags?: string[];
-
     limit?: number;
-
     cursor?: Date;
   }) {
-
     const {
-
       userId,
-
       locationId,
-
       hashtags = [],
-
       limit = 20,
-
       cursor,
     } = params;
+
+    // ================================================
+    // DEDUPLICATION MAP
+    // ================================================
 
     const results =
       new Map<string, any>();
@@ -51,58 +44,49 @@ export class DiscoveryFeedService
     // HOME FEED
     // ================================================
 
-    const homeFeed =
-      await this.feedQuery
-        .getHomeFeed({
-
+    const homeFeed =await this.feedQuery.getHomeFeed({
           userId,
-
           limit,
-
           cursor,
         });
 
-    for (
-      const post of homeFeed.posts
-    ) {
-
-      results.set(
-        post.id,
-        post,
-      );
+    for (const item of homeFeed.items) {
+      const id = item?.data?.id;
+      if (id) {
+        results.set(id,item,);
+      }
     }
+
+
+
 
     // ================================================
     // LOCATION FEED
     // ================================================
-
     if (locationId) {
 
       const locationFeed =
         await this.feedQuery
           .getLocationFeed({
-
             locationId,
-
             limit,
-
             cursor,
           });
 
-      for (
-        const post
-        of locationFeed.posts
-      ) {
-
-        results.set(
-          post.id,
-          post,
-        );
+      for (const item of locationFeed.items) {
+        const id = item?.data?.id;
+        if (id) {
+          results.set(id,item,);
+        }
       }
     }
 
+
+
+
+    
     // ================================================
-    // HASHTAG FEED
+    // HASHTAG FEEDS
     // ================================================
 
     for (
@@ -128,27 +112,37 @@ export class DiscoveryFeedService
           });
 
       for (
-        const post
-        of hashtagFeed.posts
+        const item
+        of hashtagFeed.items
       ) {
 
-        results.set(
-          post.id,
-          post,
-        );
+        const id =
+          item?.data?.id;
+
+        if (id) {
+
+          results.set(
+            id,
+            item,
+          );
+        }
       }
     }
 
     // ================================================
-    // MERGE + SORT
+    // MERGE
     // ================================================
 
-    const posts =
+    const items =
       Array.from(
         results.values(),
       );
 
-    posts.sort(
+    // ================================================
+    // SORT
+    // ================================================
+
+    items.sort(
 
       (a, b) =>
 
@@ -163,20 +157,25 @@ export class DiscoveryFeedService
         ).getTime(),
     );
 
+    // ================================================
+    // RESPONSE
+    // ================================================
+
     return {
 
-      posts:
-        posts.slice(
+      items:
+
+        items.slice(
           0,
           limit,
         ),
 
       nextCursor:
 
-        posts.length
+        items.length
 
-          ? posts[
-              posts.length - 1
+          ? items[
+              items.length - 1
             ].createdAt
 
           : null,

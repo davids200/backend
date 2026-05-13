@@ -137,6 +137,11 @@ export class UserEntity
   })
   isMinor!: boolean;
 
+  @Column({
+  default: false,
+})
+isPrivate!: boolean;
+
   // =====================================================
   // ACTIVE
   // =====================================================

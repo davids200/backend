@@ -12,6 +12,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreatePostInput = void 0;
 const graphql_1 = require("@nestjs/graphql");
 const class_validator_1 = require("class-validator");
+const post_visibility_enum_1 = require("../enums/post-visibility.enum");
+// =====================================================
+// REGISTER ENUM
+// =====================================================
+(0, graphql_1.registerEnumType)(post_visibility_enum_1.PostVisibility, { name: 'PostVisibility',
+});
 let CreatePostInput = class CreatePostInput {
     locationId;
     content;
@@ -33,9 +39,7 @@ __decorate([
     __metadata("design:type", String)
 ], CreatePostInput.prototype, "content", void 0);
 __decorate([
-    (0, graphql_1.Field)({ nullable: true, }),
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)(),
+    (0, graphql_1.Field)(() => post_visibility_enum_1.PostVisibility, { nullable: true, }),
     __metadata("design:type", String)
 ], CreatePostInput.prototype, "visibility", void 0);
 __decorate([

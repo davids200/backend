@@ -1,6 +1,7 @@
 import {
   Injectable,
   BadRequestException,
+  NotFoundException,
 } from '@nestjs/common';
 
 import {
@@ -10,12 +11,14 @@ import {
 import {
   Repository,
 } from 'typeorm';
- 
 
 import { FollowProducer }
 from './follow.producer';
-import { FollowEntity } from './entities/follow.entity';
 
+import { FollowEntity }
+from './entities/follow.entity';
+import { UserEntity } from '../user/entities/user.entity';
+ 
 @Injectable()
 export class FollowService {
 
@@ -24,6 +27,10 @@ export class FollowService {
     @InjectRepository(FollowEntity)
     private readonly repo:
       Repository<FollowEntity>,
+
+    @InjectRepository(UserEntity)
+    private readonly usersRepo:
+      Repository<UserEntity>,
 
     private readonly producer:
       FollowProducer,
@@ -38,6 +45,10 @@ export class FollowService {
     followingId: string,
   ) {
 
+    // ================================================
+    // SELF FOLLOW
+    // ================================================
+
     if (
       followerId === followingId
     ) {
@@ -46,6 +57,40 @@ export class FollowService {
         'You cannot follow yourself',
       );
     }
+
+    // ================================================
+    // TARGET USER
+    // ================================================
+
+    const targetUser =
+      await this.usersRepo.findOne({
+
+        where: {
+          id: followingId,
+        },
+      });
+
+    if (!targetUser) {
+
+      throw new NotFoundException(
+        'User not found',
+      );
+    }
+
+    // ================================================
+    // PRIVATE ACCOUNT
+    // ================================================
+
+    if (targetUser.isPrivate) {
+
+      throw new BadRequestException(
+        'Follow request required',
+      );
+    }
+
+    // ================================================
+    // EXISTING FOLLOW
+    // ================================================
 
     const existing =
       await this.repo.findOne({
@@ -57,8 +102,13 @@ export class FollowService {
       });
 
     if (existing) {
+
       return existing;
     }
+
+    // ================================================
+    // CREATE FOLLOW
+    // ================================================
 
     const follow =
       this.repo.create({

@@ -1,0 +1,10 @@
+
+
+
+export const FEED_CONSTANTS={
+    CELEBRITY_THRESHOLD : 100000,
+    MAXIMUM_REDIS_FEED : 5000,
+    BATCH_SIZE :500,
+}
+
+ 

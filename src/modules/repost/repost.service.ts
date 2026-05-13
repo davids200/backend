@@ -20,26 +20,26 @@ import { RepostInput }
 from './dto/repost.input';
 
 import { RepostProducer }
-from './repost.producer';
+from './repost.producer'; 
 
-import { PostService }
-from '../post/post.service';
+import { PostEntity }
+from '../post/post.entity';
 
+ 
 @Injectable()
 export class RepostService
 {
-  constructor(
+constructor(
 
-    @InjectRepository(RepostEntity)
-    private readonly repostRepo:
-      Repository<RepostEntity>,
+@InjectRepository(RepostEntity)
+private readonly repostRepo:Repository<RepostEntity>,
+private readonly producer:RepostProducer,
 
-    private readonly producer:
-      RepostProducer,
+@InjectRepository(PostEntity)
+private readonly postRepo:
+Repository<PostEntity>,
 
-    private readonly postService:
-      PostService,
-  ) {}
+) {}
 
   async repostPost(
     userId: string,
@@ -50,11 +50,15 @@ export class RepostService
     // CHECK ORIGINAL POST
     // ============================================
 
-    const post =
-      await this.postService
-        .getPostById(
+   const post =
+  await this.postRepo
+    .findOne({
+
+      where: {
+        id:
           input.postId,
-        );
+      },
+    });
 
     if (!post) {
 
@@ -92,46 +96,45 @@ export class RepostService
 
     const repost =
       this.repostRepo.create({
-
         userId,
-
-        postId:
-          input.postId,
-
-        quote:
-          input.quote,
+        postId:input.postId,
+        quote:input.quote,
       });
+await this.repostRepo.save(repost,);
 
-    await this.repostRepo.save(
-      repost,
-    );
 
-    // ============================================
-    // EMIT EVENT
-    // ============================================
 
-    await this.producer
-      .repostCreated({
-
-        repostId:
-          repost.id,
-
-        userId,
-
-        postId:
-          repost.postId,
-
-        originalAuthorId:
-          post.authorId,
-
-        quote:
-          repost.quote,
-
-        createdAt:
-          repost.createdAt
-            .toISOString(),
-      });
-
-    return repost;
+// ============================================
+// EMIT EVENT
+// ============================================
+await this.producer.repostCreated({
+repostId:repost.id,
+userId,
+postId:repost.postId,
+originalAuthorId:post.authorId,
+quote:repost.quote,
+createdAt:repost.createdAt.toISOString(),
+});
+ return repost;
   }
+
+
+async findByPostId(
+  postId: string,
+) {
+
+  return this.repostRepo
+    .findOne({
+
+      where: {
+        postId,
+      },
+
+      order: {
+        createdAt: 'DESC',
+      },
+    });
+}
+
+
 }

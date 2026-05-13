@@ -112,15 +112,10 @@ export class FeedService
   // =====================================================
 
   async getDiscoveryFeed(params: {
-
     userId: string;
-
     locationId?: string;
-
     hashtags?: string[];
-
     limit?: number;
-
     cursor?: Date;
   }) {
 

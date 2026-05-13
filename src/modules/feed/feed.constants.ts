@@ -1,2 +1,0 @@
-export const CELEBRITY_THRESHOLD = 100000;  
-export const MAXIMUM_REDIS_FEED = 5000; 
