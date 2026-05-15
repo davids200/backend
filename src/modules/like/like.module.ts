@@ -1,17 +1,70 @@
-import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
+// src/modules/like/like.module.ts
 
-import { LikeEntity } from './like.entity';
-import { LikeService } from './like.service'; 
-import { LikeProducer } from './like.producer';
-import { LikeConsumer } from '../../workers/like/like.consumer';
+import {
+  Module,
+} from '@nestjs/common';
+
+import {
+  TypeOrmModule,
+} from '@nestjs/typeorm';
+
+import {
+  LikeEntity,
+} from './like.entity';
+
+import {
+  PostEntity,
+} from '../post/post.entity';
+
+import {
+  LikeService,
+} from './like.service';
+
+import {
+  LikeProducer,
+} from './like.producer';
+
+import {
+  LikeResolver,
+} from './like.resolver';
+
+import {
+  LikeConsumer,
+} from '../../workers/like/like.consumer';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([LikeEntity])],
-  providers: [LikeService, LikeProducer, LikeConsumer],
-  exports: [
+
+  imports:[
+
+    TypeOrmModule.forFeature([
+
+      LikeEntity,
+
+      PostEntity,
+    ]),
+  ],
+
+  providers:[
+
     LikeService,
-  LikeConsumer,
+
+    LikeProducer,
+
+    LikeResolver,
+
+    LikeConsumer,
+  ],
+
+  exports:[
+
+    LikeService,
+
+    LikeConsumer,
   ],
 })
-export class LikeModule {}
+
+export class LikeModule {
+   constructor(
+    private readonly likeConsumer:LikeConsumer,
+  ) {}
+}

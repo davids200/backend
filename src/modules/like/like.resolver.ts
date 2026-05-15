@@ -1,42 +1,63 @@
-import { Resolver, Mutation, Args } from '@nestjs/graphql';
+import { Resolver,Mutation,Args } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 
-import { LikeService } from './like.service';
-import { GqlAuthGuard } from '../auth/guards/gql-auth.guard';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { LikeTargetType } from './like.entity';
+import { LikeService }
+from './like.service';
+
+import { GqlAuthGuard }
+from '../auth/guards/gql-auth.guard';
+
+import { CurrentUser }
+from '../auth/decorators/current-user.decorator';
 
 @Resolver()
 export class LikeResolver {
-  constructor(private readonly likeService: LikeService) {}
 
-  @Mutation(() => Boolean)
+  constructor(
+    private readonly likeService: LikeService,
+  ) {}
+
+  // =====================================================
+  // LIKE POST
+  // =====================================================
+
+  @Mutation(() => Boolean,{ name:'likePost' })
   @UseGuards(GqlAuthGuard)
-  like(
-    @CurrentUser() user: any,
-    @Args('targetId') targetId: string,
-    @Args('targetType') targetType: LikeTargetType,
-    @Args('authorId') authorId: string,
+
+  async likePost(
+
+    @CurrentUser()
+    user:any,
+
+    @Args('postId')
+    postId:string,
   ) {
-    return this.likeService.like(
+
+    return this.likeService.likePost(
       user.id,
-      targetId,
-      targetType,
-      authorId,
+      postId,
     );
   }
 
-  @Mutation(() => Boolean)
+  // =====================================================
+  // UNLIKE POST
+  // =====================================================
+
+  @Mutation(() => Boolean,{ name:'unlikePost' })
   @UseGuards(GqlAuthGuard)
-  unlike(
-    @CurrentUser() user: any,
-    @Args('targetId') targetId: string,
-    @Args('targetType') targetType: LikeTargetType,
+
+  async unlikePost(
+
+    @CurrentUser()
+    user:any,
+
+    @Args('postId')
+    postId:string,
   ) {
-    return this.likeService.unlike(
+
+    return this.likeService.unlikePost(
       user.id,
-      targetId,
-      targetType,
+      postId,
     );
   }
 }

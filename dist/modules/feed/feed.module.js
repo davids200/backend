@@ -26,6 +26,7 @@ const repost_module_1 = require("../repost/repost.module");
 const typeorm_1 = require("@nestjs/typeorm");
 const repost_entity_1 = require("../repost/repost.entity");
 const visibility_service_1 = require("./services/visibility/visibility.service");
+const feed_ranking_service_1 = require("../ranking/feed-ranking.service");
 let FeedModule = class FeedModule {
 };
 exports.FeedModule = FeedModule;
@@ -40,25 +41,15 @@ exports.FeedModule = FeedModule = __decorate([
             scylla_module_1.ScyllaModule,
         ],
         providers: [
-            // ============================================
-            // MAIN
-            // ============================================
             feed_service_1.FeedService,
             feed_resolver_1.FeedResolver,
-            // ============================================
-            // INTERNAL SERVICES
-            // ============================================
             feed_query_service_1.FeedQueryService,
             visibility_service_1.VisibilityService,
             feed_hydration_service_1.FeedHydrationService,
             discovery_feed_service_1.DiscoveryFeedService,
-            // ============================================
-            // PRODUCERS
-            // ============================================
             feed_producer_1.FeedProducer,
-            // ============================================
+            feed_ranking_service_1.FeedRankingService,
             // REPOSITORIES
-            // ============================================
             home_feed_repo_1.HomeFeedRepository,
             user_feed_repo_1.UserFeedRepository,
             location_feed_repo_1.LocationFeedRepository,
@@ -67,7 +58,7 @@ exports.FeedModule = FeedModule = __decorate([
         exports: [
             feed_service_1.FeedService,
             location_feed_repo_1.LocationFeedRepository,
-            // IMPORTANT
+            feed_ranking_service_1.FeedRankingService,
             feed_producer_1.FeedProducer,
         ],
     })

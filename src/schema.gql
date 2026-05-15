@@ -96,6 +96,7 @@ type Mutation {
   createUser(data: CreateUserInput!): String!
   deletePost(postId: String!): Boolean!
   followUser(data: FollowUserInput!): FollowEntity!
+  likePost(postId: String!): Boolean!
   login(data: LoginInput!): AuthResponse!
   logout: Boolean!
   refreshToken(data: RefreshTokenInput!): AuthResponse!
@@ -106,6 +107,7 @@ type Mutation {
   revokeSession(sessionId: String!): Boolean!
   sendOtp(data: SendOtpInput!): Boolean!
   unfollowUser(followingId: String!): Boolean!
+  unlikePost(postId: String!): Boolean!
   updateMyLocation(locationId: String!): UserEntity!
   updateProfile(data: UpdateProfileInput!): String!
   verifyOtp(data: VerifyOtpInput!): Boolean!

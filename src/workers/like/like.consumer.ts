@@ -1,6 +1,8 @@
+// src/workers/like/like.consumer.ts
+
 import {
   Injectable,
-  Logger,
+  Logger,OnModuleInit
 } from '@nestjs/common';
 
 import {
@@ -11,57 +13,52 @@ import {
   Repository,
 } from 'typeorm';
 
-import { KafkaService }
-from '../../infrastructure/kafka/kafka.service';
+import {
+  KafkaService,
+} from '../../infrastructure/kafka/kafka.service';
 
-import { RedisCounterService }
-from '../../infrastructure/redis/counters/redis.counter.service';
+import {
+  RedisCounterService,
+} from '../../infrastructure/redis/counters/redis.counter.service';
 
-import { NotificationProducer }
-from '../../modules/notification/notification.producer';
+import {
+  NotificationProducer,
+} from '../../modules/notification/notification.producer';
 
-import { LikeEntity }
-from '../../modules/like/like.entity';
+import {
+  LikeEntity,
+} from '../../modules/like/like.entity';
 
-import { KAFKA_TOPICS }
-from '../../common/constants/kafka-topics.constants';
+import {
+  KAFKA_TOPICS,
+} from '../../common/constants/kafka-topics.constants';
 
-// =====================================================
-// EVENT TYPES
-// =====================================================
+import {
+  LikeCreatedEvent,
+} from '../../common/constants/contracts/events/like-created.event';
 
-type LikeCreatedEvent = {
-  userId: string;
-  targetId: string;
-  targetType: 'post' | 'comment';
-  authorId?: string;
-};
+import {
+  LikeRemovedEvent,
+} from '../../common/constants/contracts/events/like-removed.event';
 
-type LikeRemovedEvent = {
-  userId: string;
-  targetId: string;
-  targetType: 'post' | 'comment';
-};
+import {
+  EngagementUpdatedEvent,
+} from '../../common/constants/contracts/events/engagement-updated.event';
+ 
 
 @Injectable()
-export class LikeConsumer {
+export class LikeConsumer implements OnModuleInit{
 
   private readonly logger =
-    new Logger(LikeConsumer.name);
+    new Logger(
+      LikeConsumer.name,
+    );
 
   constructor(
 
-    // =====================================================
-    // REPOSITORY
-    // =====================================================
-
     @InjectRepository(LikeEntity)
-    private readonly repo:
+    private readonly likeRepo:
       Repository<LikeEntity>,
-
-    // =====================================================
-    // SERVICES
-    // =====================================================
 
     private readonly kafka:
       KafkaService,
@@ -72,6 +69,12 @@ export class LikeConsumer {
     private readonly notification:
       NotificationProducer,
   ) {}
+
+
+  async onModuleInit() {
+
+  await this.start();
+}
 
   // =====================================================
   // START CONSUMER
@@ -89,7 +92,7 @@ export class LikeConsumer {
 
     await this.kafka.consume<LikeCreatedEvent>(
 
-      'like-group',
+     'like-created-group',
 
       KAFKA_TOPICS.LIKE_CREATED,
 
@@ -117,7 +120,7 @@ export class LikeConsumer {
 
     await this.kafka.consume<LikeRemovedEvent>(
 
-      'like-group',
+      'like-removed-group',
 
       KAFKA_TOPICS.LIKE_REMOVED,
 
@@ -144,140 +147,199 @@ export class LikeConsumer {
     );
   }
 
+
+
+  
   // =====================================================
   // HANDLE LIKE CREATED
   // =====================================================
 
+
   private async handleLikeCreated(
-    event: LikeCreatedEvent,
-  ) {
+  event:LikeCreatedEvent,
+) {
 
-    const {
-      userId,
-      targetId,
+  console.log(
+    'HANDLE LIKE CREATED STARTED',
+  );
+
+  const {
+    targetId,
+    targetType,
+    authorId,
+    createdAt,
+  } = event;
+
+  // ================================================
+  // REDIS INCREMENT
+  // ================================================
+
+  console.log(
+    'BEFORE REDIS INCREMENT',
+  );
+
+  const incrementResult =
+    await this.redisCounter.incrementLikes(
+
       targetType,
+
+      targetId,
+    );
+
+  console.log(
+    'REDIS INCREMENT RESULT',
+    incrementResult,
+  );
+
+  // ================================================
+  // READ UPDATED COUNT
+  // ================================================
+
+  const likes =
+    await this.redisCounter.getLikesCount(
+
+      targetType,
+
+      targetId,
+    );
+
+  console.log(
+    'UPDATED LIKES COUNT',
+    likes,
+  );
+
+  // ================================================
+  // ENGAGEMENT EVENT
+  // ================================================
+
+  const rankingEvent:
+    EngagementUpdatedEvent = {
+
+      postId:
+        targetId,
+
+      likes,
+
+      comments:0,
+
+      reposts:0,
+
+      createdAt,
+
       authorId,
-    } = event;
+    };
 
-    // ================================================
-    // CHECK EXISTING LIKE
-    // ================================================
+  console.log(
+    'EMITTING ENGAGEMENT EVENT',
+    rankingEvent,
+  );
 
-    const existing =
-      await this.repo.findOne({
+  await this.kafka.emit(
 
-        where: {
-          userId,
-          targetId,
-          targetType,
-        },
-      });
+    KAFKA_TOPICS
+      .ENGAGEMENT_UPDATED,
 
-    if (existing) {
-      return;
-    }
+    rankingEvent,
+  );
 
-    // ================================================
-    // SAVE LIKE
-    // ================================================
+  this.logger.log(
+    `❤️ Like created: ${targetId}`,
+  );
+}
 
-    const like =
-      this.repo.create({
 
-        userId,
-        targetId,
-        targetType,
-      });
 
-    await this.repo.save(
-      like,
-    );
 
-    // ================================================
-    // UPDATE REDIS COUNTERS
-    // ================================================
 
-    await this.redisCounter
-      .incrementLikes(
 
-        targetType,
 
-        targetId,
-      );
 
-    // ================================================
-    // CREATE NOTIFICATION
-    // ================================================
-
-    if (
-      authorId &&
-      authorId !== userId
-    ) {
-
-      await this.notification
-        .sendNotification({
-
-          userId:
-            authorId,
-
-          actorId:
-            userId,
-
-          type:
-            `${targetType}_like`,
-
-          referenceId:
-            targetId,
-
-          createdAt:
-            new Date().toISOString(),
-        });
-    }
-
-    this.logger.log(
-      `❤️ Like created: ${targetId}`,
-    );
-  }
 
   // =====================================================
   // HANDLE LIKE REMOVED
   // =====================================================
 
-  private async handleLikeRemoved(
-    event: LikeRemovedEvent,
-  ) {
+ private async handleLikeRemoved(
+  event: LikeRemovedEvent,
+) {
 
-    const {
-      userId,
-      targetId,
+  const {
+    userId,
+    targetId,
+    targetType,
+  } = event;
+
+  // ================================================
+  // DELETE LIKE
+  // ================================================
+
+  await this.likeRepo.delete({
+
+    userId,
+
+    targetId,
+
+    targetType,
+  });
+
+  // ================================================
+  // UPDATE REDIS COUNTERS
+  // ================================================
+
+  await this.redisCounter
+    .decrementLikes(
+
       targetType,
-    } = event;
 
-    // ================================================
-    // DELETE LIKE
-    // ================================================
-
-    await this.repo.delete({
-
-      userId,
       targetId,
-      targetType,
-    });
+    );
 
-    // ================================================
-    // UPDATE REDIS COUNTERS
-    // ================================================
+  // ================================================
+  // GET UPDATED LIKE COUNT
+  // ================================================
 
+  const likes =
     await this.redisCounter
-      .decrementLikes(
+      .getLikesCount(
 
         targetType,
 
         targetId,
       );
 
-    this.logger.log(
-      `💔 Like removed: ${targetId}`,
-    );
-  }
+  // ================================================
+  // EMIT ENGAGEMENT UPDATE
+  // ================================================
+
+  const rankingEvent:
+    EngagementUpdatedEvent = {
+
+      postId:
+        targetId,
+
+      likes,
+
+      comments: 0,
+
+      reposts: 0,
+
+      createdAt:
+        new Date()
+          .toISOString(),
+
+      authorId:'',
+    };
+
+  await this.kafka.emit(
+
+    KAFKA_TOPICS
+      .ENGAGEMENT_UPDATED,
+
+    rankingEvent,
+  );
+
+  this.logger.log(
+    `💔 Like removed: ${targetId}`,
+  );
+}
 }

@@ -32,6 +32,7 @@ import { RepostModule } from '../repost/repost.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RepostEntity } from '../repost/repost.entity';
 import { VisibilityService } from './services/visibility/visibility.service';
+import { FeedRankingService } from '../ranking/feed-ranking.service';
 
 @Module({
 
@@ -47,41 +48,19 @@ RepostModule,
   ],
 
   providers: [
-
-    // ============================================
-    // MAIN
-    // ============================================
-
     FeedService,
-
     FeedResolver,
-
-    // ============================================
-    // INTERNAL SERVICES
-    // ============================================
-
     FeedQueryService,
 VisibilityService,
     FeedHydrationService,
-
     DiscoveryFeedService,
-
-    // ============================================
-    // PRODUCERS
-    // ============================================
-
-    FeedProducer,
-
-    // ============================================
+    FeedProducer, 
+    FeedRankingService,
     // REPOSITORIES
-    // ============================================
 
     HomeFeedRepository,
-
     UserFeedRepository,
-
     LocationFeedRepository,
-
     HashtagFeedRepository,
   ],
 
@@ -89,7 +68,7 @@ VisibilityService,
 
     FeedService,
 LocationFeedRepository,
-    // IMPORTANT
+    FeedRankingService,
     FeedProducer,
   ],
 })

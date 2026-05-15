@@ -11,9 +11,7 @@ from '../../infrastructure/redis/redis.service';
 
 import { LocationService }
 from '../../modules/location/location.service';
-
-import { calculateScore }
-from '../../modules/feed/constants/utils/feed-ranking.util';
+ 
 
 import { FEED_CONSTANTS }
 from '../../modules/feed/constants/feed.constants';
@@ -38,6 +36,7 @@ from '../../common/constants/contracts/events/feed-fanout.event';
 import { FeedItemType } from '../../modules/feed/types/feed-item.type';
 import { HashtagFeedRepository }
 from '../../infrastructure/scylladb/repositories/feed/hashtag.feed.repo';
+import { FeedRankingService } from '../../modules/ranking/feed-ranking.service';
 
 
 @Injectable()
@@ -52,6 +51,7 @@ export class FeedConsumer  implements OnModuleInit{
     private readonly homeFeedRepo:      HomeFeedRepository,
     private readonly userFeedRepo:      UserFeedRepository,
     private readonly hashtagFeedRepo:  HashtagFeedRepository,
+    private readonly rankingService:  FeedRankingService,
   ) {}
 
   // =====================================================
@@ -123,8 +123,13 @@ export class FeedConsumer  implements OnModuleInit{
 const createdAtDate = new Date(createdAt);
 
 // SCORE
-const score =calculateScore({createdAt:createdAtDate,likes: 0,comments: 0,isFollowingAuthor:true,});
-
+const score =this.rankingService.calculateScore({
+      createdAt:createdAtDate,
+      likes: 0,
+      comments: 0,
+      reposts: 0,
+      isFollowingAuthor:true,
+    });
 
 // USER FEED
 // ================================================

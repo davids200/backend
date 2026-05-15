@@ -28,6 +28,9 @@ from './feed/feed.consumer';
 
 import { PostConsumer }
 from './post/post.consumer';
+import { FollowConsumer } from './follow/follow.consumer';
+import { LikeConsumer } from './like/like.consumer';
+import { RankingConsumer } from './ranking/ranking.consumer';
 
 @Module({
 
@@ -49,10 +52,13 @@ from './post/post.consumer';
   ],
 
   providers: [
+PostConsumer,
 
-    FeedConsumer,
+  FeedConsumer,
 
-    PostConsumer,
+  FollowConsumer, 
+
+  RankingConsumer,
   ],
 
   exports: [
@@ -63,4 +69,13 @@ from './post/post.consumer';
   ],
 })
 
-export class WorkersModule {}
+export class WorkersModule {
+  constructor(
+
+  private readonly postConsumer:PostConsumer,
+
+  private readonly followConsumer:FollowConsumer, 
+
+  private readonly rankingConsumer:RankingConsumer,
+) {}
+}

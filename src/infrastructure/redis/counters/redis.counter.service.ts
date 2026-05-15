@@ -1,253 +1,195 @@
+// src/infrastructure/redis/redis-counter.service.ts
+
 import {
   Injectable,
-  Logger,
 } from '@nestjs/common';
+import { RedisService } from '../redis.service';
 
-import { RedisService }
-from '../redis.service';
+ 
 
 @Injectable()
 export class RedisCounterService {
-  private readonly logger =
-    new Logger(RedisCounterService.name);
 
   constructor(
-    private readonly redis: RedisService,
+    private readonly redis:RedisService,
   ) {}
 
   // =====================================================
-  // REDIS KEYS
+  // KEY
   // =====================================================
 
-  private likeKey(
-    type: string,
-    id: string,
+  private getLikesKey(
+    targetType:string,
+    targetId:string,
   ) {
 
-    return `likes:${type}:${id}`;
-  }
-
-  private commentKey(
-    postId: string,
-  ) {
-
-    return `comments:post:${postId}`;
+    return `${targetType}:${targetId}:likes`;
   }
 
   // =====================================================
-  // INCREMENT LIKES
+  // INCREMENT
   // =====================================================
 
-  async incrementLikes(
-    type: string,
-    id: string,
-  ) {
+ async incrementLikes(
+  targetType:string,
+  targetId:string,
+) {
 
-    await this.redis.client.incr(
-      this.likeKey(type, id),
+  const key =
+    this.getLikesKey(
+      targetType,
+      targetId,
     );
-  }
+
+  console.log(
+    'INCREMENTING KEY',
+    key,
+  );
+
+  const result =
+    await this.redis.client.incr(
+      key,
+    );
+
+  console.log(
+    'INCR RESULT',
+    result,
+  );
+
+  return result;
+}
 
   // =====================================================
-  // DECREMENT LIKES
+  // DECREMENT
   // =====================================================
 
   async decrementLikes(
-    type: string,
-    id: string,
-  ) {
+  targetType:string,
+  targetId:string,
+) {
 
-    await this.redis.client.decr(
-      this.likeKey(type, id),
+  const key =
+    this.getLikesKey(
+      targetType,
+      targetId,
     );
-  }
 
-  // =====================================================
-  // INCREMENT COMMENTS
-  // =====================================================
-
-  async incrementComments(
-    postId: string,
-  ) {
-
-    await this.redis.client.incr(
-      this.commentKey(postId),
-    );
-  }
-
-  // =====================================================
-  // DECREMENT COMMENTS
-  // =====================================================
-
-  async decrementComments(
-    postId: string,
-  ) {
-
-    await this.redis.client.decr(
-      this.commentKey(postId),
-    );
-  }
-
-  // =====================================================
-  // GET LIKE COUNT
-  // =====================================================
-
-  async getLikes(
-    type: string,
-    id: string,
-  ): Promise<number> {
-
-    const value =
+  const current =
+    Number(
       await this.redis.client.get(
-        this.likeKey(type, id),
-      );
-
-    return value
-      ? parseInt(value, 10)
-      : 0;
-  }
-
-  // =====================================================
-  // GET COMMENT COUNT
-  // =====================================================
-
-  async getComments(
-    postId: string,
-  ): Promise<number> {
-
-    const value =
-      await this.redis.client.get(
-        this.commentKey(postId),
-      );
-
-    return value
-      ? parseInt(value, 10)
-      : 0;
-  }
-
-  // =====================================================
-  // BULK COUNTS
-  // =====================================================
-
-  async getBulkCounts(
-    postIds: string[],
-  ): Promise<
-    Record<
-      string,
-      {
-        likes: number;
-        comments: number;
-      }
-    >
-  > {
-
-    // ================================================
-    // EMPTY INPUT
-    // ================================================
-
-    if (!postIds.length) {
-      return {};
-    }
-
-    // ================================================
-    // REDIS PIPELINE
-    // ================================================
-
-    const pipeline =
-      this.redis.client.pipeline();
-
-    for (const postId of postIds) {
-
-      pipeline.get(
-        this.likeKey(
-          'post',
-          postId,
-        ),
-      );
-
-      pipeline.get(
-        this.commentKey(postId),
-      );
-    }
-
-    const results =
-      await pipeline.exec();
-
-    // ================================================
-    // BUILD RESPONSE MAP
-    // ================================================
-
-    const counts: Record<
-      string,
-      {
-        likes: number;
-        comments: number;
-      }
-    > = {};
-
-    postIds.forEach(
-      (postId, index) => {
-
-        const likeValue =
-          results?.[
-            index * 2
-          ]?.[1];
-
-        const commentValue =
-          results?.[
-            index * 2 + 1
-          ]?.[1];
-
-        counts[postId] = {
-          likes: likeValue
-            ? parseInt(
-                likeValue as string,
-                10,
-              )
-            : 0,
-
-          comments: commentValue
-            ? parseInt(
-                commentValue as string,
-                10,
-              )
-            : 0,
-        };
-      },
+        key,
+      ) || 0,
     );
 
-    return counts;
+  // ================================================
+  // NEVER NEGATIVE
+  // ================================================
+
+  if (current <= 0) {
+
+    await this.redis.client.set(
+      key,
+      0,
+    );
+
+    return 0;
+  }
+
+  return this.redis.client.decr(
+    key,
+  );
+}
+
+  // =====================================================
+  // GET COUNT
+  // =====================================================
+
+  async getLikesCount(
+    targetType:string,
+    targetId:string,
+  ) {
+
+    const key =
+      this.getLikesKey(
+        targetType,
+        targetId,
+      );
+
+    const count =
+      await this.redis.client.get(
+        key,
+      );
+
+    return Number(count || 0);
   }
 
 
 
 // =====================================================
-// FOLLOWERS
+// COMMENT KEY
 // =====================================================
 
-private followersKey(userId: string,) {
-  return `followers:${userId}`;
+private getCommentsKey(
+  postId:string,
+) {
+
+  return `post:${postId}:comments`;
 }
 
-private followingKey(userId: string,) {
-  return `following:${userId}`;
+// =====================================================
+// INCREMENT COMMENTS
+// =====================================================
+
+async incrementComments(
+  postId:string,
+) {
+
+  return this.redis.client.incr(
+
+    this.getCommentsKey(
+      postId,
+    ),
+  );
 }
 
-async incrementFollowers(  userId: string,) {
-  await this.redis.client.incr(this.followersKey(userId),);
+// =====================================================
+// DECREMENT COMMENTS
+// =====================================================
+
+async decrementComments(
+  postId:string,
+) {
+
+  return this.redis.client.decr(
+
+    this.getCommentsKey(
+      postId,
+    ),
+  );
 }
 
-async decrementFollowers(userId: string,) {
-  await this.redis.client.decr(this.followersKey(userId),);
+// =====================================================
+// GET COMMENTS COUNT
+// =====================================================
+
+async getCommentsCount(
+  postId:string,
+) {
+
+  const count =
+    await this.redis.client.get(
+
+      this.getCommentsKey(
+        postId,
+      ),
+    );
+
+  return Number(
+    count || 0,
+  );
 }
 
-async incrementFollowing(userId: string,) {
-  await this.redis.client.incr(this.followingKey(userId),);
-}
 
-async decrementFollowing(userId: string,) {
-  await this.redis.client.decr(this.followingKey(userId),);
-}
 
 
 }

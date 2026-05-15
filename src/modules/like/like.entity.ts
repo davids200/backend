@@ -1,3 +1,11 @@
+// src/modules/like/like.entity.ts
+
+import {
+  ObjectType,
+  Field,
+  registerEnumType,
+} from '@nestjs/graphql';
+
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -6,22 +14,87 @@ import {
   Unique,
 } from 'typeorm';
 
-export type LikeTargetType = 'post' | 'comment';
+// =====================================================
+// LIKE TARGET TYPE
+// =====================================================
+
+export enum LikeTargetType {
+
+  POST = 'POST',
+
+  COMMENT = 'COMMENT',
+
+  REPOST = 'REPOST',
+}
+
+// =====================================================
+// GRAPHQL ENUM
+// =====================================================
+
+registerEnumType(
+  LikeTargetType,
+  {
+    name:'LikeTargetType',
+  },
+);
+
+// =====================================================
+// LIKE ENTITY
+// =====================================================
+
+@ObjectType()
 
 @Entity('likes')
-@Unique(['userId', 'targetId', 'targetType'])
+
+@Unique([
+  'userId',
+  'targetId',
+  'targetType',
+])
+
 export class LikeEntity {
+
+  @Field()
+
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column()
+  // ================================================
+  // USER
+  // ================================================
+
+  @Field()
+
+  @Column('uuid')
   userId!: string;
 
-  @Column()
-  targetId!: string; // postId OR commentId
+  // ================================================
+  // TARGET
+  // ================================================
 
-  @Column()
+  @Field()
+
+  @Column('uuid')
+  targetId!: string;
+
+  // ================================================
+  // TARGET TYPE
+  // ================================================
+
+  @Field(() => LikeTargetType)
+
+  @Column({
+    type:'enum',
+    enum:LikeTargetType,
+  })
+
   targetType!: LikeTargetType;
+
+  // ================================================
+  // CREATED AT
+  // ================================================
+
+  @Field()
 
   @CreateDateColumn()
   createdAt!: Date;

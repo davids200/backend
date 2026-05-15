@@ -139,6 +139,12 @@ async consume<T>(
 
   await consumer.connect();
 
+
+console.log(
+  'SUBSCRIBING TO TOPIC',
+  topic,
+);
+
   await consumer.subscribe({
 
     topic,

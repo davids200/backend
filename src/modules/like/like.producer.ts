@@ -20,6 +20,10 @@ export class LikeProducer {
     data: LikeCreatedEvent,
   ) {
 
+
+    console.log(
+  'EMITTING LIKE.CREATED',
+);
     await this.kafka.emit(
 
       KAFKA_TOPICS.LIKE_CREATED,

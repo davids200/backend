@@ -72,6 +72,7 @@ let KafkaService = KafkaService_1 = class KafkaService {
             groupId,
         });
         await consumer.connect();
+        console.log('SUBSCRIBING TO TOPIC', topic);
         await consumer.subscribe({
             topic,
             fromBeginning: false,

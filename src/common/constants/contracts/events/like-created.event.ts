@@ -1,13 +1,14 @@
+import {  LikeTargetType,} from '../../../../modules/like/like.entity';
+
 export interface LikeCreatedEvent {
 
   userId: string;
 
   targetId: string;
 
-  targetType:
-    'post' | 'comment';
+  targetType: LikeTargetType;
 
-  authorId?: string;
+  authorId: string;
 
   createdAt: string;
 }
