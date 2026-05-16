@@ -69,7 +69,7 @@ export const KAFKA_TOPICS = {
   // =====================================================
 
   ENGAGEMENT_UPDATED:'engagement.updated',
-
+ENGAGEMENT_SIGNAL:'engagement.signal',
   TRENDING_UPDATED:'trending.updated',
 
   // =====================================================

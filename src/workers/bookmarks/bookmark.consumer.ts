@@ -2,24 +2,19 @@ import {
   Injectable,
   Logger,
   OnModuleInit,
-} from '@nestjs/common';
+} from '@nestjs/common'; 
+import { KafkaService } from '../../infrastructure/kafka/kafka.service';
+import { RedisCounterService } from '../../infrastructure/redis/counters/redis.counter.service';
+import { KAFKA_TOPICS } from '../../common/constants/kafka-topics.constants';
 
-import { KafkaService }
-from '../../infrastructure/kafka/kafka.service';
-
-import { RedisCounterService }
-from '../../infrastructure/redis/counters/redis.counter.service';
-
-import { KAFKA_TOPICS }
-from '../../common/constants/kafka-topics.constants';
 
 @Injectable()
-export class RepostConsumer
+export class BookmarkConsumer
 implements OnModuleInit {
 
   private readonly logger =
     new Logger(
-      RepostConsumer.name,
+      BookmarkConsumer.name,
     );
 
   constructor(
@@ -39,57 +34,57 @@ implements OnModuleInit {
   async start(){
 
     // =================================================
-    // REPOST CREATED
+    // BOOKMARK CREATED
     // =================================================
 
     await this.kafka.consume(
 
-      'repost-group',
+      'bookmark-group',
 
       KAFKA_TOPICS
-        .REPOST_CREATED,
+        .BOOKMARK_CREATED,
 
       async (event:any) => {
 
-        await this.handleRepostCreated(
+        await this.handleBookmarkCreated(
           event,
         );
       },
     );
 
     // =================================================
-    // REPOST REMOVED
+    // BOOKMARK REMOVED
     // =================================================
 
     await this.kafka.consume(
 
-      'repost-group',
+      'bookmark-group',
 
       KAFKA_TOPICS
-        .REPOST_REMOVED,
+        .BOOKMARK_REMOVED,
 
       async (event:any) => {
 
-        await this.handleRepostRemoved(
+        await this.handleBookmarkRemoved(
           event,
         );
       },
     );
 
     this.logger.log(
-      '✅ RepostConsumer started',
+      '✅ BookmarkConsumer started',
     );
   }
 
   // ===================================================
-  // HANDLE REPOST CREATED
+  // HANDLE BOOKMARK CREATED
   // ===================================================
 
-  private async handleRepostCreated(
+  private async handleBookmarkCreated(
     event:any,
   ){
 
-    await this.counter.incrementReposts(
+    await this.counter.incrementBookmarks(
       event.targetId,
     );
 
@@ -106,7 +101,7 @@ implements OnModuleInit {
         actorId:
           event.userId,
 
-        type:'REPOST',
+        type:'BOOKMARK',
 
         createdAt:
           new Date()
@@ -116,19 +111,19 @@ implements OnModuleInit {
 
     this.logger.log(
 
-      `🔁 Repost created: ${event.targetId}`,
+      `🔖 Bookmark created: ${event.targetId}`,
     );
   }
 
   // ===================================================
-  // HANDLE REPOST REMOVED
+  // HANDLE BOOKMARK REMOVED
   // ===================================================
 
-  private async handleRepostRemoved(
+  private async handleBookmarkRemoved(
     event:any,
   ){
 
-    await this.counter.decrementReposts(
+    await this.counter.decrementBookmarks(
       event.targetId,
     );
 
@@ -145,7 +140,7 @@ implements OnModuleInit {
         actorId:
           event.userId,
 
-        type:'REPOST',
+        type:'BOOKMARK',
 
         createdAt:
           new Date()
@@ -155,7 +150,7 @@ implements OnModuleInit {
 
     this.logger.log(
 
-      `❌ Repost removed: ${event.targetId}`,
+      `❌ Bookmark removed: ${event.targetId}`,
     );
   }
 }

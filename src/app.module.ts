@@ -3,12 +3,10 @@ import { GraphQLModule } from '@nestjs/graphql';
 import { TypeOrmModule } from '@nestjs/typeorm'; 
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { join } from 'path';
-
-import { DebugResolver } from './debug/debug.resolver';
+ 
 import { PostModule } from './modules/post/post.module';
 import { FeedModule } from './modules/feed/feed.module';
-import { AuthModule } from './modules/auth/auth.module';
-import { UserEntity } from './modules/user/entities/user.entity';
+import { AuthModule } from './modules/auth/auth.module'; 
 import { MinioModule } from './infrastructure/minio/minio.module';
 import { MetaModule } from './modules/meta/meta.module'; 
 import { CountryModule } from './modules/meta/country/country.module';
@@ -18,13 +16,14 @@ import { BootstrapService } from './bootstrap/bootstrap.service';
 import { KafkaModule } from './infrastructure/kafka/kafka.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { FollowModule } from './modules/follow/follow.module';
-import { LikeModule } from './modules/like/like.module';
-import { SessionCacheService } from './modules/auth/services/session-cache.service';
+import { LikeModule } from './modules/like/like.module'; 
 import { ScyllaModule } from './infrastructure/scylladb/scylla.module';
 import { WorkersModule } from './workers/workers.module';
 import { RepostModule } from './modules/repost/repost.module';
 import { ViewModule } from './modules/view/view.module';
-import { CommentModule } from './modules/comment/comment.module';
+import { CommentModule } from './modules/comment/comment.module'; 
+import { BookmarkModule } from './modules/bookmark/bookmark.module';
+import { RankingConsumer } from './workers/ranking/ranking.consumer';
  
 @Module({
   imports: [
@@ -50,7 +49,7 @@ import { CommentModule } from './modules/comment/comment.module';
 ConfigModule.forRoot({  //WITHOUT THIS,You cannot safely use:process.env.JWT_SECRET
 isGlobal: true,
 }),
-WorkersModule,
+
     PostModule,
     MetaModule,
     FeedModule,
@@ -66,6 +65,8 @@ WorkersModule,
      RepostModule,
      ViewModule,
      CommentModule,
+     BookmarkModule,
+     WorkersModule,  
   ],
   providers: [
     // DebugResolver,

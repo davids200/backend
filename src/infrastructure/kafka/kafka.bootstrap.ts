@@ -241,6 +241,15 @@ const topics = [
 
     replicationFactor:1,
   },
+  {
+    topic:
+      KAFKA_TOPICS.ENGAGEMENT_SIGNAL,
+
+    numPartitions:1,
+
+    replicationFactor:1,
+  },
+  
 
   {
     topic:
@@ -353,8 +362,20 @@ const topics = [
     replicationFactor:1,
   },
 ];
+
+const uniqueTopics =
+  Array.from(
+
+    new Map(
+
+      topics.map(
+        (t) => [t.topic,t],
+      ),
+    ).values(),
+  );
+
    const missingTopics =
-      topics.filter(
+  uniqueTopics.filter(
 
         (t) =>
           !existingTopics.includes(

@@ -1,278 +1,239 @@
-// src/infrastructure/redis/redis-counter.service.ts
-
 import {
   Injectable,
 } from '@nestjs/common';
-import { RedisService } from '../redis.service';
 
- 
+import Redis
+from 'ioredis';
 
 @Injectable()
 export class RedisCounterService {
 
-  constructor(
-    private readonly redis:RedisService,
-  ) {}
+  private redis =
+    new Redis({
+      host:'localhost',
+      port:6379,
+    });
 
   // =====================================================
-  // KEY
+  // KEY BUILDERS
   // =====================================================
 
-  private getLikesKey(
-    targetType:string,
-    targetId:string,
-  ) {
+  private likesKey(
+    postId:string,
+  ){
+    return `post:${postId}:likes`;
+  }
 
-    return `${targetType}:${targetId}:likes`;
+  private commentsKey(
+    postId:string,
+  ){
+    return `post:${postId}:comments`;
+  }
+
+  private viewsKey(
+    postId:string,
+  ){
+    return `post:${postId}:views`;
+  }
+
+  private bookmarksKey(
+    postId:string,
+  ){
+    return `post:${postId}:bookmarks`;
+  }
+
+  private repostsKey(
+    postId:string,
+  ){
+    return `post:${postId}:reposts`;
+  }
+
+  private dwellKey(
+    postId:string,
+  ){
+    return `post:${postId}:dwell`;
   }
 
   // =====================================================
-  // INCREMENT
+  // LIKES
   // =====================================================
 
- async incrementLikes(
-  targetType:string,
-  targetId:string,
-) {
-
-  const key =
-    this.getLikesKey(
-      targetType,
-      targetId,
+  async incrementLikes(
+    postId:string,
+  ){
+    await this.redis.incr(
+      this.likesKey(postId),
     );
-
-  console.log(
-    'INCREMENTING KEY',
-    key,
-  );
-
-  const result =
-    await this.redis.client.incr(
-      key,
-    );
-
-  console.log(
-    'INCR RESULT',
-    result,
-  );
-
-  return result;
-}
-
-  // =====================================================
-  // DECREMENT
-  // =====================================================
+  }
 
   async decrementLikes(
-  targetType:string,
-  targetId:string,
-) {
-
-  const key =
-    this.getLikesKey(
-      targetType,
-      targetId,
+    postId:string,
+  ){
+    await this.redis.decr(
+      this.likesKey(postId),
     );
-
-  const current =
-    Number(
-      await this.redis.client.get(
-        key,
-      ) || 0,
-    );
-
-  // ================================================
-  // NEVER NEGATIVE
-  // ================================================
-
-  if (current <= 0) {
-
-    await this.redis.client.set(
-      key,
-      0,
-    );
-
-    return 0;
   }
-
-  return this.redis.client.decr(
-    key,
-  );
-}
-
-  // =====================================================
-  // GET COUNT
-  // =====================================================
 
   async getLikesCount(
-    targetType:string,
-    targetId:string,
-  ) {
+    postId:string,
+  ){
 
-    const key =
-      this.getLikesKey(
-        targetType,
-        targetId,
+    const value =
+      await this.redis.get(
+        this.likesKey(postId),
       );
 
-    const count =
-      await this.redis.client.get(
-        key,
-      );
-
-    return Number(count || 0);
+    return Number(value || 0);
   }
 
+  // =====================================================
+  // COMMENTS
+  // =====================================================
 
-
-// =====================================================
-// COMMENT KEY
-// =====================================================
-
-private getCommentsKey(
-  postId:string,
-) {
-
-  return `post:${postId}:comments`;
-}
-
-// =====================================================
-// INCREMENT COMMENTS
-// =====================================================
-
-async incrementComments(
-  postId:string,
-) {
-
-  return this.redis.client.incr(
-
-    this.getCommentsKey(
-      postId,
-    ),
-  );
-}
-
-// =====================================================
-// DECREMENT COMMENTS
-// =====================================================
-
-async decrementComments(
-  postId:string,
-) {
-
-  return this.redis.client.decr(
-
-    this.getCommentsKey(
-      postId,
-    ),
-  );
-}
-
-// =====================================================
-// GET COMMENTS COUNT
-// =====================================================
-async getCommentsCount(
-  postId:string,
-) {
-
-  const count =
-    await this.redis.client.get(
-
-      this.getCommentsKey(
-        postId,
-      ),
+  async incrementComments(
+    postId:string,
+  ){
+    await this.redis.incr(
+      this.commentsKey(postId),
     );
+  }
 
-  return Number(
-    count || 0,
-  );
-}
-
-
-
-// =====================================================
-// VIEW KEY
-// =====================================================
-
-private getViewsKey(postId:string){
-  return `post:${postId}:views`;
-}
-
-// =====================================================
-// DWELL KEY
-// =====================================================
-
-private getDwellKey(postId:string){
-  return `post:${postId}:dwell`;
-}
-
-// =====================================================
-// INCREMENT VIEWS
-// =====================================================
-
-async incrementViews(postId:string){
-
-  const key =
-    this.getViewsKey(postId);
-
-  return this.redis.client.incr(
-    key,
-  );
-}
-
-// =====================================================
-// GET VIEWS COUNT
-// =====================================================
-
-async getViewsCount(postId:string){
-
-  const key =
-    this.getViewsKey(postId);
-
-  const count =
-    await this.redis.client.get(
-      key,
+  async decrementComments(
+    postId:string,
+  ){
+    await this.redis.decr(
+      this.commentsKey(postId),
     );
+  }
 
-  return Number(count || 0);
-}
+  async getCommentsCount(
+    postId:string,
+  ){
 
-// =====================================================
-// INCREMENT DWELL
-// =====================================================
+    const value =
+      await this.redis.get(
+        this.commentsKey(postId),
+      );
 
-async incrementDwell(
-  postId:string,
-  dwellTimeMs:number,
-){
+    return Number(value || 0);
+  }
 
-  const key =
-    this.getDwellKey(postId);
+  // =====================================================
+  // VIEWS
+  // =====================================================
 
-  return this.redis.client.incrby(
-    key,
-    dwellTimeMs,
-  );
-}
-
-// =====================================================
-// GET DWELL TIME
-// =====================================================
-
-async getDwellTime(postId:string){
-
-  const key =
-    this.getDwellKey(postId);
-
-  const total =
-    await this.redis.client.get(
-      key,
+  async incrementViews(
+    postId:string,
+  ){
+    await this.redis.incr(
+      this.viewsKey(postId),
     );
+  }
 
-  return Number(total || 0);
-}
+  async getViewsCount(
+    postId:string,
+  ){
 
+    const value =
+      await this.redis.get(
+        this.viewsKey(postId),
+      );
 
+    return Number(value || 0);
+  }
 
+  // =====================================================
+  // BOOKMARKS
+  // =====================================================
 
+  async incrementBookmarks(
+    postId:string,
+  ){
+    await this.redis.incr(
+      this.bookmarksKey(postId),
+    );
+  }
+
+  async decrementBookmarks(
+    postId:string,
+  ){
+    await this.redis.decr(
+      this.bookmarksKey(postId),
+    );
+  }
+
+  async getBookmarksCount(
+    postId:string,
+  ){
+
+    const value =
+      await this.redis.get(
+        this.bookmarksKey(postId),
+      );
+
+    return Number(value || 0);
+  }
+
+  // =====================================================
+  // REPOSTS
+  // =====================================================
+
+  async incrementReposts(
+    postId:string,
+  ){
+    await this.redis.incr(
+      this.repostsKey(postId),
+    );
+  }
+
+  async decrementReposts(
+    postId:string,
+  ){
+    await this.redis.decr(
+      this.repostsKey(postId),
+    );
+  }
+
+  async getRepostsCount(
+    postId:string,
+  ){
+
+    const value =
+      await this.redis.get(
+        this.repostsKey(postId),
+      );
+
+    return Number(value || 0);
+  }
+
+  // =====================================================
+  // DWELL TIME
+  // =====================================================
+
+  async addDwellTime(
+
+    postId:string,
+
+    dwellTimeMs:number,
+  ){
+
+    await this.redis.incrby(
+
+      this.dwellKey(postId),
+
+      dwellTimeMs,
+    );
+  }
+
+  async getDwellTime(
+    postId:string,
+  ){
+
+    const value =
+      await this.redis.get(
+        this.dwellKey(postId),
+      );
+
+    return Number(value || 0);
+  }
 }

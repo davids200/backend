@@ -1,7 +1,11 @@
-import { Injectable,OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleInit,
+} from '@nestjs/common';
 
-import { Kafka }
-from 'kafkajs';
+import { KafkaService }
+from '../../infrastructure/kafka/kafka.service';
 
 import { RedisCounterService }
 from '../../infrastructure/redis/counters/redis.counter.service';
@@ -9,99 +13,268 @@ from '../../infrastructure/redis/counters/redis.counter.service';
 import { NotificationProducer }
 from '../../modules/notification/notification.producer';
 
-import { KafkaService }
-from '../../infrastructure/kafka/kafka.service';
-
 import { KAFKA_TOPICS }
 from '../../common/constants/kafka-topics.constants';
 
 @Injectable()
-export class CommentConsumer implements OnModuleInit {
+export class CommentConsumer
+implements OnModuleInit {
 
-  private kafka = new Kafka({
-    clientId:'social-app',
-    brokers:['localhost:9092'],
-  });
-
-  private consumer =
-    this.kafka.consumer({
-      groupId:'comment-group',
-    });
+  private readonly logger =
+    new Logger(
+      CommentConsumer.name,
+    );
 
   constructor(
+
+    private readonly kafka:
+      KafkaService,
 
     private readonly counter:
       RedisCounterService,
 
     private readonly notification:
       NotificationProducer,
-
-    private readonly kafkaService:
-      KafkaService,
   ) {}
 
   async onModuleInit(){
-console.log(
-  'STARTING COMMENT CONSUMER',
-);
 
-    await this.consumer.connect();
-    await this.consumer.subscribe({
-      topic: KAFKA_TOPICS.COMMENT_CREATED,
-      fromBeginning:false,
-    });
-    await this.consumer.run({
-      eachMessage:
-        async ({ message }) => {
-          if (!message.value){
-            return;
-          }
+    await this.start();
+  }
 
-          const event = JSON.parse(message.value.toString(),);
+  // =====================================================
+  // START
+  // =====================================================
 
-          // =========================================
-          // 1. INCREMENT COMMENTS
-          // =========================================
-          await this.counter.incrementComments(
-            event.postId,
+  async start(){
+
+    // =================================================
+    // COMMENT CREATED
+    // =================================================
+
+    await this.kafka.consume(
+
+      'comment-created-group',
+
+      KAFKA_TOPICS
+        .COMMENT_CREATED,
+
+      async (event:any) => {
+
+        try {
+
+          await this.handleCommentCreated(
+            event,
           );
 
-           
-          // 2. GET UPDATED COUNT
-          // =========================================
-          const comments = await this.counter.getCommentsCount(event.postId,);
+        } catch(error){
 
-         
-          // 3. EMIT RANKING EVENT
-          // =========================================
-          await this.kafkaService.emit(KAFKA_TOPICS.ENGAGEMENT_UPDATED,  {
+          this.logger.error(
 
-              postId: event.postId,
-              likes:0,
-              comments,
-              reposts:0,
-              bookmarks:0,
-              views:0,
-              dwellTimeMs:0,
-              completionRate:0,
-              createdAt:new Date().toISOString(),
-              authorId:event.authorId,
-            },
+            '❌ Comment create failed',
+
+            error,
+          );
+        }
+      },
+    );
+
+    // =================================================
+    // COMMENT REMOVED
+    // =================================================
+
+    await this.kafka.consume(
+
+      'comment-removed-group',
+
+      KAFKA_TOPICS
+        .COMMENT_REMOVED,
+
+      async (event:any) => {
+
+        try {
+
+          await this.handleCommentRemoved(
+            event,
           );
 
-         
-          // 4. NOTIFICATION
-          // =========================================
-          await this.notification.sendNotification({
-              userId:event.userId,
-              type:'COMMENT',
-              referenceId:event.postId,
-              actorId:event.userId,
-              createdAt:new Date().toISOString(),
-            });
+        } catch(error){
 
-          console.log('💬 COMMENT RANK UPDATED',event.postId,);
-        },
-    });
+          this.logger.error(
+
+            '❌ Comment remove failed',
+
+            error,
+          );
+        }
+      },
+    );
+
+    this.logger.log(
+      '✅ CommentConsumer started',
+    );
+  }
+
+  // =====================================================
+  // COMMENT CREATED
+  // =====================================================
+
+  private async handleCommentCreated(
+    event:any,
+  ){
+
+    console.log(
+      'COMMENT CREATED EVENT',
+      event,
+    );
+
+    // =================================================
+    // VALIDATION
+    // =================================================
+
+    const postId =
+      event.postId;
+
+    if (!postId){
+
+      this.logger.error(
+        '❌ Missing targetId in comment.created',
+      );
+
+      return;
+    }
+
+    // =================================================
+    // REDIS COUNTER
+    // =================================================
+
+    await this.counter.incrementComments(
+      postId,
+    );
+
+    // =================================================
+    // ENGAGEMENT SIGNAL
+    // =================================================
+
+    await this.kafka.emit(
+
+      KAFKA_TOPICS
+        .ENGAGEMENT_SIGNAL,
+
+      {
+
+        postId,
+
+        actorId:
+          event.userId,
+
+        type:'COMMENT',
+
+        createdAt:
+          event.createdAt ||
+
+          new Date()
+            .toISOString(),
+      },
+    );
+
+    // =================================================
+    // NOTIFICATION
+    // =================================================
+
+    await this.notification
+      .sendNotification({
+
+        userId:
+          event.authorId,
+
+        actorId:
+          event.userId,
+
+        type:'COMMENT',
+
+        referenceId:
+          postId,
+
+        createdAt:
+          event.createdAt ||
+
+          new Date()
+            .toISOString(),
+      });
+
+    this.logger.log(
+
+      `💬 Comment created: ${postId}`,
+    );
+  }
+
+  // =====================================================
+  // COMMENT REMOVED
+  // =====================================================
+
+  private async handleCommentRemoved(
+    event:any,
+  ){
+
+    console.log(
+      'COMMENT REMOVED EVENT',
+      event,
+    );
+
+    // =================================================
+    // VALIDATION
+    // =================================================
+
+    const postId =
+      event.targetId;
+
+    if (!postId){
+
+      this.logger.error(
+        '❌ Missing targetId in comment.removed',
+      );
+
+      return;
+    }
+
+    // =================================================
+    // REDIS COUNTER
+    // =================================================
+
+    await this.counter.decrementComments(
+      postId,
+    );
+
+    // =================================================
+    // ENGAGEMENT SIGNAL
+    // =================================================
+
+    await this.kafka.emit(
+
+      KAFKA_TOPICS
+        .ENGAGEMENT_SIGNAL,
+
+      {
+
+        postId,
+
+        actorId:
+          event.userId,
+
+        type:'COMMENT',
+
+        createdAt:
+          event.createdAt ||
+
+          new Date()
+            .toISOString(),
+      },
+    );
+
+    this.logger.log(
+
+      `🗑️ Comment removed: ${postId}`,
+    );
   }
 }

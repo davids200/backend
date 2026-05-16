@@ -30,6 +30,7 @@ const workers_module_1 = require("./workers/workers.module");
 const repost_module_1 = require("./modules/repost/repost.module");
 const view_module_1 = require("./modules/view/view.module");
 const comment_module_1 = require("./modules/comment/comment.module");
+const bookmark_module_1 = require("./modules/bookmark/bookmark.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -57,7 +58,6 @@ exports.AppModule = AppModule = __decorate([
             config_1.ConfigModule.forRoot({
                 isGlobal: true,
             }),
-            workers_module_1.WorkersModule,
             post_module_1.PostModule,
             meta_module_1.MetaModule,
             feed_module_1.FeedModule,
@@ -73,6 +73,8 @@ exports.AppModule = AppModule = __decorate([
             repost_module_1.RepostModule,
             view_module_1.ViewModule,
             comment_module_1.CommentModule,
+            bookmark_module_1.BookmarkModule,
+            workers_module_1.WorkersModule,
         ],
         providers: [
             // DebugResolver,

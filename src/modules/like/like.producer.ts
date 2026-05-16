@@ -25,9 +25,7 @@ export class LikeProducer {
   'EMITTING LIKE.CREATED',
 );
     await this.kafka.emit(
-
       KAFKA_TOPICS.LIKE_CREATED,
-
       data,
     );
   }

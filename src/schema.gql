@@ -8,6 +8,10 @@ type AuthResponse {
   user: UserModel!
 }
 
+input BookmarkPostInput {
+  postId: String!
+}
+
 type CommentModel {
   content: String!
   createdAt: DateTime!
@@ -109,6 +113,7 @@ input MediaViewInput {
 }
 
 type Mutation {
+  bookmarkPost(input: BookmarkPostInput!): Boolean!
   createComment(input: CreateCommentInput!): CommentModel!
   createCountry(code: String!, name: String!): CountryModel!
   createEducationLevel(name: String!, order: Float!): String!
@@ -123,6 +128,7 @@ type Mutation {
   logout: Boolean!
   refreshToken(data: RefreshTokenInput!): AuthResponse!
   register(data: RegisterInput!): AuthResponse!
+  removeBookmark(input: BookmarkPostInput!): Boolean!
   replyComment(data: ReplyCommentInput!): CommentModel!
   repostPost(data: RepostInput!): RepostEntity!
   requestPasswordReset(data: RequestPasswordResetInput!): Boolean!
