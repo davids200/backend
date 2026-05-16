@@ -227,7 +227,7 @@ implements OnModuleInit {
     // =================================================
 
     const postId =
-      event.targetId;
+      event.postId;
 
     if (!postId){
 

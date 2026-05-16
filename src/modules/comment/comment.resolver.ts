@@ -147,4 +147,32 @@ export class CommentResolver {
       offset,
     });
   }
+
+
+@Mutation(() => Boolean)
+
+@UseGuards(
+  GqlAuthGuard,
+)
+
+async deleteComment(
+
+  @CurrentUser()
+  user:any,
+
+  @Args('commentId')
+  commentId:string,
+){
+
+  return this.service
+    .deleteComment(
+
+      user.id,
+
+      commentId,
+    );
+}
+
+
+
 }

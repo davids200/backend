@@ -121,6 +121,7 @@ type Mutation {
   createPost(data: CreatePostInput!): PostEntity!
   createSchool(locationId: String!, name: String!): String!
   createUser(data: CreateUserInput!): String!
+  deleteComment(commentId: String!): Boolean!
   deletePost(postId: String!): Boolean!
   followUser(data: FollowUserInput!): FollowEntity!
   likePost(postId: String!): Boolean!

@@ -9,9 +9,8 @@ import {
 import {
   Repository,
 } from 'typeorm';
-
-import { CommentEntity }
-from './entities/comment.entity';
+import { CommentEntity } from '../../../../modules/comment/entities/comment.entity';
+ 
 
 @Injectable()
 export class CommentRepository {
@@ -68,18 +67,24 @@ export class CommentRepository {
   // =====================================================
   // FIND COMMENT BY ID
   // =====================================================
+async findById(
+  id:string,
+){
 
-  async findById(
-    id: string,
-  ) {
+  return this.repo.findOne({
 
-    return this.repo.findOne({
+    where:{ id },
+  });
+}
 
-      where: {
-        id,
-      },
-    });
-  }
+async remove(
+  comment:CommentEntity,
+){
+
+  return this.repo.remove(
+    comment,
+  );
+}
 
   // =====================================================
   // FIND PARENT COMMENT

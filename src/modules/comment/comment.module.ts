@@ -15,10 +15,10 @@ from './comment.resolver';
 
 import { CommentProducer }
 from './comment.producer';
-import { CommentRepository } from './comment.repository';
 import { KafkaModule } from '../../infrastructure/kafka/kafka.module';
 import { RedisModule } from '../../infrastructure/redis/redis.module';
 import { PostEntity } from '../post/post.entity';
+import { CommentRepository } from '../../infrastructure/scylladb/repositories/comment/comment.repository';
 
 @Module({
 

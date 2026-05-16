@@ -2,9 +2,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-
-import { CommentRepository }
-from './comment.repository';
+ 
 
 import { CommentProducer }
 from './comment.producer';
@@ -18,6 +16,7 @@ from 'typeorm';
 
 import { PostEntity }
 from '../post/post.entity';
+import { CommentRepository } from '../../infrastructure/scylladb/repositories/comment/comment.repository';
  
 @Injectable()
 export class CommentService {
@@ -223,4 +222,49 @@ if (!post){
         params,
       );
   }
+
+
+async deleteComment(
+  userId:string,
+  commentId:string,
+){
+
+  const comment =
+    await this.commentRepo.findById(
+      commentId,
+    );
+
+  if (!comment){
+
+    throw new Error(
+      'Comment not found',
+    );
+  }
+
+  if (
+    comment.userId !== userId
+  ){
+
+    throw new Error(
+      'Unauthorized',
+    );
+  }
+
+  await this.commentRepo.remove(
+    comment,
+  );
+
+  await this.producer
+    .commentRemoved({
+      commentId:comment.id,
+      postId:comment.postId,
+      userId:comment.userId,
+      parentId:comment.parentId,
+      createdAt:new Date().toISOString(),
+    });
+
+  return true;
+}
+
+
 }
