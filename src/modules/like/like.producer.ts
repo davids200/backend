@@ -1,8 +1,8 @@
 import {  Injectable,} from '@nestjs/common';
-import { KafkaService }from '../../infrastructure/kafka/kafka.service';
-import { KAFKA_TOPICS }from '../../common/constants/kafka-topics.constants'; 
-import { LikeCreatedEvent } from '../../common/constants/contracts/events/like-created.event';
-import { LikeRemovedEvent } from '../../common/constants/contracts/events/like-removed.event';
+import { KafkaService }from '../../infrastructure/kafka/kafka.service'; 
+import { LikeCreatedEvent } from '../../events/like/like-created.event';
+import { LikeRemovedEvent } from '../../events/like/like-removed.event';
+import { KAFKA_TOPICS } from '../../common/constants/kafka-topics.constants';
 
 @Injectable()
 export class LikeProducer {

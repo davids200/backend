@@ -23,6 +23,8 @@ import { SessionCacheService } from './modules/auth/services/session-cache.servi
 import { ScyllaModule } from './infrastructure/scylladb/scylla.module';
 import { WorkersModule } from './workers/workers.module';
 import { RepostModule } from './modules/repost/repost.module';
+import { ViewModule } from './modules/view/view.module';
+import { CommentModule } from './modules/comment/comment.module';
  
 @Module({
   imports: [
@@ -61,7 +63,9 @@ WorkersModule,
     FollowModule,
     LikeModule,
     NotificationModule, 
-     RepostModule
+     RepostModule,
+     ViewModule,
+     CommentModule,
   ],
   providers: [
     // DebugResolver,

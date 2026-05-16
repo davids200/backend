@@ -1,4 +1,5 @@
-import {  LikeTargetType,} from '../../../../modules/like/like.entity';
+import { LikeTargetType } from "../../modules/like/like.entity";
+
 
 export interface LikeCreatedEvent {
 

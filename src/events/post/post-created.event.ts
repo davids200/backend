@@ -1,4 +1,6 @@
-import { PostVisibility } from "../../../../modules/post/enums/post-visibility.enum";
+import { PostVisibility } from "../../modules/post/enums/post-visibility.enum";
+
+ 
 
 export interface PostCreatedEvent {
 

@@ -28,6 +28,8 @@ const like_module_1 = require("./modules/like/like.module");
 const scylla_module_1 = require("./infrastructure/scylladb/scylla.module");
 const workers_module_1 = require("./workers/workers.module");
 const repost_module_1 = require("./modules/repost/repost.module");
+const view_module_1 = require("./modules/view/view.module");
+const comment_module_1 = require("./modules/comment/comment.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -68,7 +70,9 @@ exports.AppModule = AppModule = __decorate([
             follow_module_1.FollowModule,
             like_module_1.LikeModule,
             notification_module_1.NotificationModule,
-            repost_module_1.RepostModule
+            repost_module_1.RepostModule,
+            view_module_1.ViewModule,
+            comment_module_1.CommentModule,
         ],
         providers: [
             // DebugResolver,

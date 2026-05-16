@@ -1,3 +1,4 @@
+import { ObjectType } from '@nestjs/graphql';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -5,6 +6,7 @@ import {
   CreateDateColumn,
   Index,
 } from 'typeorm';
+
 
 @Entity('comments')
 export class CommentEntity {
@@ -34,13 +36,19 @@ export class CommentEntity {
   // =========================
   // THREADING
   // =========================
-  @Index()
-  @Column({ nullable: true })
-  parentId?: string | null;   // ✅ FIXED
+ @Index()
+@Column({
+  type:'uuid',
+  nullable:true,
+})
+parentId!:string | null;
 
-  @Index()
-  @Column({ nullable: true })
-  rootId?: string | null;     // ✅ FIXED
+@Index()
+@Column({
+  type:'uuid',
+  nullable:true,
+})
+rootId!:string | null;
 
   // =========================
   // TIMESTAMP

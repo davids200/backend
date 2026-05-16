@@ -31,6 +31,7 @@ from './post/post.consumer';
 import { FollowConsumer } from './follow/follow.consumer';
 import { LikeConsumer } from './like/like.consumer';
 import { RankingConsumer } from './ranking/ranking.consumer';
+import { CommentConsumer } from './comment/comment.consumer';
 
 @Module({
 
@@ -53,7 +54,7 @@ import { RankingConsumer } from './ranking/ranking.consumer';
 
   providers: [
 PostConsumer,
-
+CommentConsumer,
   FeedConsumer,
 
   FollowConsumer, 

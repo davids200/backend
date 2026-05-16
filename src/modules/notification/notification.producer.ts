@@ -1,10 +1,10 @@
 import {  Injectable,} from '@nestjs/common';
 import { KafkaService }from '../../infrastructure/kafka/kafka.service';
-import { KAFKA_TOPICS }from '../../common/constants/kafka-topics.constants'; 
-import { OtpRequestedEvent } from '../../common/constants/contracts/events/otp-requested.event';
-import { SecurityAlertEvent } from '../../common/constants/contracts/events/security-alert.event';
-import { WelcomeNotificationEvent } from '../../common/constants/contracts/events/welcome-notification.event';
-import { NotificationCreatedEvent } from '../../common/constants/contracts/events/notification-created.event';
+import { OtpRequestedEvent } from '../../events/auth/otp-requested.event';
+import { SecurityAlertEvent } from '../../events/auth/security-alert.event';
+import { WelcomeNotificationEvent } from '../../events/notification/welcome-notification.event';
+import { NotificationCreatedEvent } from '../../events/notification/notification-created.event';
+import { KAFKA_TOPICS } from '../../common/constants/kafka-topics.constants';
 
 @Injectable()
 export class NotificationProducer {

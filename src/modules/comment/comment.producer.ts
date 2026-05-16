@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { KafkaService } from '../../infrastructure/kafka/kafka.service'; 
-import { CommentCreatedEvent } from '../../common/constants/contracts/events/comment-created.event';
+import { CommentCreatedEvent } from '../../events/comment/comment-created.event';
 @Injectable()
 export class CommentProducer {
   constructor(private kafka: KafkaService) {}

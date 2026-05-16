@@ -60,11 +60,11 @@ const redis_otp_service_1 = require("../../infrastructure/redis/otp/redis.otp.se
 const redis_auth_rate_limit_service_1 = require("../../infrastructure/redis/auth/redis.auth-rate-limit.service");
 const auth_producer_1 = require("./auth.producer");
 const auth_security_service_1 = require("./security/auth-security.service");
-const kafka_topics_constants_1 = require("../../common/constants/kafka-topics.constants");
 const notification_producer_1 = require("../notification/notification.producer");
 const session_cache_service_1 = require("./services/session-cache.service");
 const generate_otp_util_1 = require("./utils/generate-otp.util");
 const verify_password_util_1 = require("./utils/verify-password.util");
+const kafka_topics_constants_1 = require("../../common/constants/kafka-topics.constants");
 let AuthService = class AuthService {
     identityRepo;
     sessionRepo;
@@ -445,7 +445,9 @@ let AuthService = class AuthService {
         // ================================================
         // EMIT EVENT
         // ================================================
-        this.notificationProducer.emit(kafka_topics_constants_1.KAFKA_TOPICS.NOTIFICATION_OTP_REQUESTED, { type: data.type, value: data.value, });
+        this.notificationProducer.emit(kafka_topics_constants_1.KAFKA_TOPICS.NOTIFICATION_OTP_REQUESTED, {
+            type: data.type, value: data.value,
+        });
         // ================================================
         // TEMP LOG
         // ================================================

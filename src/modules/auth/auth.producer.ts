@@ -1,7 +1,7 @@
 import {  Injectable,} from '@nestjs/common';
 import { KafkaService }from '../../infrastructure/kafka/kafka.service'; 
-import { OtpRequestedEvent } from '../../common/constants/contracts/events/otp-requested.event';
-import { SuspiciousLoginEvent } from '../../common/constants/contracts/events/suspicious-login.event';
+import { OtpRequestedEvent } from '../../events/auth/otp-requested.event';
+import { SuspiciousLoginEvent } from '../../events/auth/suspicious-login.event';
 
 @Injectable()
 export class AuthProducer {

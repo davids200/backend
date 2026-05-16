@@ -1,3 +1,5 @@
+// src/modules/comment/comment.resolver.ts
+
 import {
   Resolver,
   Mutation,
@@ -23,136 +25,126 @@ from './dto/create-comment.input';
 
 import { ReplyCommentInput }
 from './dto/reply-comment.input';
-import { CommentModel } from './comment.model';
+
+import { CommentModel }
+from './comment.model';
 
 @Resolver(() => CommentModel)
 export class CommentResolver {
 
   constructor(
-
-    private readonly service:
-      CommentService,
+    private readonly service:CommentService,
   ) {}
 
   // =====================================================
   // CREATE ROOT COMMENT
   // =====================================================
 
-  @Mutation(() => CommentModel)
-
-  @UseGuards(
-    GqlAuthGuard,
-  )
-
+  @Mutation(() => CommentModel,{
+    name:'createComment',
+  })
+  @UseGuards(GqlAuthGuard)
   async createComment(
 
     @CurrentUser()
-    user: any,
+    user:any,
 
-    @Args('data')
-    data: CreateCommentInput,
-  ) {
+    @Args('input')
+    input:CreateCommentInput,
+  ){
 
-    return this.service
-      .createComment(
-
-        user.id,
-
-        data,
-      );
+    return this.service.createComment(
+      user.id,
+      input,
+    );
   }
 
   // =====================================================
   // REPLY COMMENT
   // =====================================================
 
-  @Mutation(() => CommentModel)
-
-  @UseGuards(
-    GqlAuthGuard,
-  )
-
+  @Mutation(() => CommentModel,{
+    name:'replyComment',
+  })
+  @UseGuards(GqlAuthGuard)
   async replyComment(
 
     @CurrentUser()
-    user: any,
+    user:any,
 
     @Args('data')
-    data: ReplyCommentInput,
-  ) {
+    data:ReplyCommentInput,
+  ){
 
-    return this.service
-      .replyComment(
-
-        user.id,
-
-        data,
-      );
+    return this.service.replyComment(
+      user.id,
+      data,
+    );
   }
 
   // =====================================================
   // GET ROOT COMMENTS
   // =====================================================
 
-  @Query(() => [CommentModel])
-
+  @Query(() => [CommentModel],{
+    name:'getComments',
+  })
   async getComments(
 
     @Args('postId')
-    postId: string,
+    postId:string,
 
-    @Args('limit', {
-      nullable: true,
+    @Args('limit',{
+      nullable:true,
     })
-    limit?: number,
+    limit?:number,
 
-    @Args('cursor', {
-      nullable: true,
+    @Args('cursor',{
+      nullable:true,
     })
-    cursor?: Date,
-  ) {
+    cursor?:Date,
+  ){
 
-    return this.service
-      .getComments({
+    return this.service.getComments({
 
-        postId,
+      postId,
 
-        limit,
+      limit,
 
-        cursor,
-      });
+      cursor,
+    });
   }
 
   // =====================================================
   // GET REPLIES
   // =====================================================
 
-  @Query(() => [CommentModel])
-
+  @Query(() => [CommentModel],{
+    name:'getReplies',
+  })
   async getReplies(
 
     @Args('rootId')
-    rootId: string,
+    rootId:string,
 
-    @Args('limit', {
-      nullable: true,
+    @Args('limit',{
+      nullable:true,
     })
-    limit?: number,
+    limit?:number,
 
-    @Args('offset', {
-      nullable: true,
+    @Args('offset',{
+      nullable:true,
     })
-    offset?: number,
-  ) {
+    offset?:number,
+  ){
 
-    return this.service
-      .getReplies({
+    return this.service.getReplies({
 
-        rootId,
+      rootId,
 
-        limit,
+      limit,
 
-        offset,
-      });
+      offset,
+    });
   }
 }

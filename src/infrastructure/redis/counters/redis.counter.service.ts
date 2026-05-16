@@ -171,7 +171,6 @@ async decrementComments(
 // =====================================================
 // GET COMMENTS COUNT
 // =====================================================
-
 async getCommentsCount(
   postId:string,
 ) {
@@ -187,6 +186,90 @@ async getCommentsCount(
   return Number(
     count || 0,
   );
+}
+
+
+
+// =====================================================
+// VIEW KEY
+// =====================================================
+
+private getViewsKey(postId:string){
+  return `post:${postId}:views`;
+}
+
+// =====================================================
+// DWELL KEY
+// =====================================================
+
+private getDwellKey(postId:string){
+  return `post:${postId}:dwell`;
+}
+
+// =====================================================
+// INCREMENT VIEWS
+// =====================================================
+
+async incrementViews(postId:string){
+
+  const key =
+    this.getViewsKey(postId);
+
+  return this.redis.client.incr(
+    key,
+  );
+}
+
+// =====================================================
+// GET VIEWS COUNT
+// =====================================================
+
+async getViewsCount(postId:string){
+
+  const key =
+    this.getViewsKey(postId);
+
+  const count =
+    await this.redis.client.get(
+      key,
+    );
+
+  return Number(count || 0);
+}
+
+// =====================================================
+// INCREMENT DWELL
+// =====================================================
+
+async incrementDwell(
+  postId:string,
+  dwellTimeMs:number,
+){
+
+  const key =
+    this.getDwellKey(postId);
+
+  return this.redis.client.incrby(
+    key,
+    dwellTimeMs,
+  );
+}
+
+// =====================================================
+// GET DWELL TIME
+// =====================================================
+
+async getDwellTime(postId:string){
+
+  const key =
+    this.getDwellKey(postId);
+
+  const total =
+    await this.redis.client.get(
+      key,
+    );
+
+  return Number(total || 0);
 }
 
 

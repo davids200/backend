@@ -7,17 +7,15 @@ import {
 } from '@nestjs/common';
 
 import { KafkaService }
-from '../../infrastructure/kafka/kafka.service';
-
-import { KAFKA_TOPICS }
-from '../../common/constants/kafka-topics.constants';
+from '../../infrastructure/kafka/kafka.service'; 
 
 import { FeedProducer }
 from '../../modules/feed/feed.producer';
 
 import { NotificationProducer }
 from '../../modules/notification/notification.producer';
-import { RepostCreatedEvent } from '../../common/constants/contracts/events/repost-created.event';
+import { RepostCreatedEvent } from '../../events/repost/repost-created.event';
+import { KAFKA_TOPICS } from '../../common/constants/kafka-topics.constants';
  
 
 @Injectable()

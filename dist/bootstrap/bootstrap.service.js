@@ -1,4 +1,5 @@
 "use strict";
+// src/bootstrap/bootstrap.service.ts
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -12,8 +13,14 @@ var BootstrapService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BootstrapService = void 0;
 const common_1 = require("@nestjs/common");
-const kafka_bootstrap_1 = require("../infrastructure/kafka/kafka.bootstrap");
+// =====================================================
+// SCYLLA
+// =====================================================
 const schema_loader_1 = require("../infrastructure/scylladb/schema/schema.loader");
+const kafka_bootstrap_1 = require("../infrastructure/kafka/kafka.bootstrap");
+// =====================================================
+// KAFKA
+// =====================================================
 let BootstrapService = BootstrapService_1 = class BootstrapService {
     kafkaBootstrap;
     scyllaSchemaLoader;
@@ -25,17 +32,25 @@ let BootstrapService = BootstrapService_1 = class BootstrapService {
     async onApplicationBootstrap() {
         this.logger.log('🚀 Bootstrapping system...');
         try {
-            // 1. Setup Database Schema
+            // ================================================
+            // SCYLLA SCHEMA
+            // ================================================
             await this.scyllaSchemaLoader.load();
             this.logger.log('✅ Scylla schema ready');
-            // 2. Setup Kafka Topics
-            await this.kafkaBootstrap.bootstrapTopics();
+            // ================================================
+            // KAFKA TOPICS
+            // ================================================
+            await this.kafkaBootstrap
+                .bootstrapTopics();
             this.logger.log('✅ Kafka topics ready');
+            // ================================================
+            // COMPLETE
+            // ================================================
             this.logger.log('🔥 System bootstrap complete');
         }
         catch (error) {
             this.logger.error('❌ Bootstrap failed', error);
-            process.exit(1); // Force crash if infrastructure isn't ready
+            process.exit(1);
         }
     }
 };

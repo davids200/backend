@@ -5,11 +5,9 @@ import {
 } from '@nestjs/common';
 
 import { KafkaService }
-from '../../infrastructure/kafka/kafka.service';
-
-import { KAFKA_TOPICS }
-from '../../common/constants/kafka-topics.constants';
-import { RepostCreatedEvent } from '../../common/constants/contracts/events/repost-created.event';
+from '../../infrastructure/kafka/kafka.service'; 
+import { RepostCreatedEvent } from '../../events/repost/repost-created.event';
+import { KAFKA_TOPICS } from '../../common/constants/kafka-topics.constants';
  
 
 @Injectable()

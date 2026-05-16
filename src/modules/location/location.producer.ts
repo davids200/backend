@@ -2,9 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 import { KafkaService }
 from '../../infrastructure/kafka/kafka.service';
-
-import { KAFKA_TOPICS }
-from '../../common/constants/kafka-topics.constants';
+import { KAFKA_TOPICS } from '../../common/constants/kafka-topics.constants';
 
 @Injectable()
 export class LocationProducer {
@@ -23,7 +21,7 @@ export class LocationProducer {
   }) {
 
     return this.kafka.emit(
-      KAFKA_TOPICS.USER_LOCATION_JOINED,
+      KAFKA_TOPICS.LOCATION_UPDATED,
 
       data,
 

@@ -2,18 +2,16 @@ console.log("Starting POST CONSUMER");
 
 import {  Injectable,  Logger,} from '@nestjs/common';
 import { KafkaService }from '../../infrastructure/kafka/kafka.service';
-
-import { KAFKA_TOPICS }
-from '../../common/constants/kafka-topics.constants';
+ 
 
 import { FeedProducer }
 from '../../modules/feed/feed.producer';
 
 import { NotificationProducer }
 from '../../modules/notification/notification.producer';
-
-import { PostCreatedEvent }
-from '../../common/constants/contracts/events/post-created.event';
+import { PostCreatedEvent } from '../../events/post/post-created.event';
+import { KAFKA_TOPICS } from '../../common/constants/kafka-topics.constants';
+ 
 
 @Injectable()
 export class PostConsumer {

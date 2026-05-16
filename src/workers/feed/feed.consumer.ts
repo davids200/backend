@@ -16,8 +16,6 @@ from '../../modules/location/location.service';
 import { FEED_CONSTANTS }
 from '../../modules/feed/constants/feed.constants';
 
-import { KAFKA_TOPICS }
-from '../../common/constants/kafka-topics.constants';
 
 import { LocationFeedRepository }
 from '../../infrastructure/scylladb/repositories/feed/location.feed.repo';
@@ -32,11 +30,12 @@ import { PostVisibility }
 from '../../modules/post/enums/post-visibility.enum';
 
 import { FeedFanoutEvent }
-from '../../common/constants/contracts/events/feed-fanout.event'; 
+from '../../events/feed/feed-fanout.event'; 
 import { FeedItemType } from '../../modules/feed/types/feed-item.type';
 import { HashtagFeedRepository }
 from '../../infrastructure/scylladb/repositories/feed/hashtag.feed.repo';
 import { FeedRankingService } from '../../modules/ranking/feed-ranking.service';
+import { KAFKA_TOPICS } from '../../common/constants/kafka-topics.constants';
 
 
 @Injectable()

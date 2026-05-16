@@ -53,122 +53,307 @@ export class KafkaBootstrapService {
 
 const topics = [
 
+  // =====================================================
   // POSTS
+  // =====================================================
+
   {
     topic:
       KAFKA_TOPICS.POST_CREATED,
+
     numPartitions:1,
+
+    replicationFactor:1,
+  },
+
+  {
+    topic:
+      KAFKA_TOPICS.POST_UPDATED,
+
+    numPartitions:1,
+
     replicationFactor:1,
   },
 
   {
     topic:
       KAFKA_TOPICS.POST_DELETED,
+
     numPartitions:1,
+
     replicationFactor:1,
   },
 
-  {
-    topic:
-      KAFKA_TOPICS.POST_LIKED,
-    numPartitions:1,
-    replicationFactor:1,
-  },
-
-  {
-    topic:
-      KAFKA_TOPICS.POST_COMMENTED,
-    numPartitions:1,
-    replicationFactor:1,
-  },
-
+  // =====================================================
   // FEEDS
+  // =====================================================
+
   {
     topic:
       KAFKA_TOPICS.FEED_FANOUT,
+
     numPartitions:1,
+
     replicationFactor:1,
   },
 
+  {
+    topic:
+      KAFKA_TOPICS.FEED_INVALIDATE,
+
+    numPartitions:1,
+
+    replicationFactor:1,
+  },
+
+  // =====================================================
   // FOLLOWS
+  // =====================================================
+
   {
     topic:
       KAFKA_TOPICS.FOLLOW_CREATED,
+
     numPartitions:1,
+
     replicationFactor:1,
   },
 
   {
     topic:
       KAFKA_TOPICS.FOLLOW_REMOVED,
+
     numPartitions:1,
+
     replicationFactor:1,
   },
 
+  // =====================================================
   // LIKES
+  // =====================================================
+
   {
     topic:
       KAFKA_TOPICS.LIKE_CREATED,
+
     numPartitions:1,
+
     replicationFactor:1,
   },
 
   {
     topic:
       KAFKA_TOPICS.LIKE_REMOVED,
+
     numPartitions:1,
+
     replicationFactor:1,
   },
 
+  // =====================================================
   // COMMENTS
+  // =====================================================
+
   {
     topic:
       KAFKA_TOPICS.COMMENT_CREATED,
+
     numPartitions:1,
+
     replicationFactor:1,
   },
 
   {
     topic:
       KAFKA_TOPICS.COMMENT_REMOVED,
+
     numPartitions:1,
+
     replicationFactor:1,
   },
 
+  // =====================================================
+  // BOOKMARKS
+  // =====================================================
+
+  {
+    topic:
+      KAFKA_TOPICS.BOOKMARK_CREATED,
+
+    numPartitions:1,
+
+    replicationFactor:1,
+  },
+
+  {
+    topic:
+      KAFKA_TOPICS.BOOKMARK_REMOVED,
+
+    numPartitions:1,
+
+    replicationFactor:1,
+  },
+
+  // =====================================================
   // REPOSTS
+  // =====================================================
+
   {
     topic:
       KAFKA_TOPICS.REPOST_CREATED,
+
     numPartitions:1,
+
     replicationFactor:1,
   },
 
   {
     topic:
       KAFKA_TOPICS.REPOST_REMOVED,
+
     numPartitions:1,
+
     replicationFactor:1,
   },
 
+  // =====================================================
+  // VIEWS
+  // =====================================================
+
+  {
+    topic:
+      KAFKA_TOPICS.VIEW_CREATED,
+
+    numPartitions:1,
+
+    replicationFactor:1,
+  },
+
+  // =====================================================
   // ENGAGEMENT
+  // =====================================================
+
   {
     topic:
       KAFKA_TOPICS.ENGAGEMENT_UPDATED,
+
     numPartitions:1,
+
     replicationFactor:1,
   },
 
+  {
+    topic:
+      KAFKA_TOPICS.TRENDING_UPDATED,
+
+    numPartitions:1,
+
+    replicationFactor:1,
+  },
+
+  // =====================================================
+  // HASHTAGS
+  // =====================================================
+
+  {
+    topic:
+      KAFKA_TOPICS.HASHTAG_CREATED,
+
+    numPartitions:1,
+
+    replicationFactor:1,
+  },
+
+  // =====================================================
+  // LOCATIONS
+  // =====================================================
+
+  {
+    topic:
+      KAFKA_TOPICS.LOCATION_UPDATED,
+
+    numPartitions:1,
+
+    replicationFactor:1,
+  },
+
+  {
+    topic:
+      KAFKA_TOPICS.LOCATION_JOINED,
+
+    numPartitions:1,
+
+    replicationFactor:1,
+  },
+
+  {
+    topic:
+      KAFKA_TOPICS.LOCATION_INITIALIZED,
+
+    numPartitions:1,
+
+    replicationFactor:1,
+  },
+
+  // =====================================================
   // NOTIFICATIONS
+  // =====================================================
+
   {
     topic:
       KAFKA_TOPICS.NOTIFICATION_CREATED,
+
     numPartitions:1,
+
+    replicationFactor:1,
+  },
+
+  {
+    topic:
+      KAFKA_TOPICS.NOTIFICATION_SEND,
+
+    numPartitions:1,
+
+    replicationFactor:1,
+  },
+
+  {
+    topic:
+      KAFKA_TOPICS.NOTIFICATION_OTP_REQUESTED,
+
+    numPartitions:1,
+
+    replicationFactor:1,
+  },
+
+  {
+    topic:
+      KAFKA_TOPICS.NOTIFICATION_SECURITY_ALERT,
+
+    numPartitions:1,
+
+    replicationFactor:1,
+  },
+
+   {
+    topic:
+      KAFKA_TOPICS.VIEW_CREATED,
+
+    numPartitions:1,
+
+    replicationFactor:1,
+  },
+
+  {
+    topic:
+      KAFKA_TOPICS.NOTIFICATION_WELCOME,
+
+    numPartitions:1,
+
     replicationFactor:1,
   },
 ];
-      
-
-    const missingTopics =
+   const missingTopics =
       topics.filter(
 
         (t) =>

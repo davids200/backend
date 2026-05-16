@@ -1,109 +1,157 @@
-// src/modules/ranking/feed-ranking.service.ts
-
-import {
-  Injectable,
-} from '@nestjs/common';
+import {  Injectable,} from '@nestjs/common';
+import { RedisService } from '../../infrastructure/redis/redis.service';
 
 @Injectable()
 export class FeedRankingService {
 
-  // =====================================================
+  constructor(
+    private readonly redis:RedisService,
+  ) {}
+   
   // CALCULATE SCORE
   // =====================================================
+calculateScore(params:{
+  likes?:number;
+  comments?:number;
+  reposts?:number;
+  bookmarks?:number;
+  views?:number;
+  dwellTimeMs?:number;
+  createdAt:Date;
+  completionRate?:number;
+  isFollowingAuthor?:boolean;
+  isLocalAuthor?:boolean;
+}){
 
-  calculateScore(params:{
-    likes?:number;
-    comments?:number;
-    reposts?:number;
-    createdAt:Date;
-    isFollowingAuthor?:boolean;
-    isLocalAuthor?:boolean;
-  }) {
+  const {
+    likes = 0,
+    comments = 0,
+    reposts = 0,
+    bookmarks = 0,
+    views = 0,
+    dwellTimeMs = 0,    
+    createdAt,
+    completionRate = 0,
+    isFollowingAuthor = false,
+    isLocalAuthor = false,
+  } = params;
 
-    const {
-      likes = 0,
-      comments = 0,
-      reposts = 0,
-      createdAt,
-      isFollowingAuthor = false,
-      isLocalAuthor = false,
-    } = params;
+  const createdTime = new Date(createdAt).getTime();
+  const safeCreatedTime =isNaN(createdTime) ? Date.now(): createdTime;
+  let score = 0;
+  
 
-    // ================================================
-    // INVALID DATE PROTECTION
-    // ================================================
+  // ENGAGEMENT
+  // ================================================
+  score += likes * 100;
+  score += comments * 200;
+  score += reposts * 400;
+  score += bookmarks * 500;
 
-    const createdTime =
-      new Date(createdAt).getTime();
+  // ================================================
+  // VIEW QUALITY
+  // ================================================
+  score += Math.floor(views * 2,);
 
-    const safeCreatedTime =
-      isNaN(createdTime)
-        ? Date.now()
-        : createdTime;
+  // ================================================
+  // DWELL QUALITY
+  // ================================================
+const dwellSeconds =
+  dwellTimeMs / 1000;
 
-    // ================================================
-    // ENGAGEMENT SCORE
-    // ================================================
+// ================================================
+// VIEW QUALITY
+// ================================================
 
-    let score = 0;
+score += Math.floor(
+  views * 2,
+);
 
-    score += likes * 100;
+// ================================================
+// DWELL QUALITY
+// ================================================
 
-    score += comments * 200;
+if (dwellSeconds >= 3){
+  score += 20;
+}
 
-    score += reposts * 400;
+if (dwellSeconds >= 10){
+  score += 40;
+}
 
-    // ================================================
-    // FOLLOW BOOST
-    // ================================================
+// ================================================
+// VIDEO COMPLETION
+// ================================================
 
-    if (isFollowingAuthor) {
-      score += 30;
-    }
+if (completionRate >= 0.5){
+  score += 80;
+}
 
-    // ================================================
-    // LOCAL BOOST
-    // ================================================
+if (completionRate >= 0.8){
+  score += 150;
+}
 
-    if (isLocalAuthor) {
-      score += 15;
-    }
+if (completionRate >= 1){
+  score += 250;
+}
 
-    // ================================================
-    // RECENCY DECAY
-    // ================================================
+  // ================================================
+  // RELATIONSHIP BOOST
+  // ================================================
+  if (isFollowingAuthor){
+    score += 30;
+  }
 
-    const ageHours =
-      Math.max(
-        0,
-        (Date.now() - safeCreatedTime)
-        / (1000 * 60 * 60),
-      );
+  // ================================================
+  // LOCAL BOOST
+  // ================================================
 
-    // gentle decay
-    score -= ageHours * 0.5;
+  if (isLocalAuthor){
+    score += 15;
+  }
 
-    // ================================================
-    // CLEAN FINAL SCORE
-    // ================================================
+  // ================================================
+  // RECENCY DECAY
+  // ================================================
 
-    const finalScore =
-      Math.max(
-        Math.floor(score),
-        0,
-      );
-
-    console.log(
-      'RANK SCORE',
-      {
-        likes,
-        comments,
-        reposts,
-        ageHours,
-        finalScore,
-      },
+  const ageHours =
+    Math.max(
+      0,
+      (Date.now() - safeCreatedTime)
+      / (1000 * 60 * 60),
     );
 
-    return finalScore;
-  }
+  score -= ageHours * 0.5;
+
+  const finalScore =
+    Math.max(
+      Math.floor(score),
+      0,
+    );
+
+  console.log('RANK SCORE',{
+    likes,
+    comments,
+    reposts,
+    bookmarks,
+    views,
+    dwellSeconds,
+    ageHours,
+    finalScore,
+  });
+
+  return finalScore;
+}
+
+
+
+// =====================================================
+// GET POST RANK SCORE
+// =====================================================
+async getPostRankScore(postId:string,) {
+  const score = await this.redis.client.zscore('post_rankings',postId,);
+  return Number(score || 0);
+}
+
+  
 }

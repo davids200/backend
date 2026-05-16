@@ -8,7 +8,6 @@ import {
 // =====================================================
 
 import { KafkaService } from './kafka.service';
-import { KafkaBootstrapService } from './kafka.bootstrap';
 
 // =====================================================
 // PRODUCERS
@@ -18,6 +17,7 @@ import { PostProducer } from '../../modules/post/post.producer';
 import { FollowProducer } from '../../modules/follow/follow.producer';
 import { NotificationProducer } from '../../modules/notification/notification.producer';
 import { LocationProducer } from '../../modules/location/location.producer';
+import { KafkaBootstrapService } from './kafka.bootstrap';
 
 @Global()
 @Module({

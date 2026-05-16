@@ -8,9 +8,7 @@ from '../../infrastructure/kafka/kafka.service';
 
 import { NotificationService }
 from '../../modules/notification/notification.service';
-
-import { KAFKA_TOPICS }
-from '../../common/constants/kafka-topics.constants';
+import { KAFKA_TOPICS } from '../../common/constants/kafka-topics.constants';
 
 // =====================================================
 // EVENT TYPE

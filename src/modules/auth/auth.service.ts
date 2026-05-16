@@ -17,11 +17,11 @@ import { RedisAuthRateLimitService }from '../../infrastructure/redis/auth/redis.
 import { AuthProducer }from './auth.producer';
 import { AuthSecurityService }from './security/auth-security.service';
 import { DeviceInfo } from './device/device.types';
-import { KAFKA_TOPICS } from '../../common/constants/kafka-topics.constants';
 import { NotificationProducer } from '../notification/notification.producer';
 import { SessionCacheService } from './services/session-cache.service';
 import { generateOtp } from './utils/generate-otp.util';
 import { verifyPassword } from './utils/verify-password.util';
+import { KAFKA_TOPICS } from '../../common/constants/kafka-topics.constants';
 
 @Injectable()
 export class AuthService {
@@ -728,7 +728,8 @@ async logout(
     // EMIT EVENT
     // ================================================
 
-    this.notificationProducer.emit(KAFKA_TOPICS.NOTIFICATION_OTP_REQUESTED,{type: data.type,value: data.value,  },
+    this.notificationProducer.emit(KAFKA_TOPICS.NOTIFICATION_OTP_REQUESTED,{
+      type: data.type,value: data.value,  },
 );
 
     // ================================================

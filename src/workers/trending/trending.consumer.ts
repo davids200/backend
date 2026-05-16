@@ -12,9 +12,8 @@ import {
 
 import { RedisTrendingService }
 from '../../infrastructure/redis/trending/redis.trending.service';
+import { KAFKA_TOPICS } from '../../common/constants/kafka-topics.constants';
 
-import { KAFKA_TOPICS }
-from '../../common/constants/kafka-topics.constants';
 
 @Controller()
 export class TrendingConsumer {

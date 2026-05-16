@@ -12,11 +12,10 @@ from '../../infrastructure/redis/redis.service';
 
  
 import { EngagementUpdatedEvent }
-from '../../common/constants/contracts/events/engagement-updated.event';
-
-import { KAFKA_TOPICS }
-from '../../common/constants/kafka-topics.constants';
+from '../../events/ranking/engagement-updated.event';
+ 
 import { FeedRankingService } from '../../modules/ranking/feed-ranking.service';
+import { KAFKA_TOPICS } from '../../common/constants/kafka-topics.constants';
 
 @Injectable()
 export class RankingConsumer
@@ -66,12 +65,29 @@ implements OnModuleInit {
     event: EngagementUpdatedEvent,
   ) {
 
-const score =this.rankingService.calculateScore({
-likes:event.likes,
-comments:event.comments,
-reposts:event.reposts,
-createdAt:new Date(event.createdAt,),
-});
+const score =
+  this.rankingService.calculateScore({
+    likes:event.likes,
+    comments:event.comments,
+    reposts:event.reposts,
+
+    bookmarks:
+      event.bookmarks,
+
+    views:
+      event.views,
+
+    dwellTimeMs:
+      event.dwellTimeMs,
+
+    completionRate:
+      event.completionRate,
+
+    createdAt:
+      new Date(event.createdAt),
+
+    isFollowingAuthor:true,
+  });
 
 
 

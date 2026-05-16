@@ -12,7 +12,6 @@ const common_1 = require("@nestjs/common");
 // CORE
 // =====================================================
 const kafka_service_1 = require("./kafka.service");
-const kafka_bootstrap_1 = require("./kafka.bootstrap");
 // =====================================================
 // PRODUCERS
 // =====================================================
@@ -20,6 +19,7 @@ const post_producer_1 = require("../../modules/post/post.producer");
 const follow_producer_1 = require("../../modules/follow/follow.producer");
 const notification_producer_1 = require("../../modules/notification/notification.producer");
 const location_producer_1 = require("../../modules/location/location.producer");
+const kafka_bootstrap_1 = require("./kafka.bootstrap");
 let KafkaModule = class KafkaModule {
 };
 exports.KafkaModule = KafkaModule;

@@ -1,8 +1,8 @@
 import {  Injectable,} from '@nestjs/common';
 import { KafkaService }from '../../infrastructure/kafka/kafka.service';
-import { KAFKA_TOPICS }from '../../common/constants/kafka-topics.constants'; 
-import { FeedFanoutEvent } from '../../common/constants/contracts/events/feed-fanout.event';
-import { FeedInvalidateEvent } from '../../common/constants/contracts/events/feed-invalidate.event';
+import { FeedFanoutEvent } from '../../events/feed/feed-fanout.event';
+import { FeedInvalidateEvent } from '../../events/feed/feed-invalidate.event';
+import { KAFKA_TOPICS } from '../../common/constants/kafka-topics.constants';
 
 @Injectable()
 export class FeedProducer {

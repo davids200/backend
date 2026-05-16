@@ -32,18 +32,13 @@ import {
 import {
   KAFKA_TOPICS,
 } from '../../common/constants/kafka-topics.constants';
-
-import {
-  LikeCreatedEvent,
-} from '../../common/constants/contracts/events/like-created.event';
-
-import {
-  LikeRemovedEvent,
-} from '../../common/constants/contracts/events/like-removed.event';
+ 
 
 import {
   EngagementUpdatedEvent,
-} from '../../common/constants/contracts/events/engagement-updated.event';
+} from '../../events/ranking/engagement-updated.event';
+import { LikeCreatedEvent } from '../../events/like/like-created.event';
+import { LikeRemovedEvent } from '../../events/like/like-removed.event';
  
 
 @Injectable()

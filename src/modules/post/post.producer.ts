@@ -3,16 +3,13 @@ import {
 } from '@nestjs/common';
 
 import { KafkaService }
-from '../../infrastructure/kafka/kafka.service';
-
-import { KAFKA_TOPICS }
-from '../../common/constants/kafka-topics.constants';
-
-import { PostCreatedEvent }
-from '../../common/constants/contracts/events/post-created.event';
+from '../../infrastructure/kafka/kafka.service'; 
+ 
 
 import { PostRemovedEvent }
-from '../../common/constants/contracts/events/post-removed.event';
+from '../../events/post/post-removed.event';
+import { PostCreatedEvent } from '../../events/post/post-created.event';
+import { KAFKA_TOPICS } from '../../common/constants/kafka-topics.constants';
 
 @Injectable()
 export class PostProducer {
@@ -54,7 +51,7 @@ export class PostProducer {
 
     await this.kafka.emit(
 
-      KAFKA_TOPICS.POST_REMOVED,
+      KAFKA_TOPICS.POST_DELETED,
 
       data,
 

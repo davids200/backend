@@ -8,10 +8,25 @@ type AuthResponse {
   user: UserModel!
 }
 
+type CommentModel {
+  content: String!
+  createdAt: DateTime!
+  id: ID!
+  parentId: String
+  postId: String!
+  rootId: String!
+  userId: String!
+}
+
 type CountryModel {
   code: String!
   id: ID!
   name: String!
+}
+
+input CreateCommentInput {
+  content: String!
+  postId: String!
 }
 
 input CreateLocationInput {
@@ -87,7 +102,14 @@ input LoginInput {
   password: String!
 }
 
+input MediaViewInput {
+  completionRate: Float!
+  mediaId: String!
+  watchTimeMs: Int!
+}
+
 type Mutation {
+  createComment(input: CreateCommentInput!): CommentModel!
   createCountry(code: String!, name: String!): CountryModel!
   createEducationLevel(name: String!, order: Float!): String!
   createLocation(data: CreateLocationInput!): LocationEntity!
@@ -101,6 +123,7 @@ type Mutation {
   logout: Boolean!
   refreshToken(data: RefreshTokenInput!): AuthResponse!
   register(data: RegisterInput!): AuthResponse!
+  replyComment(data: ReplyCommentInput!): CommentModel!
   repostPost(data: RepostInput!): RepostEntity!
   requestPasswordReset(data: RequestPasswordResetInput!): Boolean!
   resetPassword(data: ResetPasswordInput!): Boolean!
@@ -111,6 +134,7 @@ type Mutation {
   updateMyLocation(locationId: String!): UserEntity!
   updateProfile(data: UpdateProfileInput!): String!
   verifyOtp(data: VerifyOtpInput!): Boolean!
+  viewPost(input: ViewPostInput!): Boolean!
 }
 
 type PostEntity {
@@ -141,10 +165,12 @@ type Query {
   educationLevels: [String!]!
   followers(userId: String!): [FollowEntity!]!
   following(userId: String!): [FollowEntity!]!
+  getComments(cursor: DateTime, limit: Float, postId: String!): [CommentModel!]!
   getLocation(id: String!): LocationEntity
   getLocationTree(id: String!): LocationEntity!
   getPostsByIds(postIds: [String!]!): [PostEntity!]!
   getProfile: String!
+  getReplies(limit: Float, offset: Float, rootId: String!): [CommentModel!]!
   getUser(id: String!): String!
   hashtagFeed(cursor: DateTime, hashtag: String!, limit: Float = 20): FeedResponse!
   homeFeed(cursor: DateTime, limit: Float = 20): FeedResponse!
@@ -167,6 +193,12 @@ input RegisterInput {
   password: String
   phone: String
   username: String!
+}
+
+input ReplyCommentInput {
+  content: String!
+  parentId: String!
+  postId: String!
 }
 
 type RepostEntity {
@@ -258,4 +290,10 @@ input VerifyOtpInput {
   otp: String!
   type: String!
   value: String!
+}
+
+input ViewPostInput {
+  dwellTimeMs: Int!
+  media: [MediaViewInput!]
+  postId: String!
 }

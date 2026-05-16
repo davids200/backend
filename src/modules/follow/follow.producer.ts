@@ -1,10 +1,8 @@
 import { Injectable } from '@nestjs/common';
 
 import { KafkaService }
-from '../../infrastructure/kafka/kafka.service';
-
-import { KAFKA_TOPICS }
-from '../../common/constants/kafka-topics.constants';
+from '../../infrastructure/kafka/kafka.service'; 
+import { KAFKA_TOPICS } from '../../common/constants/kafka-topics.constants';
 
 @Injectable()
 export class FollowProducer {

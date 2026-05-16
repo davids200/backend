@@ -8,52 +8,53 @@ from './comment.repository';
 
 import { CommentProducer }
 from './comment.producer';
+import { CreateCommentInput } from './dto/create-comment.input';
+import { ReplyCommentInput } from './dto/reply-comment.input';
+import { InjectRepository }
+from '@nestjs/typeorm';
 
-interface CreateCommentInput {
+import { Repository }
+from 'typeorm';
 
-  postId: string;
-
-  content: string;
-}
-
-interface ReplyCommentInput {
-
-  postId: string;
-
-  content: string;
-
-  parentId: string;
-}
-
+import { PostEntity }
+from '../post/post.entity';
+ 
 @Injectable()
 export class CommentService {
 
   constructor(
+private readonly commentRepo:
+    CommentRepository,
 
-    private readonly repository:
-      CommentRepository,
+  @InjectRepository(PostEntity)
+  private readonly postRepo:
+    Repository<PostEntity>,
 
-    private readonly producer:
-      CommentProducer,
+  private readonly producer:
+    CommentProducer,
   ) {}
 
   // =====================================================
   // CREATE ROOT COMMENT
   // =====================================================
 
-  async createComment(
+  async createComment(userId: string,data: CreateCommentInput,  ) {
+    const post =  await this.postRepo.findOne({
+      where: { id: data.postId }
+    });
 
-    userId: string,
-
-    data: CreateCommentInput,
-  ) {
+if (!post){
+  throw new Error(
+    'Post not found',
+  );
+}
 
     // ================================================
     // CREATE ENTITY
     // ================================================
 
     const comment =
-      this.repository.create({
+      this.commentRepo.create({
 
         postId:
           data.postId,
@@ -71,7 +72,7 @@ export class CommentService {
     // ================================================
 
     const saved =
-      await this.repository.save(
+      await this.commentRepo.save(
         comment,
       );
 
@@ -79,7 +80,7 @@ export class CommentService {
     // ROOT ID = SELF
     // ================================================
 
-    await this.repository.update(
+    await this.commentRepo.update(
 
       saved.id,
 
@@ -135,7 +136,7 @@ export class CommentService {
     // ================================================
 
     const parent =
-      await this.repository
+      await this.commentRepo
         .findParentComment(
           data.parentId,
         );
@@ -153,7 +154,7 @@ export class CommentService {
     // ================================================
 
     const comment =
-      this.repository.create({
+      this.commentRepo.create({
 
         postId:
           data.postId,
@@ -171,7 +172,7 @@ export class CommentService {
       });
 
     const saved =
-      await this.repository.save(
+      await this.commentRepo.save(
         comment,
       );
 
@@ -206,7 +207,7 @@ export class CommentService {
   // =====================================================
 
   async getComments(params: {postId: string;limit?: number;cursor?: Date;}) {
-    return this.repository.getRootComments(params,);
+    return this.commentRepo.getRootComments(params,);
   }
 
 
@@ -217,7 +218,7 @@ export class CommentService {
     limit?: number;
     offset?: number;
   }) {
-    return this.repository
+    return this.commentRepo
       .getReplies(
         params,
       );
