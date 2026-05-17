@@ -19,8 +19,7 @@ const user_module_1 = require("../user/user.module");
 const redis_module_1 = require("../../infrastructure/redis/redis.module");
 const kafka_module_1 = require("../../infrastructure/kafka/kafka.module");
 const apple_strategy_1 = require("./strategies/apple.strategy");
-const redis_otp_service_1 = require("../../infrastructure/redis/otp/redis.otp.service");
-const redis_auth_rate_limit_service_1 = require("../../infrastructure/redis/auth/redis.auth-rate-limit.service");
+const redis_auth_rate_limit_service_1 = require("../../infrastructure/redis/counters/auth/redis.auth-rate-limit.service");
 const google_strategy_1 = require("./strategies/google.strategy");
 //import { AuthController } from './auth.controller';
 const auth_security_service_1 = require("./security/auth-security.service");
@@ -30,6 +29,7 @@ const twilio_provider_1 = require("../notification/channels/sms/providers/twilio
 const custom_sms_provider_1 = require("../notification/channels/sms/providers/custom-sms.provider");
 const config_1 = require("@nestjs/config");
 const session_cache_service_1 = require("./services/session-cache.service");
+const redis_otp_service_1 = require("../../infrastructure/redis/counters/otp/redis.otp.service");
 let AuthModule = class AuthModule {
 };
 exports.AuthModule = AuthModule;

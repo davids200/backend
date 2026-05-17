@@ -3,15 +3,10 @@ import {
   Logger,
   OnModuleInit,
 } from '@nestjs/common';
+import { KafkaService } from '../../infrastructure/kafka/kafka.service';
 
-import { KafkaService }
-from '../../infrastructure/kafka/kafka.service';
-
-import { RedisCounterService }
-from '../../infrastructure/redis/counters/redis.counter.service';
-
-import { KAFKA_TOPICS }
-from '../../common/constants/kafka-topics.constants';
+import { KAFKA_TOPICS } from '../../common/constants/kafka-topics.constants';
+import { RedisEngagementCounterService } from '../../infrastructure/redis/counters/engagement/redis.engagement.counter.service';
 
 @Injectable()
 export class EngagementConsumer
@@ -27,8 +22,8 @@ implements OnModuleInit {
     private readonly kafka:
       KafkaService,
 
-    private readonly redis:
-      RedisCounterService,
+    private readonly engagement:
+      RedisEngagementCounterService,
   ) {}
 
   async onModuleInit(){
@@ -100,55 +95,14 @@ implements OnModuleInit {
     }
 
     // =================================================
-    // LOAD COUNTERS (PARALLEL)
+    // LOAD AGGREGATED ENGAGEMENT
     // =================================================
 
-    const [
-
-      likes,
-
-      comments,
-
-      views,
-
-      bookmarks,
-
-      reposts,
-
-      dwellTimeMs,
-
-    ] = await Promise.all([
-
-      this.redis
-        .getLikesCount(
+    const engagement =
+      await this.engagement
+        .getEngagement(
           postId,
-        ),
-
-      this.redis
-        .getCommentsCount(
-          postId,
-        ),
-
-      this.redis
-        .getViewsCount(
-          postId,
-        ),
-
-      this.redis
-        .getBookmarksCount(
-          postId,
-        ),
-
-      this.redis
-        .getRepostsCount(
-          postId,
-        ),
-
-      this.redis
-        .getDwellTime(
-          postId,
-        ),
-    ]);
+        );
 
     // =================================================
     // EMIT AGGREGATED STATE
@@ -163,17 +117,23 @@ implements OnModuleInit {
 
         postId,
 
-        likes,
+        likes:
+          engagement.likes,
 
-        comments,
+        comments:
+          engagement.comments,
 
-        views,
+        views:
+          engagement.views,
 
-        bookmarks,
+        bookmarks:
+          engagement.bookmarks,
 
-        reposts,
+        reposts:
+          engagement.reposts,
 
-        dwellTimeMs,
+        dwellTimeMs:
+          engagement.dwellTimeMs,
 
         completionRate:0,
 
@@ -188,30 +148,20 @@ implements OnModuleInit {
       },
     );
 
+    // =================================================
+    // LOGS
+    // =================================================
+
     this.logger.log(
 
       `📊 Engagement aggregated: ${postId}`,
     );
 
-    // =================================================
-    // DEBUG
-    // =================================================
-
     console.log({
 
       postId,
 
-      likes,
-
-      comments,
-
-      views,
-
-      bookmarks,
-
-      reposts,
-
-      dwellTimeMs,
+      ...engagement,
     });
   }
 }

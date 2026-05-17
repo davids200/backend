@@ -1,7 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common'; 
+import { RedisService } from '../redis.service';
 
-import { RedisService }
-from '../redis.service';
 
 @Injectable()
 export class RedisHashtagService {

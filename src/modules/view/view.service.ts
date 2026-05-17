@@ -1,57 +1,172 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { ViewEntity } from './view.entity';
-import { ViewProducer } from './view.producer';
-import { ViewPostInput } from './dto/view-post.input';
-import { PostEntity } from '../post/post.entity';
+import {
+  Injectable,
+  BadRequestException,
+} from '@nestjs/common';
+
+import {
+  InjectRepository,
+} from '@nestjs/typeorm';
+
+import {
+  Repository,
+} from 'typeorm';
+
+import { ViewEntity }
+from './view.entity';
+
+import { ViewProducer }
+from './view.producer';
+
+import { ViewPostInput }
+from './dto/view-post.input';
+
+import { PostEntity }
+from '../post/post.entity';
+import { RedisViewCounterService } from '../../infrastructure/redis/counters/view/redis.view.counter.service';
+
+
 
 @Injectable()
 export class ViewService {
 
-constructor(
+  constructor(
 
-@InjectRepository(ViewEntity)
-private readonly viewRepo:Repository<ViewEntity>,
-@InjectRepository(PostEntity)
-private readonly postRepo:Repository<PostEntity>,
-private readonly producer:ViewProducer,
-) {}
+    @InjectRepository(
+      ViewEntity,
+    )
 
-async viewPost(userId:string,input:ViewPostInput){
+    private readonly viewRepo:
+      Repository<ViewEntity>,
 
-const post =  await this.postRepo.findOne({ where:{id:input.postId,},});
+    @InjectRepository(
+      PostEntity,
+    )
 
-if (!post){
-throw new Error(
-'Post not found',
-);
-}
+    private readonly postRepo:
+      Repository<PostEntity>,
+
+    private readonly producer:
+      ViewProducer,
+
+    private readonly redis:      RedisViewCounterService,
+  ) {}
+
+  // =====================================================
+  // VIEW POST
+  // =====================================================
+
+  async viewPost(
+
+    userId:string,
+
+    input:ViewPostInput,
+  ){
+
+    // =================================================
+    // CHECK POST
+    // =================================================
+
+    const post =
+      await this.postRepo.findOne({
+
+        where:{
+          id:input.postId,
+        },
+      });
+
+    if (!post){
+
+      throw new BadRequestException(
+        'Post not found',
+      );
+    }
+
+    // =================================================
+    // VIEW DEDUPE
+    // =================================================
+
+    const dedupeKey =
+
+      `view:${userId}:${input.postId}`;
+
+    const exists =
+      await this.redis.viewExists(
+        dedupeKey,
+      );
+
+    // =================================================
+    // IGNORE RAPID DUPLICATES
+    // =================================================
+
+    if (exists){
+
+      return true;
+    }
+
+    // =================================================
+    // 30-SECOND WINDOW
+    // =================================================
+
+    await this.redis.setViewWindow(dedupeKey,30,
+    );
+
+    // =================================================
+    // NORMALIZE VALUES
+    // =================================================
+
+    const dwellTimeMs =
+      input.dwellTimeMs || 0;
+
+    const media =
+      input.media || [];
+
+    // =================================================
+    // MEANINGFUL VIEW
+    // =================================================
 
     const meaningful =
-      input.dwellTimeMs >= 3000;
+      dwellTimeMs >= 3000;
+
+    // =================================================
+    // TOTAL WATCH TIME
+    // =================================================
 
     const totalWatchTimeMs =
-      input.media?.reduce(
+      media.reduce(
 
         (sum,item) =>
-          sum + item.watchTimeMs,
+
+          sum +
+          (item.watchTimeMs || 0),
 
         0,
-      ) || 0;
+      );
+
+    // =================================================
+    // COMPLETION RATE
+    // =================================================
 
     const completionRate =
-      input.media?.length
+      media.length
 
-        ? input.media.reduce(
+        ? media.reduce(
 
             (sum,item) =>
-              sum + item.completionRate,
+
+              sum +
+              (item.completionRate || 0),
 
             0,
-          ) / input.media.length
+          ) / media.length
 
         : 0;
+
+    // =================================================
+    // OPTIONAL STORAGE
+    // =================================================
+    // Later at hyperscale this may move
+    // entirely into ScyllaDB analytics.
+    // =================================================
 
     const view =
       this.viewRepo.create({
@@ -61,8 +176,7 @@ throw new Error(
         postId:
           input.postId,
 
-        dwellTimeMs:
-          input.dwellTimeMs,
+        dwellTimeMs,
 
         totalWatchTimeMs,
 
@@ -75,25 +189,35 @@ throw new Error(
       view,
     );
 
-    await this.producer.viewCreated({
+    // =================================================
+    // EMIT EVENT
+    // =================================================
 
-      userId,
+    await this.producer
+      .viewCreated({
 
-      postId:
-        input.postId,
+        viewId:
+          view.id,
 
-      dwellTimeMs:
-        input.dwellTimeMs,
+        userId,
 
-      meaningful,
+        postId:
+          input.postId,
 
-      media:
-        input.media,
+        dwellTimeMs,
 
-      createdAt:
-        new Date()
-          .toISOString(),
-    });
+        totalWatchTimeMs,
+
+        completionRate,
+
+        meaningful,
+
+        media,
+
+        createdAt:
+          new Date()
+            .toISOString(),
+      });
 
     return true;
   }

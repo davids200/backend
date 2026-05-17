@@ -6,15 +6,14 @@ import {
 
 import { KafkaService }
 from '../../infrastructure/kafka/kafka.service';
-
-import { RedisCounterService }
-from '../../infrastructure/redis/counters/redis.counter.service';
+ 
 
 import { NotificationProducer }
 from '../../modules/notification/notification.producer';
 
 import { KAFKA_TOPICS }
 from '../../common/constants/kafka-topics.constants';
+import { RedisLikeCounterService } from '../../infrastructure/redis/counters/like/redis.like.counter.service';
 
 @Injectable()
 export class LikeConsumer
@@ -30,8 +29,7 @@ implements OnModuleInit {
     private readonly kafka:
       KafkaService,
 
-    private readonly counter:
-      RedisCounterService,
+    private readonly counter:RedisLikeCounterService,
 
     private readonly notification:
       NotificationProducer,

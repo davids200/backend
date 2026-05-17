@@ -7,14 +7,13 @@ import {
 import { KafkaService }
 from '../../infrastructure/kafka/kafka.service';
 
-import { RedisCounterService }
-from '../../infrastructure/redis/counters/redis.counter.service';
 
 import { NotificationProducer }
 from '../../modules/notification/notification.producer';
 
 import { KAFKA_TOPICS }
 from '../../common/constants/kafka-topics.constants';
+import { RedisCommentCounterService } from '../../infrastructure/redis/counters/comment/redis.comment.counter.service';
 
 @Injectable()
 export class CommentConsumer
@@ -30,8 +29,7 @@ implements OnModuleInit {
     private readonly kafka:
       KafkaService,
 
-    private readonly counter:
-      RedisCounterService,
+    private readonly counter:RedisCommentCounterService,
 
     private readonly notification:
       NotificationProducer,

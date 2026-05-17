@@ -56,8 +56,7 @@ const auth_identity_entity_1 = require("./entities/auth-identity.entity");
 const auth_session_entity_1 = require("./entities/auth-session.entity");
 const user_service_1 = require("../user/user.service");
 const hash_password_util_1 = require("./utils/hash-password.util");
-const redis_otp_service_1 = require("../../infrastructure/redis/otp/redis.otp.service");
-const redis_auth_rate_limit_service_1 = require("../../infrastructure/redis/auth/redis.auth-rate-limit.service");
+const redis_auth_rate_limit_service_1 = require("../../infrastructure/redis/counters/auth/redis.auth-rate-limit.service");
 const auth_producer_1 = require("./auth.producer");
 const auth_security_service_1 = require("./security/auth-security.service");
 const notification_producer_1 = require("../notification/notification.producer");
@@ -65,6 +64,7 @@ const session_cache_service_1 = require("./services/session-cache.service");
 const generate_otp_util_1 = require("./utils/generate-otp.util");
 const verify_password_util_1 = require("./utils/verify-password.util");
 const kafka_topics_constants_1 = require("../../common/constants/kafka-topics.constants");
+const redis_otp_service_1 = require("../../infrastructure/redis/counters/otp/redis.otp.service");
 let AuthService = class AuthService {
     identityRepo;
     sessionRepo;

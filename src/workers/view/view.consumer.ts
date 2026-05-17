@@ -6,12 +6,11 @@ import {
 
 import { KafkaService }
 from '../../infrastructure/kafka/kafka.service';
-
-import { RedisCounterService }
-from '../../infrastructure/redis/counters/redis.counter.service';
+ 
 
 import { KAFKA_TOPICS }
 from '../../common/constants/kafka-topics.constants';
+import { RedisViewCounterService } from '../../infrastructure/redis/counters/view/redis.view.counter.service';
 
 @Injectable()
 export class ViewConsumer
@@ -27,8 +26,7 @@ implements OnModuleInit {
     private readonly kafka:
       KafkaService,
 
-    private readonly counter:
-      RedisCounterService,
+    private readonly counter:RedisViewCounterService,
   ) {}
 
   async onModuleInit(){
@@ -40,16 +38,28 @@ implements OnModuleInit {
 
     await this.kafka.consume(
 
-      'view-group',
+      'view-created-group',
 
       KAFKA_TOPICS
         .VIEW_CREATED,
 
       async (event:any) => {
 
-        await this.handleView(
-          event,
-        );
+        try {
+
+          await this.handleViewCreated(
+            event,
+          );
+
+        } catch(error){
+
+          this.logger.error(
+
+            '❌ View processing failed',
+
+            error,
+          );
+        }
       },
     );
 
@@ -58,42 +68,45 @@ implements OnModuleInit {
     );
   }
 
-  // ===================================================
-  // HANDLE VIEW
-  // ===================================================
+  // =====================================================
+  // VIEW CREATED
+  // =====================================================
 
-  private async handleView(
-    event:any,
-  ){
+  private async handleViewCreated(event:any,  ){
+    console.log('VIEW EVENT',event,);
+    const postId = event.postId;
 
-    // ================================================
-    // IGNORE LOW QUALITY VIEWS
-    // ================================================
+    if (!postId){
+      this.logger.error( '❌ Missing postId',   );
 
-    if (
-      event.dwellTimeMs < 3000
-    ){
       return;
     }
 
-    // ================================================
-    // COUNTERS
-    // ================================================
+    // =================================================
+    // VIEW COUNT
+    // =================================================
 
     await this.counter.incrementViews(
-      event.targetId,
+      postId,
     );
 
-    await this.counter.addDwellTime(
+    // =================================================
+    // DWELL TIME
+    // =================================================
 
-      event.targetId,
+    if (event.dwellTimeMs){
 
-      event.dwellTimeMs,
-    );
+      await this.counter.addDwellTime(
 
-    // ================================================
+        postId,
+
+        event.dwellTimeMs,
+      );
+    }
+
+    // =================================================
     // ENGAGEMENT SIGNAL
-    // ================================================
+    // =================================================
 
     await this.kafka.emit(
 
@@ -102,8 +115,7 @@ implements OnModuleInit {
 
       {
 
-        postId:
-          event.targetId,
+        postId,
 
         actorId:
           event.userId,
@@ -111,14 +123,13 @@ implements OnModuleInit {
         type:'VIEW',
 
         createdAt:
-          new Date()
-            .toISOString(),
+          event.createdAt,
       },
     );
 
     this.logger.log(
 
-      `👁️ View recorded: ${event.targetId}`,
+      `👁️ View created: ${postId}`,
     );
   }
 }

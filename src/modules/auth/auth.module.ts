@@ -9,9 +9,8 @@ import { AuthSessionEntity }from './entities/auth-session.entity';
 import { UserModule }from '../user/user.module';
 import { RedisModule }from '../../infrastructure/redis/redis.module';
 import { KafkaModule }from '../../infrastructure/kafka/kafka.module';
-import { JwtStrategy } from './strategies/apple.strategy';
-import { RedisOtpService } from '../../infrastructure/redis/otp/redis.otp.service';
-import { RedisAuthRateLimitService } from '../../infrastructure/redis/auth/redis.auth-rate-limit.service';
+import { JwtStrategy } from './strategies/apple.strategy'; 
+import { RedisAuthRateLimitService } from '../../infrastructure/redis/counters/auth/redis.auth-rate-limit.service';
 import { GoogleStrategy } from './strategies/google.strategy';
 //import { AuthController } from './auth.controller';
 import { AuthSecurityService } from './security/auth-security.service';
@@ -21,6 +20,7 @@ import { TwilioProvider } from '../notification/channels/sms/providers/twilio.pr
 import { CustomSmsProvider } from '../notification/channels/sms/providers/custom-sms.provider';
 import { ConfigService } from '@nestjs/config';
 import { SessionCacheService } from './services/session-cache.service';
+import { RedisOtpService } from '../../infrastructure/redis/counters/otp/redis.otp.service';
 
 @Module({
   imports: [

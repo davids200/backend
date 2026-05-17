@@ -30,19 +30,15 @@ import { PostEntity } from '../post/post.entity';
   ],
 
   providers:[
-
     ViewService,
-
     ViewResolver,
-
     ViewProducer,
-
     ViewConsumer,
   ],
 
   exports:[
-
     ViewService,
+    ViewResolver,
   ],
 })
 export class ViewModule {}

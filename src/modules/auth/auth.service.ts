@@ -12,8 +12,7 @@ import { RegisterInput }from './dto/register.input';
 import { JwtPayload }from './interfaces/jwt-payload.interface';
 import { hashPassword }from './utils/hash-password.util'; 
 
-import { RedisOtpService }from '../../infrastructure/redis/otp/redis.otp.service';
-import { RedisAuthRateLimitService }from '../../infrastructure/redis/auth/redis.auth-rate-limit.service';
+import { RedisAuthRateLimitService }from '../../infrastructure/redis/counters/auth/redis.auth-rate-limit.service';
 import { AuthProducer }from './auth.producer';
 import { AuthSecurityService }from './security/auth-security.service';
 import { DeviceInfo } from './device/device.types';
@@ -22,6 +21,7 @@ import { SessionCacheService } from './services/session-cache.service';
 import { generateOtp } from './utils/generate-otp.util';
 import { verifyPassword } from './utils/verify-password.util';
 import { KAFKA_TOPICS } from '../../common/constants/kafka-topics.constants';
+import { RedisOtpService } from '../../infrastructure/redis/counters/otp/redis.otp.service';
 
 @Injectable()
 export class AuthService {

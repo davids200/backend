@@ -6,12 +6,12 @@ import {
 
 import { KafkaService }
 from '../../infrastructure/kafka/kafka.service';
-
-import { RedisCounterService }
-from '../../infrastructure/redis/counters/redis.counter.service';
+ 
 
 import { KAFKA_TOPICS }
 from '../../common/constants/kafka-topics.constants';
+import { RedisService } from '../../infrastructure/redis/redis.service';
+import { RedisBookmarkCounterService } from '../../infrastructure/redis/counters/bookmark/redis.bookmark.counter';
 
 @Injectable()
 export class BookmarkConsumer
@@ -23,52 +23,38 @@ implements OnModuleInit {
     );
 
   constructor(
-
-    private readonly kafka:
-      KafkaService,
-
-    private readonly counter:
-      RedisCounterService,
+    private readonly kafka: KafkaService,
+    private readonly counter: RedisBookmarkCounterService,
   ) {}
 
   async onModuleInit(){
-
     await this.start();
   }
 
   async start(){
-
     // ================================================
     // BOOKMARK CREATED
     // ================================================
 
     await this.kafka.consume(
-
       'bookmark-created-group',
-
-      KAFKA_TOPICS
-        .BOOKMARK_CREATED,
+      KAFKA_TOPICS.BOOKMARK_CREATED,
 
       async (event:any) => {
 
         try {
-
-          await this.handleBookmarkCreated(
-            event,
-          );
+          await this.handleBookmarkCreated(event,  );
 
         } catch(error){
 
-          this.logger.error(
-
-            '❌ Bookmark create failed',
-
-            error,
-          );
+          this.logger.error('❌ Bookmark create failed',  error,       );
         }
       },
     );
 
+
+
+    
     // ================================================
     // BOOKMARK REMOVED
     // ================================================

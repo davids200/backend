@@ -10,9 +10,15 @@ exports.RedisModule = void 0;
 const common_1 = require("@nestjs/common");
 const redis_service_1 = require("./redis.service");
 const redis_feed_service_1 = require("./feed/redis.feed.service");
-const redis_counter_service_1 = require("./counters/redis.counter.service");
-const redis_post_guard_service_1 = require("./post/redis-post-guard.service");
 const session_cache_service_1 = require("../../modules/auth/services/session-cache.service");
+const redis_post_guard_service_1 = require("./counters/post/redis-post-guard.service");
+const redis_bookmark_counter_1 = require("./counters/bookmark/redis.bookmark.counter");
+const redis_post_counter_service_1 = require("./counters/post/redis.post.counter.service");
+const redis_comment_counter_service_1 = require("./counters/comment/redis.comment.counter.service");
+const redis_engagement_counter_service_1 = require("./counters/engagement/redis.engagement.counter.service");
+const redis_like_counter_service_1 = require("./counters/like/redis.like.counter.service");
+const redis_repost_counter_service_1 = require("./counters/repost/redis.repost.counter.service");
+const redis_view_counter_service_1 = require("./counters/view/redis.view.counter.service");
 let RedisModule = class RedisModule {
 };
 exports.RedisModule = RedisModule;
@@ -22,16 +28,28 @@ exports.RedisModule = RedisModule = __decorate([
         providers: [
             redis_service_1.RedisService,
             redis_feed_service_1.RedisFeedService,
-            redis_counter_service_1.RedisCounterService,
             redis_post_guard_service_1.RedisPostGuardService,
-            session_cache_service_1.SessionCacheService
+            session_cache_service_1.SessionCacheService,
+            redis_bookmark_counter_1.RedisBookmarkCounterService,
+            redis_post_counter_service_1.RedisPostCounterService,
+            redis_comment_counter_service_1.RedisCommentCounterService,
+            redis_engagement_counter_service_1.RedisEngagementCounterService,
+            redis_like_counter_service_1.RedisLikeCounterService,
+            redis_repost_counter_service_1.RedisRepostCounterService,
+            redis_view_counter_service_1.RedisViewCounterService,
         ],
         exports: [
             redis_service_1.RedisService,
             redis_feed_service_1.RedisFeedService,
-            redis_counter_service_1.RedisCounterService,
             redis_post_guard_service_1.RedisPostGuardService,
-            session_cache_service_1.SessionCacheService
+            session_cache_service_1.SessionCacheService,
+            redis_bookmark_counter_1.RedisBookmarkCounterService,
+            redis_post_counter_service_1.RedisPostCounterService,
+            redis_comment_counter_service_1.RedisCommentCounterService,
+            redis_engagement_counter_service_1.RedisEngagementCounterService,
+            redis_like_counter_service_1.RedisLikeCounterService,
+            redis_repost_counter_service_1.RedisRepostCounterService,
+            redis_view_counter_service_1.RedisViewCounterService,
         ],
     })
 ], RedisModule);

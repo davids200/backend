@@ -6,12 +6,11 @@ import {
 
 import { KafkaService }
 from '../../infrastructure/kafka/kafka.service';
-
-import { RedisCounterService }
-from '../../infrastructure/redis/counters/redis.counter.service';
+ 
 
 import { KAFKA_TOPICS }
 from '../../common/constants/kafka-topics.constants';
+import { RedisRepostCounterService } from '../../infrastructure/redis/counters/repost/redis.repost.counter.service';
 
 @Injectable()
 export class RepostConsumer
@@ -28,7 +27,7 @@ implements OnModuleInit {
       KafkaService,
 
     private readonly counter:
-      RedisCounterService,
+      RedisRepostCounterService,
   ) {}
 
   async onModuleInit(){

@@ -1,16 +1,14 @@
 import {
   Injectable,
-} from '@nestjs/common';
-
-import { RedisService }
-from '../redis.service';
+} from '@nestjs/common'; 
+import { RedisService } from '../../redis.service';
+ 
 
 @Injectable()
 export class RedisAuthRateLimitService {
 
   constructor(
-    private readonly redis:
-      RedisService,
+    private readonly redis: RedisService,
   ) {}
 
   // =====================================================
