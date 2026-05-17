@@ -1,5 +1,3 @@
-// src/modules/repost/repost.service.ts
-
 import {
   Injectable,
   BadRequestException,
@@ -13,128 +11,159 @@ import {
   Repository,
 } from 'typeorm';
 
-import { RepostEntity }
-from './repost.entity';
 
 import { RepostInput }
 from './dto/repost.input';
 
 import { RepostProducer }
-from './repost.producer'; 
+from './repost.producer';
+import { RepostEntity } from './repost.entity';
+import { PostEntity } from '../post/post.entity';
 
-import { PostEntity }
-from '../post/post.entity';
-
- 
 @Injectable()
-export class RepostService
-{
-constructor(
+export class RepostService {
 
-@InjectRepository(RepostEntity)
-private readonly repostRepo:Repository<RepostEntity>,
-private readonly producer:RepostProducer,
+  constructor(
 
-@InjectRepository(PostEntity)
-private readonly postRepo:
-Repository<PostEntity>,
+    @InjectRepository(
+      RepostEntity,
+    )
 
-) {}
+    private readonly repostRepo:
+      Repository<RepostEntity>,
 
-  async repostPost(
-    userId: string,
-    input: RepostInput,
-  ) {
+    @InjectRepository(
+      PostEntity,
+    )
 
-    // ============================================
-    // CHECK ORIGINAL POST
-    // ============================================
+    private readonly postRepo:
+      Repository<PostEntity>,
 
-   const post =
-  await this.postRepo
-    .findOne({
+    private readonly producer:
+      RepostProducer,
+  ) {}
 
-      where: {
-        id:
-          input.postId,
-      },
-    });
+  // =====================================================
+  // CREATE REPOST
+  // =====================================================
 
-    if (!post) {
+  async repostPost(userId:string,input:RepostInput,){
 
+    
+    // CHECK POST
+    // =================================================
+    const post = await this.postRepo.findOne({
+        where:{ id:input.postId,  },
+      });
+
+    if (!post){
       throw new BadRequestException(
         'Post not found',
       );
     }
 
-    // ============================================
-    // PREVENT DUPLICATE REPOST
-    // ============================================
+    
+    // PREVENT DUPLICATES
+    // =================================================
+    const existing =      await this.repostRepo.findOne({
 
-    const existing =
-      await this.repostRepo.findOne({
-
-        where: {
-
+        where:{
           userId,
-
-          postId:
-            input.postId,
+          postId:input.postId,
         },
       });
 
-    if (existing) {
-
+    if (existing){
       throw new BadRequestException(
         'Already reposted',
       );
     }
 
-    // ============================================
-    // CREATE REPOST
-    // ============================================
+    // =================================================
+    // CREATE
+    // =================================================
 
-    const repost =
-      this.repostRepo.create({
+    const repost =   this.repostRepo.create({
         userId,
         postId:input.postId,
         quote:input.quote,
       });
-await this.repostRepo.save(repost,);
 
+    await this.repostRepo.save(repost,  );
 
+    // =================================================
+    // EMIT EVENT
+    // =================================================
 
-// ============================================
-// EMIT EVENT
-// ============================================
-await this.producer.repostCreated({
-repostId:repost.id,
-userId,
-postId:repost.postId,
-originalAuthorId:post.authorId,
-quote:repost.quote,
-createdAt:repost.createdAt.toISOString(),
-});
- return repost;
+    await this.producer.repostCreated({
+        repostId:repost.id,
+        userId,
+        postId:repost.postId,
+        originalAuthorId:post.authorId,
+        quote:repost.quote,
+        createdAt: repost.createdAt.toISOString(),
+      });
+    return repost;
   }
 
+  // =====================================================
+  // REMOVE REPOST
+  // =====================================================
 
-async findByPostId(
-  postId: string,
-) {
+  async removeRepost(userId:string,postId:string,){
 
-  return this.repostRepo
-    .findOne({
+    // =================================================
+    // FIND REPOST
+    // =================================================
 
-      where: {
+    const repost =
+      await this.repostRepo.findOne({
+        where:{
+          userId,
+          postId,
+        },
+      });
+
+    if (!repost){
+
+      throw new BadRequestException(
+        'Repost not found',
+      );
+    }
+
+    // =================================================
+    // REMOVE
+    // =================================================
+
+    await this.repostRepo.remove(repost,    );
+
+    // =================================================
+    // EMIT EVENT
+    // =================================================
+
+    await this.producer.repostRemoved({
+        repostId:repost.id,
+        userId,
+        postId,
+        createdAt:new Date().toISOString(),
+      });
+    return true;
+  }
+
+  // =====================================================
+  // FIND BY POST
+  // =====================================================
+
+  async findByPostId(
+    postId:string,
+  ){
+    return this.repostRepo.find({
+      where:{
         postId,
       },
-
-      order: {
-        createdAt: 'DESC',
+      order:{
+        createdAt:'DESC',
       },
     });
-}
-
-
+  }
 }

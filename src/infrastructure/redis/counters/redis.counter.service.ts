@@ -186,13 +186,39 @@ export class RedisCounterService {
     );
   }
 
-  async decrementReposts(
-    postId:string,
-  ){
-    await this.redis.decr(
-      this.repostsKey(postId),
+async decrementReposts(
+  postId:string,
+){
+
+  const key =
+    `post:${postId}:reposts`;
+
+  const current =
+    Number(
+
+      await this.redis.get(
+        key,
+      ) || 0,
     );
+
+  // ============================
+  // PREVENT NEGATIVE
+  // ============================
+
+  if (current <= 0){
+
+    await this.redis.set(
+      key,
+      0,
+    );
+
+    return;
   }
+
+  await this.redis.decr(
+    key,
+  );
+}
 
   async getRepostsCount(
     postId:string,

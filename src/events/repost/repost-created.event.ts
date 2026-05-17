@@ -1,16 +1,16 @@
 // src/common/constants/contracts/events/repost-created.event.ts
 
-export interface RepostCreatedEvent
-{
-  repostId: string;
+export interface RepostCreatedEvent {
 
-  userId: string;
+  repostId:string;
 
-  postId: string;
+  userId:string;
 
-  originalAuthorId: string;
+  postId:string;
 
-  quote?: string;
+  originalAuthorId:string;
 
-  createdAt: string;
+  quote?:string;
+
+  createdAt:string;
 }

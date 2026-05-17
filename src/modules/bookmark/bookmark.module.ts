@@ -32,25 +32,25 @@ import { BookmarkRepository } from '../../infrastructure/scylladb/repositories/b
 
 @Module({
 
-  imports:[
+imports:[
 
-    TypeOrmModule.forFeature([
-      BookmarkEntity,
-      PostEntity,
-    ]),
+TypeOrmModule.forFeature([
+BookmarkEntity,
+PostEntity,
+]),
 
-  ],
+],
 
-  providers:[
-    BookmarkRepository,
-    BookmarkService,
-    BookmarkProducer,
-    BookmarkResolver,
-  ],
-
-  exports:[
+providers:[
+BookmarkRepository,
+BookmarkService,
+BookmarkProducer,
 BookmarkResolver,
-    BookmarkService,
-  ],
+],
+
+exports:[
+BookmarkResolver,
+BookmarkService,
+],
 })
 export class BookmarkModule {}

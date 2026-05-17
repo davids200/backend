@@ -1,18 +1,16 @@
-// src/modules/repost/repost.producer.ts
-
 import {
   Injectable,
 } from '@nestjs/common';
 
 import { KafkaService }
-from '../../infrastructure/kafka/kafka.service'; 
-import { RepostCreatedEvent } from '../../events/repost/repost-created.event';
-import { KAFKA_TOPICS } from '../../common/constants/kafka-topics.constants';
- 
+from '../../infrastructure/kafka/kafka.service';
+
+import { KAFKA_TOPICS }
+from '../../common/constants/kafka-topics.constants';
 
 @Injectable()
-export class RepostProducer
-{
+export class RepostProducer {
+
   constructor(
 
     private readonly kafka:
@@ -20,20 +18,31 @@ export class RepostProducer
   ) {}
 
   async repostCreated(
-    data: RepostCreatedEvent,
-  ) {
+    payload:any,
+  ){
 
     await this.kafka.emit(
-      KAFKA_TOPICS.REPOST_CREATED,
-      data,
-      data.userId,
+
+      KAFKA_TOPICS
+        .REPOST_CREATED,
+
+      payload,
     );
   }
-
-
-
  
 
+async repostRemoved(
+  payload:any,
+){
+
+  await this.kafka.emit(
+
+    KAFKA_TOPICS
+      .REPOST_REMOVED,
+
+    payload,
+  );
+}
 
 
 }

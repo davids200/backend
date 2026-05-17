@@ -31,18 +31,14 @@ import { BookmarkConsumer } from './bookmarks/bookmark.consumer';
   ],
 
   providers:[
-
-    LikeConsumer,
-
-    CommentConsumer,
-
-    ViewConsumer,
-
-    EngagementConsumer,
+LikeConsumer,
+CommentConsumer,
+ViewConsumer,
+EngagementConsumer,
 FeedModule,
-    RepostConsumer,
+RepostConsumer,
 RankingConsumer,
-    BookmarkConsumer,
+BookmarkConsumer,
   ],
 })
 export class WorkersModule {}

@@ -2,11 +2,16 @@ import {
   Injectable,
   Logger,
   OnModuleInit,
-} from '@nestjs/common'; 
-import { KafkaService } from '../../infrastructure/kafka/kafka.service';
-import { RedisCounterService } from '../../infrastructure/redis/counters/redis.counter.service';
-import { KAFKA_TOPICS } from '../../common/constants/kafka-topics.constants';
+} from '@nestjs/common';
 
+import { KafkaService }
+from '../../infrastructure/kafka/kafka.service';
+
+import { RedisCounterService }
+from '../../infrastructure/redis/counters/redis.counter.service';
+
+import { KAFKA_TOPICS }
+from '../../common/constants/kafka-topics.constants';
 
 @Injectable()
 export class BookmarkConsumer
@@ -33,41 +38,65 @@ implements OnModuleInit {
 
   async start(){
 
-    // =================================================
+    // ================================================
     // BOOKMARK CREATED
-    // =================================================
+    // ================================================
 
     await this.kafka.consume(
 
-      'bookmark-group',
+      'bookmark-created-group',
 
       KAFKA_TOPICS
         .BOOKMARK_CREATED,
 
       async (event:any) => {
 
-        await this.handleBookmarkCreated(
-          event,
-        );
+        try {
+
+          await this.handleBookmarkCreated(
+            event,
+          );
+
+        } catch(error){
+
+          this.logger.error(
+
+            '❌ Bookmark create failed',
+
+            error,
+          );
+        }
       },
     );
 
-    // =================================================
+    // ================================================
     // BOOKMARK REMOVED
-    // =================================================
+    // ================================================
 
     await this.kafka.consume(
 
-      'bookmark-group',
+      'bookmark-removed-group',
 
       KAFKA_TOPICS
         .BOOKMARK_REMOVED,
 
       async (event:any) => {
 
-        await this.handleBookmarkRemoved(
-          event,
-        );
+        try {
+
+          await this.handleBookmarkRemoved(
+            event,
+          );
+
+        } catch(error){
+
+          this.logger.error(
+
+            '❌ Bookmark remove failed',
+
+            error,
+          );
+        }
       },
     );
 
@@ -76,17 +105,35 @@ implements OnModuleInit {
     );
   }
 
-  // ===================================================
-  // HANDLE BOOKMARK CREATED
-  // ===================================================
+  // ================================================
+  // CREATED
+  // ================================================
 
   private async handleBookmarkCreated(
     event:any,
   ){
 
-    await this.counter.incrementBookmarks(
-      event.targetId,
+    console.log(
+      'BOOKMARK CREATED EVENT',
+      event,
     );
+
+    const postId =
+      event.postId;
+
+    if (!postId){
+
+      this.logger.error(
+        '❌ Missing postId',
+      );
+
+      return;
+    }
+
+    await this.counter
+      .incrementBookmarks(
+        postId,
+      );
 
     await this.kafka.emit(
 
@@ -95,8 +142,7 @@ implements OnModuleInit {
 
       {
 
-        postId:
-          event.targetId,
+        postId,
 
         actorId:
           event.userId,
@@ -104,28 +150,45 @@ implements OnModuleInit {
         type:'BOOKMARK',
 
         createdAt:
-          new Date()
-            .toISOString(),
+          event.createdAt,
       },
     );
 
     this.logger.log(
 
-      `🔖 Bookmark created: ${event.targetId}`,
+      `🔖 Bookmark created: ${postId}`,
     );
   }
 
-  // ===================================================
-  // HANDLE BOOKMARK REMOVED
-  // ===================================================
+  // ================================================
+  // REMOVED
+  // ================================================
 
   private async handleBookmarkRemoved(
     event:any,
   ){
 
-    await this.counter.decrementBookmarks(
-      event.targetId,
+    console.log(
+      'BOOKMARK REMOVED EVENT',
+      event,
     );
+
+    const postId =
+      event.postId;
+
+    if (!postId){
+
+      this.logger.error(
+        '❌ Missing postId',
+      );
+
+      return;
+    }
+
+    await this.counter
+      .decrementBookmarks(
+        postId,
+      );
 
     await this.kafka.emit(
 
@@ -134,8 +197,7 @@ implements OnModuleInit {
 
       {
 
-        postId:
-          event.targetId,
+        postId,
 
         actorId:
           event.userId,
@@ -143,14 +205,13 @@ implements OnModuleInit {
         type:'BOOKMARK',
 
         createdAt:
-          new Date()
-            .toISOString(),
+          event.createdAt,
       },
     );
 
     this.logger.log(
 
-      `❌ Bookmark removed: ${event.targetId}`,
+      `🗑️ Bookmark removed: ${postId}`,
     );
   }
 }

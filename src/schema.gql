@@ -130,6 +130,7 @@ type Mutation {
   refreshToken(data: RefreshTokenInput!): AuthResponse!
   register(data: RegisterInput!): AuthResponse!
   removeBookmark(input: BookmarkPostInput!): Boolean!
+  removeRepost(postId: String!): Boolean!
   replyComment(data: ReplyCommentInput!): CommentModel!
   repostPost(data: RepostInput!): RepostEntity!
   requestPasswordReset(data: RequestPasswordResetInput!): Boolean!

@@ -38,41 +38,65 @@ implements OnModuleInit {
 
   async start(){
 
-    // =================================================
+    // ================================================
     // REPOST CREATED
-    // =================================================
+    // ================================================
 
     await this.kafka.consume(
 
-      'repost-group',
+      'repost-created-group',
 
       KAFKA_TOPICS
         .REPOST_CREATED,
 
       async (event:any) => {
 
-        await this.handleRepostCreated(
-          event,
-        );
+        try {
+
+          await this.handleRepostCreated(
+            event,
+          );
+
+        } catch(error){
+
+          this.logger.error(
+
+            '❌ Repost create failed',
+
+            error,
+          );
+        }
       },
     );
 
-    // =================================================
+    // ================================================
     // REPOST REMOVED
-    // =================================================
+    // ================================================
 
     await this.kafka.consume(
 
-      'repost-group',
+      'repost-removed-group',
 
       KAFKA_TOPICS
         .REPOST_REMOVED,
 
       async (event:any) => {
 
-        await this.handleRepostRemoved(
-          event,
-        );
+        try {
+
+          await this.handleRepostRemoved(
+            event,
+          );
+
+        } catch(error){
+
+          this.logger.error(
+
+            '❌ Repost remove failed',
+
+            error,
+          );
+        }
       },
     );
 
@@ -81,56 +105,75 @@ implements OnModuleInit {
     );
   }
 
-  // ===================================================
-  // HANDLE REPOST CREATED
-  // ===================================================
+  // ================================================
+  // CREATED
+  // ================================================
 
   private async handleRepostCreated(
     event:any,
   ){
 
-    await this.counter.incrementReposts(
-      event.targetId,
+    console.log(
+      'REPOST CREATED EVENT',
+      event,
     );
 
-    await this.kafka.emit(
+    const postId =
+      event.postId;
 
-      KAFKA_TOPICS
-        .ENGAGEMENT_SIGNAL,
+    if (!postId){
+
+      this.logger.error(
+        '❌ Missing postId',
+      );
+
+      return;
+    }
+
+    await this.counter.incrementReposts(postId,);
+
+    await this.kafka.emit(KAFKA_TOPICS.ENGAGEMENT_SIGNAL,
 
       {
-
-        postId:
-          event.targetId,
-
-        actorId:
-          event.userId,
-
+        postId,
+        actorId:event.userId,
         type:'REPOST',
-
-        createdAt:
-          new Date()
-            .toISOString(),
+        createdAt:event.createdAt,
       },
     );
-
-    this.logger.log(
-
-      `🔁 Repost created: ${event.targetId}`,
+    this.logger.log(`🔁 Repost created: ${postId}`,
     );
   }
 
-  // ===================================================
-  // HANDLE REPOST REMOVED
-  // ===================================================
+  // ================================================
+  // REMOVED
+  // ================================================
 
   private async handleRepostRemoved(
     event:any,
   ){
 
-    await this.counter.decrementReposts(
-      event.targetId,
+    console.log(
+      'REPOST REMOVED EVENT',
+      event,
     );
+
+    const postId =
+      event.postId;
+
+    if (!postId){
+
+      this.logger.error(
+        '❌ Missing postId',
+      );
+
+      return;
+    }
+
+    await this.counter
+      .decrementReposts(
+        postId,
+      );
 
     await this.kafka.emit(
 
@@ -139,8 +182,7 @@ implements OnModuleInit {
 
       {
 
-        postId:
-          event.targetId,
+        postId,
 
         actorId:
           event.userId,
@@ -148,14 +190,13 @@ implements OnModuleInit {
         type:'REPOST',
 
         createdAt:
-          new Date()
-            .toISOString(),
+          event.createdAt,
       },
     );
 
     this.logger.log(
 
-      `❌ Repost removed: ${event.targetId}`,
+      `🗑️ Repost removed: ${postId}`,
     );
   }
 }

@@ -53,4 +53,32 @@ export class RepostResolver
         data,
       );
   }
+
+
+
+
+@Mutation(() => Boolean)
+
+@UseGuards(
+  GqlAuthGuard,
+)
+
+async removeRepost(
+
+  @CurrentUser()
+  user:any,
+
+  @Args('postId')
+  postId:string,
+){
+
+  return this.repostService
+    .removeRepost(
+
+      user.id,
+
+      postId,
+    );
+
+}
 }
