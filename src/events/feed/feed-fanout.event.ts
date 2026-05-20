@@ -1,13 +1,16 @@
 export interface FeedFanoutEvent {
 
-  postId: string;
+  postId:string;
 
-  authorId: string;
+  authorId:string;
 
-  visibility: string;
+  visibility:string;
 
-  createdAt: string;
+  createdAt:string;
 
-  locationId?: string;
-  hashtags?: string[];
+  followerIds:string[];
+
+  locationId?:string;
+
+  hashtags?:string[];
 }

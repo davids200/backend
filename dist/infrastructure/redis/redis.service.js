@@ -62,6 +62,15 @@ let RedisService = class RedisService {
     async del(key) {
         return this.client.del(key);
     }
+    async sadd(key, value) {
+        return this.client.sadd(key, value);
+    }
+    async srem(key, value) {
+        return this.client.srem(key, value);
+    }
+    async smembers(key) {
+        return this.client.smembers(key);
+    }
 };
 exports.RedisService = RedisService;
 exports.RedisService = RedisService = __decorate([

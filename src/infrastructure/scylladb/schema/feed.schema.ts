@@ -24,29 +24,36 @@ export const FEED_SCHEMA = [
   `
   CREATE TABLE IF NOT EXISTS social_app.user_feed (
 
-    author_id UUID,
+  author_id UUID,
 
-    created_at TIMESTAMP,
-    item_type TEXT,
+  bucket_date DATE,
 
-    post_id UUID,
+  score BIGINT,
 
-    PRIMARY KEY (
+  item_type TEXT,
 
-      (author_id),
+  created_at TIMESTAMP,
 
-      created_at,
+  post_id UUID,
 
-      post_id
-    )
+  PRIMARY KEY (
+
+    (author_id, bucket_date),
+
+    score,
+    created_at,
+    post_id
   )
+)
 
-  WITH CLUSTERING ORDER BY (
+WITH CLUSTERING ORDER BY (
 
-    created_at DESC,
+  score DESC,
 
-    post_id DESC
-  );
+  created_at DESC,
+
+  post_id DESC
+);
   `,
 
   // =====================================================

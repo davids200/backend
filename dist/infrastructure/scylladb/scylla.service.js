@@ -14,32 +14,40 @@ let ScyllaService = ScyllaService_1 = class ScyllaService {
     logger = new common_1.Logger(ScyllaService_1.name);
     client;
     // =====================================================
-    // MODULE INIT
+    // INIT
     // =====================================================
     async onModuleInit() {
-        try {
-            this.client =
-                new cassandra_driver_1.Client({
-                    contactPoints: [
-                        '127.0.0.1',
-                    ],
-                    localDataCenter: 'datacenter1',
-                });
-            await this.client.connect();
-            this.logger.log('✅ Scylla connected');
-        }
-        catch (error) {
-            this.logger.error('❌ Scylla initialization failed');
-            throw error;
-        }
+        this.client =
+            new cassandra_driver_1.Client({
+                contactPoints: [
+                    '127.0.0.1',
+                ],
+                localDataCenter: 'datacenter1',
+                keyspace: 'social_app',
+            });
+        await this.client.connect();
+        this.logger.log('✅ ScyllaDB connected');
     }
     // =====================================================
-    // EXECUTE QUERY
+    // EXECUTE
     // =====================================================
-    async execute(query, params = []) {
-        return this.client.execute(query, params, {
+    async execute(query, params = [], options = {}) {
+        return this.client.execute(query, params, options);
+    }
+    // =====================================================
+    // BATCH
+    // =====================================================
+    async batch(queries) {
+        return this.client.batch(queries, {
             prepare: true,
         });
+    }
+    // =====================================================
+    // SHUTDOWN
+    // =====================================================
+    async shutdown() {
+        await this.client.shutdown();
+        this.logger.log('🛑 ScyllaDB disconnected');
     }
 };
 exports.ScyllaService = ScyllaService;

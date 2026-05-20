@@ -1,36 +1,9 @@
-// src/modules/feed/services/feed-query/feed-query.service.ts
+import {
+  Injectable,
+} from '@nestjs/common';
 
-import { Injectable } from '@nestjs/common';
-
-import { InjectRepository }
-from '@nestjs/typeorm';
-
-import { Repository }
-from 'typeorm';
-
-import { HomeFeedRepository }
-from '../../../infrastructure/scylladb/repositories/feed/home.feed.repo';
-
-import { UserFeedRepository }
-from '../../../infrastructure/scylladb/repositories/feed/user.feed.repo';
-
-import { LocationFeedRepository }
-from '../../../infrastructure/scylladb/repositories/feed/location.feed.repo';
-
-import { HashtagFeedRepository }
-from '../../../infrastructure/scylladb/repositories/feed/hashtag.feed.repo';
-
-import { PostService }
-from '../../post/post.service';
-
-import { RepostEntity }
-from '../../repost/repost.entity';
-
-import { FeedItemType }
-from '../types/feed-item.type';
-
-import { VisibilityService }
-from './visibility/visibility.service';
+import { ScyllaService }
+from '../../../infrastructure/scylladb/scylla.service';
 
 import { FeedRankingService }
 from '../../ranking/feed-ranking.service';
@@ -40,422 +13,552 @@ export class FeedQueryService {
 
   constructor(
 
-    @InjectRepository(RepostEntity)
-    private readonly repostRepo:
-      Repository<RepostEntity>,
+    private readonly scylla:
+      ScyllaService,
 
-    private readonly homeFeedRepo:
-      HomeFeedRepository,
-
-    private readonly userFeedRepo:
-      UserFeedRepository,
-
-    private readonly locationFeedRepo:
-      LocationFeedRepository,
-
-    private readonly hashtagFeedRepo:
-      HashtagFeedRepository,
-
-    private readonly postService:
-      PostService,
-
-    private readonly visibilityService:
-      VisibilityService,
-
-    private readonly rankingService:
+    private readonly ranking:
       FeedRankingService,
   ) {}
 
   // =====================================================
-  // HOME FEED
+  // INSERT HOME FEED
   // =====================================================
 
-  async getHomeFeed(params:{
-    userId:string;
-    viewerId?:string;
-    viewerLocationId?:string;
-    limit?:number;
-    cursor?:Date;
-  }) {
-
-    const referenceDate =
-      params.cursor || new Date();
+  async insertHomeFeed(
+    payload:any,
+  ){
 
     const bucketDate =
-      referenceDate
-        .toISOString()
-        .split('T')[0];
 
-    const rows =
-      await this.homeFeedRepo.getFeed({
+      new Date(
+        payload.createdAt,
+      )
+      .toISOString()
+      .split('T')[0];
 
-        userId:
+    await this.scylla.execute(
+
+      `
+      INSERT INTO home_feed (
+
+        user_id,
+
+        bucket_date,
+
+        score,
+
+        item_type,
+
+        created_at,
+
+        post_id,
+
+        author_id
+
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+      `,
+
+      [
+
+        payload.userId,
+
+        bucketDate,
+
+        payload.score,
+
+        'POST',
+
+        payload.createdAt,
+
+        payload.postId,
+
+        payload.authorId,
+      ],
+
+      {
+
+        prepare:true,
+      },
+    );
+  }
+
+  // =====================================================
+  // INSERT USER FEED
+  // =====================================================
+
+  async insertUserFeed(
+    payload:any,
+  ){
+
+    const bucketDate =
+
+      new Date(
+        payload.createdAt,
+      )
+      .toISOString()
+      .split('T')[0];
+
+    await this.scylla.execute(
+
+      `
+      INSERT INTO user_feed (
+
+        author_id,
+
+        bucket_date,
+
+        score,
+
+        item_type,
+
+        created_at,
+
+        post_id
+
+      ) VALUES (?, ?, ?, ?, ?, ?)
+      `,
+
+      [
+
+        payload.authorId,
+
+        bucketDate,
+
+        payload.score,
+
+        'POST',
+
+        payload.createdAt,
+
+        payload.postId,
+      ],
+
+      {
+
+        prepare:true,
+      },
+    );
+  }
+
+  // =====================================================
+  // INSERT LOCATION FEED
+  // =====================================================
+
+  async insertLocationFeed(
+    payload:any,
+  ){
+
+    const bucketDate =
+
+      new Date(
+        payload.createdAt,
+      )
+      .toISOString()
+      .split('T')[0];
+
+    await this.scylla.execute(
+
+      `
+      INSERT INTO location_feed (
+
+        location_id,
+
+        bucket_date,
+
+        score,
+
+        item_type,
+
+        created_at,
+
+        post_id,
+
+        author_id
+
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+      `,
+
+      [
+
+        payload.locationId,
+
+        bucketDate,
+
+        payload.score,
+
+        'POST',
+
+        payload.createdAt,
+
+        payload.postId,
+
+        payload.authorId,
+      ],
+
+      {
+
+        prepare:true,
+      },
+    );
+  }
+
+  // =====================================================
+  // INSERT HASHTAG FEED
+  // =====================================================
+
+  async insertHashtagFeed(
+    payload:any,
+  ){
+
+    const bucketDate =
+
+      new Date(
+        payload.createdAt,
+      )
+      .toISOString()
+      .split('T')[0];
+
+    await this.scylla.execute(
+
+      `
+      INSERT INTO hashtag_feed (
+
+        hashtag,
+
+        bucket_date,
+
+        score,
+
+        item_type,
+
+        created_at,
+
+        post_id,
+
+        author_id
+
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+      `,
+
+      [
+
+        payload.hashtag,
+
+        bucketDate,
+
+        payload.score,
+
+        'POST',
+
+        payload.createdAt,
+
+        payload.postId,
+
+        payload.authorId,
+      ],
+
+      {
+
+        prepare:true,
+      },
+    );
+  }
+
+  // =====================================================
+  // GET HOME FEED
+  // =====================================================
+
+  async getHomeFeed(
+    params:{
+      userId:string;
+      bucketDate:string;
+      limit?:number;
+      cursor?:Date;
+    },
+  ){
+
+    const result =
+      await this.scylla.execute(
+
+        `
+        SELECT *
+        FROM home_feed
+        WHERE user_id = ?
+        AND bucket_date = ?
+        LIMIT ?
+        `,
+
+        [
+
           params.userId,
 
-        bucketDate,
+          params.bucketDate,
 
-        limit:
-          params.limit,
+          params.limit || 50,
+        ],
 
-        cursor:
-          params.cursor,
-      });
+        {
 
-    const rankedPosts =
-      await this.attachRankScores(
-        rows,
+          prepare:true,
+        },
       );
 
-    return this.buildFeedResponse(
+    const ranked =
+      await this.attachRankScores(
+        result.rows,
+      );
 
-      rankedPosts,
+   return {
 
-      params.viewerId,
+  data:
 
-      params.viewerLocationId,
-    );
+    ranked.map(
+
+      row =>
+
+        this.mapFeedRow(
+          row,
+        ),
+    ),
+};
   }
 
   // =====================================================
-  // USER FEED
+  // GET USER FEED
   // =====================================================
 
-  async getUserFeed(params:{
-    authorId:string;
-    viewerId?:string;
-    viewerLocationId?:string;
-    bucketDate?:string;
-    limit?:number;
-    cursor?:Date;
-  }) {
+  async getUserFeed(
+    params:{
+      authorId:string;
+      bucketDate:string;
+      limit?:number;
+      cursor?:Date;
+    },
+  ){
 
-    const bucketDate =
-      params.bucketDate ||
+    const result =
+      await this.scylla.execute(
 
-      (params.cursor || new Date())
-        .toISOString()
-        .split('T')[0];
+        `
+        SELECT *
+        FROM user_feed
+        WHERE author_id = ?
+        AND bucket_date = ?
+        LIMIT ?
+        `,
 
-    const rows =
-      await this.userFeedRepo.getPosts({
+        [
 
-        authorId:
           params.authorId,
 
-        bucketDate,
+          params.bucketDate,
 
-        limit:
-          params.limit,
+          params.limit || 50,
+        ],
 
-        cursor:
-          params.cursor,
-      });
+        {
 
-    const rankedPosts =
+          prepare:true,
+        },
+      );
+
+    return {
+
+      data:result.rows,
+    };
+  }
+
+  // =====================================================
+  // GET LOCATION FEED
+  // =====================================================
+
+  async getLocationFeed(
+    params:{
+      locationId:string;
+      bucketDate:string;
+      limit?:number;
+      cursor?:Date;
+    },
+  ){
+
+    const result =
+      await this.scylla.execute(
+
+        `
+        SELECT *
+        FROM location_feed
+        WHERE location_id = ?
+        AND bucket_date = ?
+        LIMIT ?
+        `,
+
+        [
+
+          params.locationId,
+
+          params.bucketDate,
+
+          params.limit || 50,
+        ],
+
+        {
+
+          prepare:true,
+        },
+      );
+
+    const ranked =
       await this.attachRankScores(
-        rows,
+        result.rows,
       );
 
-    return this.buildFeedResponse(
+   return {
 
-      rankedPosts,
+  data:
 
-      params.viewerId,
+    ranked.map(
 
-      params.viewerLocationId,
-    );
+      row =>
+
+        this.mapFeedRow(
+          row,
+        ),
+    ),
+};
   }
 
   // =====================================================
-  // LOCATION FEED
+  // GET HASHTAG FEED
   // =====================================================
 
-  async getLocationFeed(params:{
-    locationId:string;
-    viewerId?:string;
-    viewerLocationId?:string;
-    bucketDate?:string;
-    limit?:number;
-    cursor?:Date;
-  }) {
+  async getHashtagFeed(
+    params:{
+      hashtag:string;
+      bucketDate:string;
+      limit?:number;
+      cursor?:Date;
+    },
+  ){
 
-    const rows =
-      await this.locationFeedRepo.getFeed(
-        params,
+    const result =
+      await this.scylla.execute(
+
+        `
+        SELECT *
+        FROM hashtag_feed
+        WHERE hashtag = ?
+        AND bucket_date = ?
+        LIMIT ?
+        `,
+
+        [
+
+          params.hashtag,
+
+          params.bucketDate,
+
+          params.limit || 50,
+        ],
+
+        {
+
+          prepare:true,
+        },
       );
 
-    const rankedPosts =
+    const ranked =
       await this.attachRankScores(
-        rows.posts,
+        result.rows,
       );
 
-    return this.buildFeedResponse(
+    return {
 
-      rankedPosts,
+  data:
 
-      params.viewerId,
+    ranked.map(
 
-      params.viewerLocationId,
-    );
+      row =>
+
+        this.mapFeedRow(
+          row,
+        ),
+    ),
+};
   }
 
   // =====================================================
-  // HASHTAG FEED
-  // =====================================================
-
-  async getHashtagFeed(params:{
-    hashtag:string;
-    viewerId?:string;
-    viewerLocationId?:string;
-    limit?:number;
-    cursor?:Date;
-  }) {
-
-    const normalized =
-      params.hashtag
-        .replace('#','')
-        .trim()
-        .toLowerCase();
-
-    const rows =
-      await this.hashtagFeedRepo.getFeed({
-
-        hashtag:
-          normalized,
-
-        limit:
-          params.limit,
-
-        cursor:
-          params.cursor,
-      });
-
-    const rankedPosts =
-      await this.attachRankScores(
-        rows,
-      );
-
-    return this.buildFeedResponse(
-
-      rankedPosts,
-
-      params.viewerId,
-
-      params.viewerLocationId,
-    );
-  }
-
-  // =====================================================
-  // DISCOVERY FEED
-  // =====================================================
-
-  async getDiscoveryFeed(params:{
-    userId:string;
-    viewerId?:string;
-    viewerLocationId?:string;
-    locationId?:string;
-    hashtags?:string[];
-    limit?:number;
-    cursor?:Date;
-  }) {
-
-    const {
-      userId,
-      viewerId,
-      viewerLocationId,
-      limit = 20,
-      cursor,
-    } = params;
-
-    return this.getHomeFeed({
-
-      userId,
-
-      viewerId,
-
-      viewerLocationId,
-
-      limit,
-
-      cursor,
-    });
-  }
-
-  // =====================================================
-  // ATTACH REDIS RANK SCORES
+  // ATTACH LIVE RANK SCORES
   // =====================================================
 
   private async attachRankScores(
     rows:any[],
-  ) {
+  ){
 
-    const rankedPosts =
+    const ranked =
       await Promise.all(
 
-        rows.map(async row => {
+        rows.map(
 
-          const score =
-            await this.rankingService
-              .getPostRankScore(
+          async row => {
 
-                row.post_id,
-              );
+            const score =
 
-          return {
+              await this.ranking
+                .getPostRankScore(
 
-            ...row,
+                  row.post_id,
+                );
 
-            rankScore:score,
-          };
-        }),
+            return {
+
+              ...row,
+
+              liveScore:
+                score,
+            };
+          },
+        ),
       );
 
-    // ================================================
-    // SORT BY SCORE
-    // ================================================
-
-    rankedPosts.sort(
+    ranked.sort(
 
       (a,b) =>
-        b.rankScore - a.rankScore,
+
+        b.liveScore -
+        a.liveScore,
     );
 
-    return rankedPosts;
+    return ranked;
   }
 
-  // =====================================================
-  // BUILD FEED RESPONSE
-  // =====================================================
 
-  private async buildFeedResponse(
-    rows:any[],
-    viewerId?:string,
-    viewerLocationId?:string,
-  ) {
 
-    if (!rows || rows.length === 0) {
 
-      return {
+private mapFeedRow(
+  row:any,
+){
 
-        items:[],
+  return {
 
-        nextCursor:null,
-      };
-    }
+    postId:
+      row.post_id,
 
-    const results:any[] = [];
+    authorId:
+      row.author_id,
 
-    for (const row of rows) {
+    createdAt:
+      row.created_at,
 
-      // ===============================================
-      // NORMAL POSTS
-      // ===============================================
+    itemType:
+      row.item_type,
 
-      if (
-        row.item_type ===
-        FeedItemType.POST
-      ) {
+    score:
+      row.score,
 
-        const post =
-          await this.postService
-            .getPostById(
-              row.post_id,
-            );
+    liveScore:
+      row.liveScore,
+  };
+}
 
-        if (!post) {
-          continue;
-        }
 
-        const canView =
-          await this.visibilityService
-            .canViewPost({
-
-              viewerId,
-
-              authorId:
-                post.authorId,
-
-              visibility:
-                post.visibility,
-
-              viewerLocationId,
-
-              postLocationId:
-                post.locationId,
-            });
-
-        if (!canView) {
-          continue;
-        }
-
-        results.push({
-
-          type:
-            FeedItemType.POST,
-
-          score:
-            row.rankScore || row.score,
-
-          createdAt:
-            row.created_at,
-
-          data:post,
-        });
-      }
-
-      // ===============================================
-      // REPOSTS
-      // ===============================================
-
-      if (
-
-        row.item_type ===
-        FeedItemType.REPOST ||
-
-        row.item_type ===
-        FeedItemType.QUOTE_REPOST
-      ) {
-
-        const repost =
-          await this.repostRepo.findOne({
-
-            where:{
-              postId:
-                row.post_id,
-            },
-
-            order:{
-              createdAt:'DESC',
-            },
-          });
-
-        if (!repost) {
-          continue;
-        }
-
-        results.push({
-
-          type:
-            row.item_type,
-
-          score:
-            row.rankScore || row.score,
-
-          createdAt:
-            row.created_at,
-
-          data:repost,
-        });
-      }
-    }
-
-    return {
-
-      items:results,
-
-      nextCursor:
-        rows[rows.length - 1]
-          ?.created_at || null,
-    };
-  }
 }

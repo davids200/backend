@@ -28,9 +28,10 @@ let FeedResolver = class FeedResolver {
     // HOME FEED
     // =====================================================
     async homeFeed(user, limit, cursor) {
-        return this.feedService
-            .getHomeFeed({
+        const bucketDate = new Date().toISOString().split('T')[0];
+        return this.feedService.getHomeFeed({
             userId: user.id,
+            bucketDate,
             limit,
             cursor,
         });
@@ -39,9 +40,12 @@ let FeedResolver = class FeedResolver {
     // USER PROFILE FEED
     // =====================================================
     async userFeed(authorId, limit, cursor) {
-        return this.feedService
-            .getUserFeed({
+        const bucketDate = new Date()
+            .toISOString()
+            .split('T')[0];
+        return this.feedService.getUserFeed({
             authorId,
+            bucketDate,
             limit,
             cursor,
         });
@@ -50,9 +54,13 @@ let FeedResolver = class FeedResolver {
     // LOCATION FEED
     // =====================================================
     async locationFeed(locationId, limit, cursor) {
+        const bucketDate = new Date()
+            .toISOString()
+            .split('T')[0];
         return this.feedService
             .getLocationFeed({
             locationId,
+            bucketDate,
             limit,
             cursor,
         });
@@ -61,9 +69,13 @@ let FeedResolver = class FeedResolver {
     // HASHTAG FEED
     // =====================================================
     async hashtagFeed(hashtag, limit, cursor) {
+        const bucketDate = new Date()
+            .toISOString()
+            .split('T')[0];
         return this.feedService
             .getHashtagFeed({
             hashtag,
+            bucketDate,
             limit,
             cursor,
         });

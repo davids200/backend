@@ -1,41 +1,76 @@
-console.log("Starting POST CONSUMER");
+import {
+  Injectable,
+  Logger,
+  OnModuleInit,
+} from '@nestjs/common';
 
-import {  Injectable,  Logger,} from '@nestjs/common';
-import { KafkaService }from '../../infrastructure/kafka/kafka.service';
- 
+import { KafkaService }
+from '../../infrastructure/kafka/kafka.service';
 
 import { FeedProducer }
 from '../../modules/feed/feed.producer';
 
 import { NotificationProducer }
 from '../../modules/notification/notification.producer';
-import { PostCreatedEvent } from '../../events/post/post-created.event';
-import { KAFKA_TOPICS } from '../../common/constants/kafka-topics.constants';
- 
+
+import { RedisFollowService }
+from '../../infrastructure/redis/follow/redis.follow.service';
+
+import { PostCreatedEvent }
+from '../../events/post/post-created.event';
+
+import { KAFKA_TOPICS }
+from '../../common/constants/kafka-topics.constants';
 
 @Injectable()
-export class PostConsumer {
-  private readonly logger =new Logger(PostConsumer.name,);
-  private started = false;  
+export class PostConsumer
+implements OnModuleInit {
+
+  private readonly logger =
+    new Logger(
+      PostConsumer.name,
+    );
+
+  private started = false;
 
   constructor(
-    private readonly kafka: KafkaService,
-    private readonly feed: FeedProducer,
-    private readonly notification: NotificationProducer,
-  ) {
- console.log('✅ PostConsumer initialized in Constructor');
 
+    private readonly kafka:
+      KafkaService,
+
+    private readonly feed:
+      FeedProducer,
+
+    private readonly notification:
+      NotificationProducer,
+
+    private readonly followRedis:
+      RedisFollowService,
+  ) {
+
+    console.log(
+      '✅ PostConsumer initialized',
+    );
   }
 
-  async onModuleInit(): Promise<void> {
-     this.logger.log('✅ PostConsumer initialized...............');
+  // =====================================================
+  // MODULE INIT
+  // =====================================================
+
+  async onModuleInit(){
 
     try {
-      this.logger.log('🔥 Bootstrap starting...');
+
       await this.bootstrap();
-      this.logger.log('✅ Bootstrap complete');
-    } catch (err) {
-      this.logger.error('❌ Bootstrap failed', err);
+
+    } catch(error){
+
+      this.logger.error(
+
+        '❌ Bootstrap failed',
+
+        error,
+      );
     }
   }
 
@@ -43,40 +78,61 @@ export class PostConsumer {
   // BOOTSTRAP
   // =====================================================
 
-  private async bootstrap() {
+  private async bootstrap(){
 
-    if (this.started) {
+    if (this.started){
+
       return;
     }
 
     this.started = true;
 
     await this.start();
+
+    this.logger.log(
+      '✅ PostConsumer bootstrapped',
+    );
   }
 
   // =====================================================
   // START CONSUMER
   // =====================================================
- 
-  async start() {   
 
-    
+  private async start(){
 
-    await this.kafka.consume<PostCreatedEvent>(
+    await this.kafka.consume<
+
+      PostCreatedEvent
+
+    >(
 
       'post-group',
 
-      KAFKA_TOPICS.POST_CREATED,
+      KAFKA_TOPICS
+        .POST_CREATED,
 
       async (event) => {
 
-      console.log('🔥 FEED CONSUMER STARTED',
-  );
+        try {
 
-        await this.handlePostCreated(
-          event,
-        );
+          await this.handlePostCreated(
+            event,
+          );
+
+        } catch(error){
+
+          this.logger.error(
+
+            '❌ Post processing failed',
+
+            error,
+          );
+        }
       },
+    );
+
+    this.logger.log(
+      '✅ PostConsumer started',
     );
   }
 
@@ -84,39 +140,102 @@ export class PostConsumer {
   // HANDLE POST CREATED
   // =====================================================
 
-  private async handlePostCreated(event: PostCreatedEvent,) { 
+  private async handlePostCreated(
+    event:PostCreatedEvent,
+  ){
 
-    await this.feed.fanoutPost({
-      postId:event.postId,
-      authorId:event.authorId,
-      visibility:event.visibility,
-      createdAt:event.createdAt,
-      locationId:event.locationId,
-      hashtags:event.hashtags
-    });
+    console.log(
+      '🔥 POST EVENT',
+      event,
+    );
+
+    // =================================================
+    // LOAD FOLLOWERS
+    // =================================================
+
+    const followerIds =
+
+      await this.followRedis
+        .getFollowers(
+
+          event.authorId,
+        );
+
+    console.log(
+      'FOLLOWERS',
+      followerIds,
+    );
+
+    // =================================================
+    // FEED FANOUT
+    // =================================================
+
+    await this.feed
+      .fanoutPost({
+
+        postId:
+          event.postId,
+
+        authorId:
+          event.authorId,
+
+        followerIds,
+
+        visibility:
+          event.visibility,
+
+        createdAt:
+          event.createdAt,
+
+        locationId:
+          event.locationId,
+
+        hashtags:
+          event.hashtags,
+      });
+
+    // =================================================
+    // MENTIONS
+    // =================================================
 
     if (
       event.mentions?.length
-    ) {
+    ){
 
       await Promise.all(
 
         event.mentions.map(
 
-          async (mentionUserId) => {
+          async (
+            mentionUserId,
+          ) => {
 
-            await this.notification.sendNotification({
-                userId:mentionUserId,
-                actorId:event.authorId,
-                type:'mention',
-                referenceId:event.postId,
-                createdAt:event.createdAt,
+            await this.notification
+              .sendNotification({
+
+                userId:
+                  mentionUserId,
+
+                actorId:
+                  event.authorId,
+
+                type:
+                  'mention',
+
+                referenceId:
+                  event.postId,
+
+                createdAt:
+                  event.createdAt,
               });
           },
         ),
       );
     }
 
-    this.logger.log(`✅ DONE: ${event.postId}`,);
+    this.logger.log(
+
+      `✅ DONE: ${event.postId}`,
+    );
   }
 }

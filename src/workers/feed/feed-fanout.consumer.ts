@@ -14,12 +14,12 @@ import { KAFKA_TOPICS }
 from '../../common/constants/kafka-topics.constants';
 
 @Injectable()
-export class FeedConsumer
+export class FeedFanoutConsumer
 implements OnModuleInit {
 
   private readonly logger =
     new Logger(
-      FeedConsumer.name,
+      FeedFanoutConsumer.name,
     );
 
   constructor(
@@ -35,10 +35,6 @@ implements OnModuleInit {
 
     await this.start();
   }
-
-  // =====================================================
-  // START
-  // =====================================================
 
   async start(){
 
@@ -70,7 +66,7 @@ implements OnModuleInit {
     );
 
     this.logger.log(
-      '✅ FeedConsumer started',
+      '✅ FeedFanoutConsumer started',
     );
   }
 
@@ -82,19 +78,32 @@ implements OnModuleInit {
     event:any,
   ){
 
-    console.log(
-      'FANOUT EVENT',
-      event,
-    );
+    const {
+
+      postId,
+
+      authorId,
+
+      followerIds,
+    } = event;
+
+    // ================================================
+    // DISTRIBUTE TO FOLLOWERS
+    // ================================================
 
     await this.feed
-      .fanoutPost(
-        event,
-      );
+      .fanoutPost({
+
+        postId,
+
+        authorId,
+
+        followerIds,
+      });
 
     this.logger.log(
 
-      `📨 Feed distributed: ${event.postId}`,
+      `📨 Fanout completed: ${postId}`,
     );
   }
 }

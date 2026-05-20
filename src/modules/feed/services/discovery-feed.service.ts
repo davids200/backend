@@ -18,13 +18,14 @@ export class DiscoveryFeedService {
   // DISCOVERY FEED
   // =====================================================
 
-  async getDiscoveryFeed(params: {
-    userId: string;
-    locationId?: string;
-    hashtags?: string[];
-    limit?: number;
-    cursor?: Date;
-  }) {
+  async getDiscoveryFeed(params:{
+    userId:string;
+    locationId?:string;
+    hashtags?:string[];
+    limit?:number;
+    cursor?:Date;
+  }){
+
     const {
       userId,
       locationId,
@@ -34,57 +35,93 @@ export class DiscoveryFeedService {
     } = params;
 
     // ================================================
+    // BUCKET DATE
+    // ================================================
+
+    const bucketDate =
+
+      new Date()
+        .toISOString()
+        .split('T')[0];
+
+    // ================================================
     // DEDUPLICATION MAP
     // ================================================
 
     const results =
-      new Map<string, any>();
+      new Map<string,any>();
 
     // ================================================
     // HOME FEED
     // ================================================
 
-    const homeFeed =await this.feedQuery.getHomeFeed({
+    const homeFeed =
+      await this.feedQuery
+        .getHomeFeed({
+
           userId,
+
+          bucketDate,
+
           limit,
+
           cursor,
         });
 
-    for (const item of homeFeed.items) {
-      const id = item?.data?.id;
-      if (id) {
-        results.set(id,item,);
+    for (
+      const item
+      of homeFeed.data
+    ){
+
+      const id =
+        item?.postId;
+
+      if (id){
+
+        results.set(
+          id,
+          item,
+        );
       }
     }
-
-
-
 
     // ================================================
     // LOCATION FEED
     // ================================================
-    if (locationId) {
+
+    if (locationId){
 
       const locationFeed =
         await this.feedQuery
           .getLocationFeed({
+
             locationId,
+
+            bucketDate,
+
             limit,
+
             cursor,
           });
 
-      for (const item of locationFeed.items) {
-        const id = item?.data?.id;
-        if (id) {
-          results.set(id,item,);
+      for (
+        const item
+        of locationFeed.data
+      ){
+
+        const id =
+          item?.postId;
+
+        if (id){
+
+          results.set(
+            id,
+            item,
+          );
         }
       }
     }
 
-
-
-
-    
     // ================================================
     // HASHTAG FEEDS
     // ================================================
@@ -92,11 +129,12 @@ export class DiscoveryFeedService {
     for (
       const rawHashtag
       of hashtags
-    ) {
+    ){
 
       const hashtag =
+
         rawHashtag
-          .replace('#', '')
+          .replace('#','')
           .trim()
           .toLowerCase();
 
@@ -106,6 +144,8 @@ export class DiscoveryFeedService {
 
             hashtag,
 
+            bucketDate,
+
             limit,
 
             cursor,
@@ -113,13 +153,13 @@ export class DiscoveryFeedService {
 
       for (
         const item
-        of hashtagFeed.items
-      ) {
+        of hashtagFeed.data
+      ){
 
         const id =
-          item?.data?.id;
+          item?.postId;
 
-        if (id) {
+        if (id){
 
           results.set(
             id,
@@ -144,17 +184,36 @@ export class DiscoveryFeedService {
 
     items.sort(
 
-      (a, b) =>
+      (a,b) => {
 
-        new Date(
-          b.createdAt,
-        ).getTime()
+        const scoreA =
+          a.liveScore || 0;
 
-        -
+        const scoreB =
+          b.liveScore || 0;
 
-        new Date(
-          a.createdAt,
-        ).getTime(),
+        if (
+          scoreB !== scoreA
+        ){
+
+          return (
+            scoreB - scoreA
+          );
+        }
+
+        return (
+
+          new Date(
+            b.createdAt,
+          ).getTime()
+
+          -
+
+          new Date(
+            a.createdAt,
+          ).getTime()
+        );
+      },
     );
 
     // ================================================

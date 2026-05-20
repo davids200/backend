@@ -24,13 +24,21 @@ from './repost/repost.consumer';
 import { RankingConsumer } from './ranking/ranking.consumer';
 import { FeedModule } from '../modules/feed/feed.module';
 import { BookmarkConsumer } from './bookmarks/bookmark.consumer';
+import { PostConsumer } from './post/post.consumer';
+import { FeedConsumer } from './feed/feed.consumer';
+import { LocationModule } from '../modules/location/location.module';
+import { RedisModule } from '../infrastructure/redis/redis.module';
 
 @Module({
   imports: [
     FeedModule,
-  ],
+    LocationModule,
+    RedisModule,
+  ], 
 
   providers:[
+    PostConsumer,
+    FeedConsumer,
 LikeConsumer,
 CommentConsumer,
 ViewConsumer,

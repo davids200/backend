@@ -94,4 +94,47 @@ implements OnModuleDestroy {
       key,
     );
   }
+
+
+
+  async sadd(
+
+  key:string,
+
+  value:string,
+){
+
+  return this.client.sadd(
+    key,
+    value,
+  );
+}
+
+
+
+
+async srem(
+
+  key:string,
+
+  value:string,
+){
+
+  return this.client.srem(
+    key,
+    value,
+  );
+}
+
+
+
+
+async smembers(
+  key:string,
+){
+
+  return this.client.smembers(
+    key,
+  );
+}
 }

@@ -15,7 +15,7 @@ export class UserFeedRepository {
     createdAt: Date;
   }) {
 
-    await this.scylla.client.execute(
+    await this.scylla.execute(
 
       `
       INSERT INTO user_feed (
@@ -42,7 +42,7 @@ export class UserFeedRepository {
   ) {
 
     const result =
-      await this.scylla.client.execute(
+      await this.scylla.execute(
 
         `
         SELECT post_id

@@ -10,16 +10,16 @@ import { RedisEngagementCounterService } from './counters/engagement/redis.engag
 import { RedisLikeCounterService } from './counters/like/redis.like.counter.service';
 import { RedisRepostCounterService } from './counters/repost/redis.repost.counter.service';
 import { RedisViewCounterService } from './counters/view/redis.view.counter.service';
-
+import { RedisFollowService } from './follow/redis.follow.service';
 
 @Global()
 @Module({
  providers: [
-    RedisService, 
+    RedisService,  
     RedisFeedService,  
     RedisPostGuardService,
     SessionCacheService,
-
+RedisFollowService,
     RedisBookmarkCounterService,
     RedisPostCounterService,
     RedisCommentCounterService,
@@ -33,7 +33,7 @@ RedisService,
 RedisFeedService,     
 RedisPostGuardService,
 SessionCacheService,
-
+RedisFollowService,
 RedisBookmarkCounterService,
     RedisPostCounterService,
     RedisCommentCounterService,

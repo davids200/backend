@@ -18,13 +18,13 @@ export class RedisFollowService {
   ) {
 
     // user follows someone
-    await this.redis.client.sadd(
+    await this.redis.sadd(
       `following:${followerId}`,
       followingId,
     );
 
     // target gains follower
-    await this.redis.client.sadd(
+    await this.redis.sadd(
       `followers:${followingId}`,
       followerId,
     );

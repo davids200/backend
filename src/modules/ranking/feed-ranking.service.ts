@@ -38,7 +38,8 @@ calculateScore(params:{
 
   const createdTime = new Date(createdAt).getTime();
   const safeCreatedTime =isNaN(createdTime) ? Date.now(): createdTime;
-  let score = 0;
+ // let score = 0;
+ let score = 100;
   
 
   // ENGAGEMENT

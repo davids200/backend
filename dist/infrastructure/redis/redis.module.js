@@ -19,6 +19,7 @@ const redis_engagement_counter_service_1 = require("./counters/engagement/redis.
 const redis_like_counter_service_1 = require("./counters/like/redis.like.counter.service");
 const redis_repost_counter_service_1 = require("./counters/repost/redis.repost.counter.service");
 const redis_view_counter_service_1 = require("./counters/view/redis.view.counter.service");
+const redis_follow_service_1 = require("./follow/redis.follow.service");
 let RedisModule = class RedisModule {
 };
 exports.RedisModule = RedisModule;
@@ -30,6 +31,7 @@ exports.RedisModule = RedisModule = __decorate([
             redis_feed_service_1.RedisFeedService,
             redis_post_guard_service_1.RedisPostGuardService,
             session_cache_service_1.SessionCacheService,
+            redis_follow_service_1.RedisFollowService,
             redis_bookmark_counter_1.RedisBookmarkCounterService,
             redis_post_counter_service_1.RedisPostCounterService,
             redis_comment_counter_service_1.RedisCommentCounterService,
@@ -43,6 +45,7 @@ exports.RedisModule = RedisModule = __decorate([
             redis_feed_service_1.RedisFeedService,
             redis_post_guard_service_1.RedisPostGuardService,
             session_cache_service_1.SessionCacheService,
+            redis_follow_service_1.RedisFollowService,
             redis_bookmark_counter_1.RedisBookmarkCounterService,
             redis_post_counter_service_1.RedisPostCounterService,
             redis_comment_counter_service_1.RedisCommentCounterService,

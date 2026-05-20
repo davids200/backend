@@ -12,57 +12,167 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.FeedService = void 0;
 const common_1 = require("@nestjs/common");
 const feed_query_service_1 = require("./services/feed-query.service");
+const discovery_feed_service_1 = require("./services/discovery-feed.service");
+const feed_ranking_service_1 = require("../ranking/feed-ranking.service");
 let FeedService = class FeedService {
-    queryService;
-    constructor(queryService) {
-        this.queryService = queryService;
+    feedQuery;
+    discoveryFeed;
+    ranking;
+    constructor(feedQuery, discoveryFeed, ranking) {
+        this.feedQuery = feedQuery;
+        this.discoveryFeed = discoveryFeed;
+        this.ranking = ranking;
     }
     // =====================================================
-    // HOME FEED
+    // FANOUT POST
+    // =====================================================
+    async fanoutPost(payload) {
+        const { postId, authorId, followerIds = [], createdAt, locationId, hashtags = [], } = payload;
+        // =================================================
+        // HOME FEED SCORE
+        // =================================================
+        const homeFeedScore = this.ranking.calculateScore({
+            likes: 0,
+            comments: 0,
+            reposts: 0,
+            bookmarks: 0,
+            views: 0,
+            dwellTimeMs: 0,
+            completionRate: 0,
+            createdAt: new Date(),
+            isFollowingAuthor: true,
+            isLocalAuthor: false,
+        });
+        // =================================================
+        // USER FEED SCORE
+        // =================================================
+        // Profile feeds are mostly chronological
+        // =================================================
+        const userFeedScore = Date.now();
+        // =================================================
+        // LOCATION FEED SCORE
+        // =================================================
+        const locationFeedScore = this.ranking.calculateScore({
+            likes: 0,
+            comments: 0,
+            reposts: 0,
+            bookmarks: 0,
+            views: 0,
+            dwellTimeMs: 0,
+            completionRate: 0,
+            createdAt: new Date(),
+            isFollowingAuthor: false,
+            isLocalAuthor: true,
+        });
+        // =================================================
+        // HOME FEED
+        // =================================================
+        if (followerIds.length) {
+            await Promise.all(followerIds.map(async (followerId) => {
+                await this.feedQuery
+                    .insertHomeFeed({
+                    userId: followerId,
+                    postId,
+                    authorId,
+                    createdAt,
+                    score: homeFeedScore,
+                });
+            }));
+        }
+        // =================================================
+        // USER FEED
+        // =================================================
+        await this.feedQuery
+            .insertUserFeed({
+            userId: authorId,
+            postId,
+            authorId,
+            createdAt,
+            score: userFeedScore,
+        });
+        // =================================================
+        // LOCATION FEED
+        // =================================================
+        if (locationId) {
+            await this.feedQuery
+                .insertLocationFeed({
+                locationId,
+                postId,
+                authorId,
+                createdAt,
+                score: locationFeedScore,
+            });
+        }
+        // =================================================
+        // HASHTAG FEED SCORE
+        // =================================================
+        const hashtagFeedScore = this.ranking.calculateScore({
+            likes: 0,
+            comments: 0,
+            reposts: 0,
+            bookmarks: 0,
+            views: 0,
+            dwellTimeMs: 0,
+            completionRate: 0,
+            createdAt: new Date(),
+            isFollowingAuthor: false,
+            isLocalAuthor: false,
+        });
+        console.log('GENERATED HASHTAG SCORE', hashtagFeedScore);
+        if (hashtags.length) {
+            await Promise.all(hashtags.map(async (hashtag) => {
+                await this.feedQuery
+                    .insertHashtagFeed({
+                    hashtag,
+                    postId,
+                    authorId,
+                    createdAt,
+                    score: hashtagFeedScore,
+                });
+            }));
+        }
+    }
+    // =====================================================
+    // GET HOME FEED
     // =====================================================
     async getHomeFeed(params) {
-        return this.queryService
+        return this.feedQuery
             .getHomeFeed(params);
     }
     // =====================================================
-    // USER FEED
+    // GET USER FEED
     // =====================================================
     async getUserFeed(params) {
-        const bucketDate = (params.cursor ||
-            new Date())
-            .toISOString()
-            .split('T')[0];
-        return this.queryService
-            .getUserFeed({
-            ...params,
-            bucketDate,
-        });
+        return this.feedQuery
+            .getUserFeed(params);
     }
     // =====================================================
-    // LOCATION FEED
+    // GET LOCATION FEED
     // =====================================================
     async getLocationFeed(params) {
-        return this.queryService
+        return this.feedQuery
             .getLocationFeed(params);
     }
     // =====================================================
-    // HASHTAG FEED
+    // GET HASHTAG FEED
     // =====================================================
     async getHashtagFeed(params) {
-        return this.queryService
+        return this.feedQuery
             .getHashtagFeed(params);
     }
     // =====================================================
     // DISCOVERY FEED
     // =====================================================
     async getDiscoveryFeed(params) {
-        return this.queryService
+        return this.discoveryFeed
             .getDiscoveryFeed(params);
     }
 };
 exports.FeedService = FeedService;
 exports.FeedService = FeedService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [feed_query_service_1.FeedQueryService])
+    __metadata("design:paramtypes", [feed_query_service_1.FeedQueryService,
+        discovery_feed_service_1.DiscoveryFeedService,
+        feed_ranking_service_1.FeedRankingService])
 ], FeedService);
 //# sourceMappingURL=feed.service.js.map

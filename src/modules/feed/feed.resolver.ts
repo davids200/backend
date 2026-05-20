@@ -56,15 +56,13 @@ export class FeedResolver {
     cursor?: Date,
   ) {
 
-    return this.feedService
-      .getHomeFeed({
+const bucketDate =new Date().toISOString().split('T')[0];
 
-        userId:
-          user.id,
-
-        limit,
-
-        cursor,
+    return this.feedService.getHomeFeed({       
+    userId: user.id,
+    bucketDate,
+    limit,
+    cursor,
       });
   }
 
@@ -91,15 +89,18 @@ export class FeedResolver {
     cursor?: Date,
   ) {
 
-    return this.feedService
-      .getUserFeed({
+ const bucketDate =
 
-        authorId,
+  new Date()
+    .toISOString()
+    .split('T')[0];
 
-        limit,
-
-        cursor,
-      });
+return this.feedService.getUserFeed({
+    authorId,
+    bucketDate,
+    limit,
+    cursor,
+  });
   }
 
   // =====================================================
@@ -125,15 +126,23 @@ export class FeedResolver {
     cursor?: Date,
   ) {
 
-    return this.feedService
-      .getLocationFeed({
+  const bucketDate =
 
-        locationId,
+  new Date()
+    .toISOString()
+    .split('T')[0];
 
-        limit,
+return this.feedService
+  .getLocationFeed({
 
-        cursor,
-      });
+    locationId,
+
+    bucketDate,
+
+    limit,
+
+    cursor,
+  });
   }
 
   // =====================================================
@@ -159,15 +168,23 @@ export class FeedResolver {
     cursor?: Date,
   ) {
 
-    return this.feedService
-      .getHashtagFeed({
+   const bucketDate =
 
-        hashtag,
+  new Date()
+    .toISOString()
+    .split('T')[0];
 
-        limit,
+return this.feedService
+  .getHashtagFeed({
 
-        cursor,
-      });
+    hashtag,
+
+    bucketDate,
+
+    limit,
+
+    cursor,
+  });
   }
 
   // =====================================================
